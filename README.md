@@ -1,6 +1,15 @@
 # Template Engine
 
-Converts TemplateMark JSON + Data JSON to AgreementMark JSON.
+This is the core Accord Project template engine. The template engine is a JSON to JSON transformation 
+that converts TemplateMark JSON + agreement data (JSON) to AgreementMark JSON.
+
+Both TemplateMark and AgreementMark are specified using the [Concerto](https://concerto.accordproject.org) data modelling language.
+
+TemplateMark is a document object model that describes a rich-text template, with embedded variables, conditional sections, formulae etc. TemplateMark uses embedded JavaScript expressions for conditionals
+and calculations.
+
+At a high-level the template engine converts a TemplateMark DOM to an AgreementMark DOM, evaluating JavaScript expressions for conditional sections and formulae, and replaces variable references with 
+variable values from the supplied agreement data.
 
 ## Install
 

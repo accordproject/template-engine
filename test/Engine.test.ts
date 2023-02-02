@@ -81,7 +81,7 @@ const templateMark = {
     ]
 };
 
-test('should detect no changes between two identical files', async () => {
+test('should generate an agreement with variables, conditionals, formulae', async () => {
     const data = {
         'firstName': 'Dan',
         'lastName': 'Selman',
