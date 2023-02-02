@@ -14,7 +14,7 @@
 
 import dayjs from 'dayjs';
 
-const TM_RE = /^(org\.accordproject\.templatemark)@(.+)\.(\w+)Definition$/;
+const TEMPLATEMARK_RE = /^(org\.accordproject\.templatemark)@(.+)\.(\w+)Definition$/;
 const FORMULA_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.FormulaDefinition$/;
 const VARIABLE_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.VariableDefinition$/;
 const CONDITIONAL_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ConditionalDefinition$/;
@@ -31,6 +31,14 @@ const FORMATTED_VARIABLE_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.
 // Document
 
 type TemplateData = Record<string,unknown>;
+
+type TemplateMarkNode = {
+    code: string;
+    value: string;
+    name: string;
+    condition: string;
+    isTrue: boolean;
+}
 
 /**
  * Evaluates a JS expression
@@ -63,8 +71,17 @@ function evaluateJavaScript(data:TemplateData, expression:string, now?: dayjs.Da
     return result;
 }
 
-function reviver(context: any, data:TemplateData, key:string, value:object) {
-
+/**
+ * This is a JSON.parse 'reviver' - a function that can transform
+ * JSON nodes in place. This reviver transforms a TemplateMark JSON document
+ * plus template data to an AgrementMark JSON document.
+ * @param {*} context - the 'this' parameter for the reviver, the node being processed
+ * @param {*} data - the template data being used to create AgreementMark
+ * @param {string} key - the key of the current object
+ * @param {*} value - the value of the current object
+ * @returns {*} the updated value
+ */
+function reviver(context: TemplateMarkNode, data:TemplateData, key:string, value:object) : object | string {
     // process the nodes in the templatemark, converting them to agreementmark
     if(key === '$class' && typeof value === 'string') {
         const nodeClass = value as string;
@@ -101,7 +118,7 @@ function reviver(context: any, data:TemplateData, key:string, value:object) {
         // with the result of evaluating the JS code
         else if(CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
             if(context.condition) {
-                context.isTrue = evaluateJavaScript(data, `return !!${context.condition}`);
+                context.isTrue = evaluateJavaScript(data, `return !!${context.condition}`) as unknown as boolean;
             }
             else {
                 throw new Error('Condition node is missing condition.');
@@ -109,7 +126,7 @@ function reviver(context: any, data:TemplateData, key:string, value:object) {
         }
 
         // rewrite node types, mapping from TemplateMark to AgreementMark
-        const match = nodeClass.match(TM_RE);
+        const match = nodeClass.match(TEMPLATEMARK_RE);
         if(match && match.length > 1) {
             return `org.accordproject.ciceromark@${match[2]}.${match[3]}`;
         }
@@ -118,8 +135,14 @@ function reviver(context: any, data:TemplateData, key:string, value:object) {
     return value;
 }
 
+/**
+ * Generates an AgreementMark JSON document from a template plus data.
+ * @param {*} templateMark - the TemplateMark JSON document
+ * @param {*} data - the template data JSON
+ * @returns {*} the AgreementMark JSON
+ */
 export function generateAgreement(templateMark:object, data:TemplateData) : object {
-    const f = function(this:any, key:string,value:any) {
+    const f = function(this:TemplateMarkNode, key:string, value:object) {
         return reviver(this, data,key, value);
     };
     return JSON.parse(JSON.stringify(templateMark), f);
