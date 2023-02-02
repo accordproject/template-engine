@@ -14,6 +14,8 @@
 
 import dayjs from 'dayjs';
 
+import { draftingMap } from './drafting';
+
 const TEMPLATEMARK_RE = /^(org\.accordproject\.templatemark)@(.+)\.(\w+)Definition$/;
 const FORMULA_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.FormulaDefinition$/;
 const VARIABLE_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.VariableDefinition$/;
@@ -38,6 +40,8 @@ type TemplateMarkNode = {
     name: string;
     condition: string;
     isTrue: boolean;
+    elementType: string;
+    format: string;
 }
 
 /**
@@ -106,8 +110,8 @@ function reviver(context: TemplateMarkNode, data:TemplateData, key:string, value
                 throw new Error(`Missing variable value '${context.name}'.`);
             }
             if(data[context.name] !== null) {
-                const val = data[context.name];
-                context.value = typeof val === 'string' ? val : JSON.stringify(data[context.name]);
+                const drafter = draftingMap.get(context.elementType);
+                context.value = drafter ? drafter(data[context.name], context.format) : data[context.name] as string;
             }
             else {
                 throw new Error(`Variable value '${context.name}' is null.`);
