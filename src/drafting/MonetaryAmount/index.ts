@@ -37,7 +37,12 @@ function monetaryAmountDefaultDrafter(value:MonetaryAmount) {
  */
 function codeSymbol(c:string) : string {
     const index: number = Object.keys(CurrencyCode).indexOf(c);
-    return Object.values(CurrencyCode)[index];
+    if(index >=0) {
+        return Object.values(CurrencyCode)[index];
+    }
+    else {
+        return c;
+    }
 }
 
 /**
