@@ -67,7 +67,8 @@ function buildExternalModels() {
     const template = handlebars.compile(source);
 
     const contextArray = modelsJson.models.map(m => {
-        const modelText = fs.readFileSync(path.join(scriptDir,targetDir,mapName(m.from)), 'utf-8');
+        const filePath = m.from.startsWith('http') ? path.join(scriptDir,targetDir,mapName(m.from)) : m.from;
+        const modelText = fs.readFileSync(filePath, 'utf-8');
         // XXX Escape so it can be embedded in a string
         const model = modelText.replace(/\\/g, '\\\\');
         return { ...m, model };
@@ -75,7 +76,7 @@ function buildExternalModels() {
     //console.log('contextArray --- ' + JSON.stringify(contextArray));
 
     contextArray.forEach(function(context) {
-        // Only create a corresponding JS file if the js field exists
+        // Only create a corresponding TS file if the ts field exists
         if (context.ts) {
             const result = template(context);
             const buildModelsJs = path.join(scriptDir,context.ts,context.name + '.ts');

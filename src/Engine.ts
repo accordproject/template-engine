@@ -17,6 +17,10 @@ import jp from 'jsonpath';
 
 import { ClassDeclaration, Factory, Introspector, ModelManager, Serializer } from '@accordproject/concerto-core';
 import { draftingMap } from './drafting';
+import { TemplateMarkModel } from './externalModels/TemplateMarkModel';
+import { CommonMarkModel } from './externalModels/CommonMarkModel';
+import { CiceroMarkModel } from './externalModels/CiceroMarkModel';
+import { ConcertoMetaModel } from './externalModels/ConcertoMetaModel';
 
 const TEMPLATEMARK_RE = /^(org\.accordproject\.templatemark)@(.+)\.(\w+)Definition$/;
 const FORMULA_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.FormulaDefinition$/;
@@ -187,6 +191,14 @@ export class Engine {
      * @throws {Error} if the templateMark document is invalid
      */
     checkTypes(templateMark:object) : object {
+        const modelManager = new ModelManager({strict:true});
+        modelManager.addCTOModel(ConcertoMetaModel, 'concertometamodel.cto');
+        modelManager.addCTOModel(CommonMarkModel, 'commonmark.cto');
+        modelManager.addCTOModel(CiceroMarkModel, 'ciceromarkmark.cto');
+        modelManager.addCTOModel(TemplateMarkModel, 'templatemark.cto');
+        const factory = new Factory(modelManager);
+        const serializer = new Serializer(factory, modelManager);
+        serializer.fromJSON(templateMark);
         return templateMark;
     }
 

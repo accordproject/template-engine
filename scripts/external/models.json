@@ -4,25 +4,25 @@
     {
       "name": "CommonMarkModel",
       "namespace": "org.accordproject.commonmark",
-      "from": "https://models.accordproject.org/markdown/commonmark@0.4.0.cto",
+      "from": "./scripts/external/commonmark.cto",
       "ts": "src/externalModels"
     },
     {
       "name": "ConcertoMetaModel",
       "namespace": "concerto.metamodel",
-      "from": "https://models.accordproject.org/concerto/metamodel@0.2.0.cto",
+      "from": "./scripts/external/metamodel.cto",
       "ts": "src/externalModels"
     },
     {
       "name": "CiceroMarkModel",
       "namespace": "org.accordproject.ciceromark",
-      "from": "https://models.accordproject.org/markdown/ciceromark@0.3.3.cto",
+      "from": "./scripts/external/ciceromark.cto",
       "ts": "src/externalModels"
     },
     {
       "name": "TemplateMarkModel",
       "namespace": "org.accordproject.templatemark",
-      "from": "https://models.accordproject.org/markdown/templatemark@0.1.3.cto",
+      "from": "./scripts/external/templatemark.cto",
       "ts": "src/externalModels"
     }
   ]
