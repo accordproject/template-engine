@@ -13,7 +13,9 @@
  */
 
 import dayjs from 'dayjs';
+import jp from 'jsonpath';
 
+import { ClassDeclaration, Factory, Introspector, ModelManager, Serializer } from '@accordproject/concerto-core';
 import { draftingMap } from './drafting';
 
 const TEMPLATEMARK_RE = /^(org\.accordproject\.templatemark)@(.+)\.(\w+)Definition$/;
@@ -22,6 +24,7 @@ const VARIABLE_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.Variab
 const CONDITIONAL_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ConditionalDefinition$/;
 const ENUM_VARIABLE_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.EnumVariableDefinition$/;
 const FORMATTED_VARIABLE_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.FormattedVariableDefinition$/;
+// const WITH_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.WithDefinition$/;
 
 // TODO??
 // ListBlockDefinition
@@ -106,15 +109,16 @@ function reviver(context: TemplateMarkNode, data:TemplateData, key:string, value
         else if(VARIABLE_DEFINITION_RE.test(nodeClass) ||
             ENUM_VARIABLE_DEFINITION_RE.test(nodeClass) ||
             FORMATTED_VARIABLE_DEFINITION_RE.test(nodeClass)) {
-            if(!Object.keys(data).includes(context.name)) {
-                throw new Error(`Missing variable value '${context.name}'.`);
-            }
-            if(data[context.name] !== null) {
-                const drafter = draftingMap.get(context.elementType);
-                context.value = drafter ? drafter(data[context.name], context.format) : data[context.name] as string;
+
+            const variableValues = jp.query(data, `$.${context.name}`, 1);
+
+            if(variableValues.length === 0) {
+                throw new Error(`No values found for path '${context.name}' in data ${JSON.stringify(data, null,2)}.`);
             }
             else {
-                throw new Error(`Variable value '${context.name}' is null.`);
+                const variableValue = variableValues[0];
+                const drafter = draftingMap.get(context.elementType);
+                context.value = drafter ? drafter(variableValue, context.format) : variableValue as string;
             }
         }
 
@@ -145,9 +149,61 @@ function reviver(context: TemplateMarkNode, data:TemplateData, key:string, value
  * @param {*} data - the template data JSON
  * @returns {*} the AgreementMark JSON
  */
-export function generateAgreement(templateMark:object, data:TemplateData) : object {
+function generateAgreement(templateMark:object, data:TemplateData) : object {
     const f = function(this:TemplateMarkNode, key:string, value:object) {
         return reviver(this, data,key, value);
     };
     return JSON.parse(JSON.stringify(templateMark), f);
+}
+
+export class Engine {
+    modelManager:ModelManager;
+    templateClass:ClassDeclaration;
+
+    constructor(modelManager:ModelManager) {
+        this.modelManager = modelManager;
+        const introspector = new Introspector(this.modelManager);
+        const templateModels = introspector.getClassDeclarations().filter((item) => {
+            return !item.isAbstract() && item.getDecorator('template');
+        });
+        if (templateModels.length > 1) {
+            throw new Error('Found multiple concepts with @template decorator. The model for the template must contain a single concept with the @template decorator.');
+        } else if (templateModels.length === 0) {
+            throw new Error('Failed to find a concept with the @template decorator. The model for the template must contain a single concept with the @template decoratpr.');
+        } else {
+            this.templateClass = templateModels[0];
+        }
+    }
+
+    /**
+     * Checks that a TemplateMark JSON document is valid with respect to the
+     * TemplateMark model, as well as the template model.
+     *
+     * Checks:
+     * 1. Variable names are valid properties in the template model
+     * 2. Optional properties have guards
+     * @param {*} templateMark the TemplateMark JSON object
+     * @returns {*} TemplateMark JSON that has been typed checked and has type metadata added
+     * @throws {Error} if the templateMark document is invalid
+     */
+    checkTypes(templateMark:object) : object {
+        return templateMark;
+    }
+
+    validateCiceroMark(ciceroMark:object) {
+        return true;
+    }
+
+    generate(templateMark:object, data:TemplateData) : object {
+        const typedTemplateMark = this.checkTypes(templateMark);
+        const factory = new Factory(this.modelManager);
+        const serializer = new Serializer(factory, this.modelManager);
+        const templateData = serializer.fromJSON(data);
+        if(templateData.getFullyQualifiedType() !== this.templateClass.getFullyQualifiedName()) {
+            throw new Error(`Template data must be of type '${this.templateClass.getFullyQualifiedName()}'.`);
+        }
+        const ciceroMark = generateAgreement(typedTemplateMark, data);
+        this.validateCiceroMark(ciceroMark);
+        return ciceroMark;
+    }
 }

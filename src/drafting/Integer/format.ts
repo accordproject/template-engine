@@ -28,7 +28,7 @@ export function draftInteger(value:number) : string {
  * @returns {object} the parser
  */
 export function draftIntegerFormat(value:number,format:string) : string {
-    return format.replace(/0(.)0/gi, function(_a,sep1,_b){
+    return format.replace(/0(.)0/gi, function(_a,sep1){
         const vs = value.toFixed(0);
         let res = '';
         let i = vs.substring(0,vs.length);

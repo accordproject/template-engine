@@ -1,5 +1,24 @@
-import { generateAgreement } from '../src/';
+import { ModelManager } from '@accordproject/concerto-core';
+import { Engine } from '../src/';
 
+/**
+ * Define the data model for the template. The model must have a concept with
+ * the @template decorator. The types of properties allow the template to be
+ * type-checked.
+ */
+const model = `namespace test@1.0.0
+
+@template
+concept TemplateData {
+    o String firstName
+    o String lastName optional
+    o DateTime lastVisit
+}
+`;
+
+/**
+ * Define the structure of the template using a TemplateMark JSON DOM.
+ */
 const templateMark = {
     '$class': 'org.accordproject.commonmark@1.0.0.Document',
     'xmlns': 'http://commonmark.org/xml/1.0',
@@ -44,7 +63,7 @@ const templateMark = {
                             ],
                             'condition': 'lastName.startsWith(\'S\')',
                             'dependencies': [
-                                'lastName'
+                                'person.lastName'
                             ],
                             'name': 'if'
                         },
@@ -83,10 +102,16 @@ const templateMark = {
 
 test('should generate an agreement with variables, conditionals, formulae', async () => {
     const data = {
-        'firstName': 'Dan',
-        'lastName': 'Selman',
-        'lastVisit': '2023-01-10'
+        $class: 'test@1.0.0.TemplateData',
+        firstName: 'Dan',
+        lastName: 'Selman',
+        lastVisit: '2023-01-10'
     };
-    const agreementMark = generateAgreement(templateMark, data);
+    const modelManager = new ModelManager();
+    modelManager.addCTOModel(model);
+    const engine = new Engine(modelManager);
+
+    const agreementMark = engine.generate(templateMark, data);
     expect(agreementMark).toBeTruthy();
+    console.log(JSON.stringify(agreementMark, null, 2 ));
 });
