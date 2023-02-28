@@ -12,7 +12,7 @@
     "scripts": {
         "clean": "rimraf dist",
         "prebuild": "npm-run-all clean",
-        "build": "tsc -p tsconfig.build.json",
+        "build": "tsc -p tsconfig.build.json && npm run models:get",
         "pretest": "npm-run-all licchk lint",
         "lint": "eslint .",
         "licchk": "license-check-and-add",
