@@ -58,8 +58,8 @@ concept WithDefinition extends BlockDefinition {
 concept ConditionalDefinition extends BlockDefinition {
     o Child[] whenTrue
     o Child[] whenFalse
-    o String condition
-    o String[] dependencies
+    o String condition optional
+    o String[] dependencies optional
 }
 
 concept OptionalDefinition extends BlockDefinition {

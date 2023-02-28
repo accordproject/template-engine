@@ -194,7 +194,6 @@ export class Engine {
         const modelManager = new ModelManager({strict:true});
         modelManager.addCTOModel(ConcertoMetaModel, 'concertometamodel.cto');
         modelManager.addCTOModel(CommonMarkModel, 'commonmark.cto');
-        modelManager.addCTOModel(CiceroMarkModel, 'ciceromarkmark.cto');
         modelManager.addCTOModel(TemplateMarkModel, 'templatemark.cto');
         const factory = new Factory(modelManager);
         const serializer = new Serializer(factory, modelManager);
@@ -203,6 +202,13 @@ export class Engine {
     }
 
     validateCiceroMark(ciceroMark:object) {
+        const modelManager = new ModelManager({strict:true});
+        modelManager.addCTOModel(ConcertoMetaModel, 'concertometamodel.cto');
+        modelManager.addCTOModel(CommonMarkModel, 'commonmark.cto');
+        modelManager.addCTOModel(CiceroMarkModel, 'ciceromarkmark.cto');
+        const factory = new Factory(modelManager);
+        const serializer = new Serializer(factory, modelManager);
+        serializer.fromJSON(ciceroMark);
         return true;
     }
 

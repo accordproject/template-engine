@@ -57,6 +57,8 @@ concept Conditional extends Block {
   o Boolean isTrue
   o Child[] whenTrue
   o Child[] whenFalse
+  o String condition optional
+  o String[] dependencies optional
 }
 
 concept Optional extends Block {
