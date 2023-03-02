@@ -79,6 +79,17 @@ function evaluateJavaScript(data: TemplateData, expression: string, now?: dayjs.
     return result;
 }
 
+/**
+ * Calculates a JSON path to use to retrieve data, based on a TemplatemMark tree.
+ * For example, if we hit a VariableDefinition {{city}} that is nested inside a
+ * WithDefinition {{#with address}} then the JSON path returned should be '$.address.city'.
+ * Similarly ListBlockDefinition and JoinDefinition also include property names that must
+ * apply to their child nodes.
+ * @param {*} rootData the root of the JSON document, typically this is a TemplateMark JSON
+ * @param {*} currentNode the current TemplateMark node we are processing
+ * @param {string[]} paths the traverse path to the current node
+ * @returns {string} the JSON path to use to retrieve data
+ */
 function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
     if(!currentNode) {
         throw new Error('Data must be supplied');
@@ -88,6 +99,10 @@ function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
     }
     if(currentNode.name === 'this') { // TODO: is this what we want to do?!
         return '$.';
+    }
+    if(currentNode.name.indexOf('.') >=0) {
+        // prevent JSON path injection
+        throw new Error(`Invalid name property ${currentNode.name}`);
     }
     if(!paths || !paths.length || paths.length <1 ) {
         throw new Error('Paths must be supplied');
