@@ -6,10 +6,22 @@ concept Address {
     o String zip
 }
 
+concept Order {
+    o String sku
+    o Integer amount
+}
+
+concept LoyaltyStatus {
+    o String level
+}
+
 @template
 concept TemplateData {
     o String firstName
-    o String lastName optional
+    o String lastName
+    o String[] middleNames
     o DateTime lastVisit
     o Address address
+    o Order[] orders
+    o LoyaltyStatus loyaltyStatus optional
 }

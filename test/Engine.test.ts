@@ -19,13 +19,26 @@ test('should generate an agreement with variables, conditionals, formulae', asyn
         $class: 'test@1.0.0.TemplateData',
         firstName: 'Dan',
         lastName: 'Selman',
+        middleNames: ['Tenzin', 'Isaac', 'Mia'],
         lastVisit: '2023-01-10',
         address: {
             $class: 'test@1.0.0.Address',
             street: '1 Main Street',
             city: 'Boston',
             zip: '12345'
-        }
+        },
+        orders: [
+            {
+                $class: 'test@1.0.0.Order',
+                sku: 'WIDGET-2000',
+                amount: 10
+            },
+            {
+                $class: 'test@1.0.0.Order',
+                sku: 'DOODAH-X',
+                amount: 3
+            }
+        ]
     };
     const modelManager = new ModelManager();
     modelManager.addCTOModel(model);
