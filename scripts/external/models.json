@@ -14,9 +14,9 @@
       "ts": "src/externalModels"
     },
     {
-      "name": "CiceroMarkModel",
-      "namespace": "org.accordproject.ciceromark",
-      "from": "./scripts/external/ciceromark.cto",
+      "name": "AgreementMarkModel",
+      "namespace": "org.accordproject.agreementmark",
+      "from": "./scripts/external/agreementmark.cto",
       "ts": "src/externalModels"
     },
     {

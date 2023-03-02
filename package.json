@@ -37,12 +37,14 @@
         "@accordproject/concerto-core": "^3.6.0",
         "dayjs": "1.11.7",
         "flow-remove-types": "^2.198.2",
-        "jsonpath": "^1.1.1"
+        "jsonpath": "^1.1.1",
+        "traverse": "^0.6.7"
     },
     "devDependencies": {
         "@types/jest": "28.1.1",
         "@types/jsonpath": "^0.2.0",
         "@types/semver": "7.3.10",
+        "@types/traverse": "^0.6.32",
         "@typescript-eslint/eslint-plugin": "5.27.1",
         "@typescript-eslint/parser": "5.27.1",
         "eslint": "8.2.0",

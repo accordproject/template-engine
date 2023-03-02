@@ -11,6 +11,8 @@ and calculations.
 At a high-level the template engine converts a TemplateMark DOM to an AgreementMark DOM, evaluating JavaScript expressions for conditional sections and formulae, and replaces variable references with 
 variable values from the supplied agreement data.
 
+> Note: Use the @accordproject/markdown-transform project to convert templates to TemplateMark and to convert AgreementMark to output formats (HTML, PDF, DOCX etc.)
+
 ## Install
 
 ```

@@ -21,7 +21,7 @@ import concerto.metamodel@1.0.0.{Decorator}
  * A model for Accord Project template extensions to commonmark
  */
 abstract concept ElementDefinition extends Child {
-  o String name // Add Concerto regex
+  o String name
   o String elementType optional
   o Decorator[] decorators optional
 }

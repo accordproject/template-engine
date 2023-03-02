@@ -18,5 +18,5 @@
  * @returns {string} the text
  */
 export default function stringDrafter(value:string) : string {
-    return '' + '"' + value + '"';
+    return value;
 }

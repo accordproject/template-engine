@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-namespace org.accordproject.ciceromark@1.0.0
+namespace org.accordproject.agreementmark@1.0.0
 
 import org.accordproject.commonmark@1.0.0.{Child}
 import concerto.metamodel@1.0.0.{Decorator}
