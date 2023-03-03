@@ -20,6 +20,6 @@ Your last visit was: _{{lastVisit as "DD/MM/YYYY"}}_.
 
 {{% return favoriteColors ? favoriteColors.join(',') : '' %}}
 
-{{#if condition="favoriteColors && favoriteColors.indexOf('PINK') >= 0"}}You like PINK!{{/if}}
+{{#if condition="favoriteColors && favoriteColors.indexOf('PINK') >= 0"}}You like PINK!{{else}}Why don't you like PINK?{{/if}}
 
 Done.
