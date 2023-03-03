@@ -237,7 +237,7 @@ function generateAgreement(templateMark: object, data: TemplateData): any {
             }
 
             // add a 'isTrue' property to ConditionDefinition
-            // with the result of evaluating the JS code
+            // with the result of evaluating the JS code or a boolean property
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
                     context.isTrue = evaluateJavaScript(data, `return !!${context.condition}`) as unknown as boolean;
@@ -249,7 +249,22 @@ function generateAgreement(templateMark: object, data: TemplateData): any {
                     }
                 }
                 else {
-                    throw new Error('Condition node is missing condition.');
+                    const path = getJsonPath(templateMark, context, this.path);
+                    const variableValues = jp.query(data, path, 1);
+                    if (variableValues && variableValues.length) {
+                        if(variableValues.length === 1) {
+                            context.isTrue = !!variableValues[0];
+                            if(context.isTrue) {
+                                delete context.whenFalse;
+                            }
+                            else {
+                                delete context.whenTrue;
+                            }
+                        }
+                        else {
+                            throw new Error(`Multiple values found for path '${path}' in data ${data}.`);
+                        }
+                    }
                 }
             }
 

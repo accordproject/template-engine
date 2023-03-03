@@ -20,6 +20,7 @@ concept TemplateData {
     o String firstName
     o String lastName
     o String[] middleNames
+    o Boolean active
     o DateTime lastVisit
     o Address address
     o Order[] orders

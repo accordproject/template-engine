@@ -20,6 +20,7 @@ test('should generate an agreement with variables, conditionals, formulae', asyn
         firstName: 'Dan',
         lastName: 'Selman',
         middleNames: ['Tenzin', 'Isaac', 'Mia'],
+        active: true,
         lastVisit: '2023-01-10',
         address: {
             $class: 'test@1.0.0.Address',
