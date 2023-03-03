@@ -4,6 +4,8 @@ Your city is: {{#with address}}{{city}}{{/with}}.
 
 Thank you for visiting us {{% return now.diff(lastVisit,'day') %}} days ago.
 
+Your last visit was: _{{lastVisit as "DD/MM/YYYY"}}_.
+
 ## Orders
 
 {{#ulist orders}}

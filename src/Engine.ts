@@ -14,7 +14,6 @@
 
 import dayjs from 'dayjs';
 import jp from 'jsonpath';
-
 import traverse from 'traverse';
 
 import { ClassDeclaration, Factory, Introspector, ModelManager, Serializer } from '@accordproject/concerto-core';
@@ -40,12 +39,6 @@ const WITH_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.WithDefini
 const LISTBLOCK_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ListBlockDefinition$/;
 const JOIN_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.JoinDefinition$/;
 const OPTIONAL_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.OptionalDefinition$/;
-
-// TODO??
-// ContractDefinition
-// ClauseDefinition
-// OptionalDefinition
-// Document
 
 type TemplateData = Record<string, unknown>;
 
@@ -84,8 +77,8 @@ function evaluateJavaScript(data: TemplateData, expression: string, now?: dayjs.
  * Calculates a JSON path to use to retrieve data, based on a TemplatemMark tree.
  * For example, if we hit a VariableDefinition {{city}} that is nested inside a
  * WithDefinition {{#with address}} then the JSON path returned should be '$.address.city'.
- * Similarly ListBlockDefinition and JoinDefinition also include property names that must
- * apply to their child nodes.
+ * Similarly ListBlockDefinition, JoinDefinition and OptionalDefinition also include
+ * property names that must apply to their child nodes.
  * @param {*} rootData the root of the JSON document, typically this is a TemplateMark JSON
  * @param {*} currentNode the current TemplateMark node we are processing
  * @param {string[]} paths the traverse path to the current node
@@ -140,7 +133,7 @@ function generateAgreement(templateMark: object, data: TemplateData): any {
         if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
             const nodeClass = context.$class as string;
 
-            // rewrite node types, mapping from TemplateMark to AgreementMark
+            // rewrite node types, mapping from TemplateMark namespace to AgreementMark
             const match = nodeClass.match(TEMPLATEMARK_RE);
             if (match && match.length > 1) {
                 context.$class = `org.accordproject.agreementmark@${match[2]}.${match[3]}`;
@@ -166,6 +159,7 @@ function generateAgreement(templateMark: object, data: TemplateData): any {
                 }
             }
 
+            // evaluate lists, recursing on each list item
             else if (LISTBLOCK_DEFINITION_RE.test(nodeClass)) {
                 const path = getJsonPath(templateMark, context, this.path);
                 const variableValues = jp.query(data, path, 1);
@@ -195,6 +189,7 @@ function generateAgreement(templateMark: object, data: TemplateData): any {
                 }
             }
 
+            // map over an array of items, joining them into a Text node
             else if (JOIN_DEFINITION_RE.test(nodeClass)) {
                 const path = getJsonPath(templateMark, context, this.path);
                 const variableValues = jp.query(data, path, 1);
