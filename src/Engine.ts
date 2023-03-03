@@ -158,7 +158,8 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
             else if (FORMULA_DEFINITION_RE.test(nodeClass)) {
                 if (context.code) {
                     const templateClass = introspector.getClassDeclaration(data.$class as string);
-                    context.value = JSON.stringify(evaluateJavaScript(templateClass, data, context.code));
+                    const result = evaluateJavaScript(templateClass, data, context.code);
+                    context.value = typeof result === 'string' ? result : JSON.stringify(result);
                 }
                 else {
                     throw new Error('Formula node is missing code.');
