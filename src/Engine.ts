@@ -44,20 +44,22 @@ type TemplateData = Record<string, unknown>;
 
 /**
  * Evaluates a JS expression
+ * @param {ClassDeclaration} templateClass the Concerto class for the template data
  * @param {*} data the contract data
  * @param {string} expression the JS expression
  * @param {Date} now the current value for now
  * @returns {object} the result of evaluating the expression against the data
  */
-function evaluateJavaScript(data: TemplateData, expression: string, now?: dayjs.Dayjs): object {
-    if (!data || !expression) {
+function evaluateJavaScript(templateClass:ClassDeclaration, data: TemplateData, expression: string, now?: dayjs.Dayjs): object {
+    if (!data || !expression || !templateClass) {
         throw new Error(`Cannot evaluate JS ${expression} against ${data}`);
     }
     data.now = now ? now : dayjs();
-    const args = Object.keys(data);
-    const values = Object.values(data);
+    const args = templateClass.getOwnProperties().map(p => p.name);
+    args.push('now');
+    const values = args.map(p => data[p]);
     const types = values.map(v => typeof v);
-    const DEBUG = false;
+    const DEBUG = true;
     if (DEBUG) {
         console.debug('**** ' + JSON.stringify(data, null, 2));
         console.debug('**** ' + expression);
@@ -91,9 +93,6 @@ function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
     if(!currentNode.name) {
         throw new Error(`Data must have a name: ${JSON.stringify(currentNode)}`);
     }
-    if(currentNode.name === 'this') { // TODO: is this what we want to do?!
-        return '$.';
-    }
     if(currentNode.name.indexOf('.') >=0) {
         // prevent JSON path injection
         throw new Error(`Invalid name property ${currentNode.name}`);
@@ -113,21 +112,27 @@ function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
             obj.$class === 'org.accordproject.templatemark@1.0.0.WithDefinition' ||
             obj.$class === 'org.accordproject.templatemark@1.0.0.JoinDefinition' ||
             obj.$class === 'org.accordproject.templatemark@1.0.0.OptionalDefinition') {
-                withPath.push(obj.name);
+                withPath.push(`['${obj.name}']`);
             }
         }
     }
-    const path = withPath.length > 0 ? `${withPath.join('.')}.${currentNode.name}` : currentNode.name;
-    return `$.${path}`;
+
+    if(currentNode.name !== 'this') {
+        withPath.push(`['${currentNode.name}']`);
+    }
+
+    return withPath.length > 0 ? `$${withPath.join('')}` : '$..*';
 }
 
 /**
  * Generates an AgreementMark JSON document from a template plus data.
+ * @param {ModelManager} modelManager - the template model
  * @param {*} templateMark - the TemplateMark JSON document
  * @param {*} data - the template data JSON
  * @returns {*} the AgreementMark JSON
  */
-function generateAgreement(templateMark: object, data: TemplateData): any {
+function generateAgreement(modelManager:ModelManager, templateMark: object, data: TemplateData): any {
+    const introspector = new Introspector(modelManager);
     return traverse(templateMark).map(function (context: any) {
         let stopHere = false;
         if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
@@ -152,7 +157,8 @@ function generateAgreement(templateMark: object, data: TemplateData): any {
             // with the result of evaluating the JS code
             else if (FORMULA_DEFINITION_RE.test(nodeClass)) {
                 if (context.code) {
-                    context.value = JSON.stringify(evaluateJavaScript(data, context.code));
+                    const templateClass = introspector.getClassDeclaration(data.$class as string);
+                    context.value = JSON.stringify(evaluateJavaScript(templateClass, data, context.code));
                 }
                 else {
                     throw new Error('Formula node is missing code.');
@@ -178,7 +184,7 @@ function generateAgreement(templateMark: object, data: TemplateData): any {
                         delete context.name;
                         context.nodes = arrayData.map( arrayItem => {
                             // arrayItem is now the data for the nested traversal
-                            const subResult = generateAgreement(context.nodes[0].nodes[0], arrayItem);
+                            const subResult = generateAgreement(modelManager, context.nodes[0].nodes[0], arrayItem);
                             return {
                                 $class: 'org.accordproject.commonmark@1.0.0.Item',
                                 nodes: subResult.nodes ? subResult.nodes : []
@@ -222,17 +228,26 @@ function generateAgreement(templateMark: object, data: TemplateData): any {
             else if (VARIABLE_DEFINITION_RE.test(nodeClass) ||
                 ENUM_VARIABLE_DEFINITION_RE.test(nodeClass) ||
                 FORMATTED_VARIABLE_DEFINITION_RE.test(nodeClass)) {
-                const path = getJsonPath(templateMark, context, this.path);
-                const variableValues = jp.query(data, path, 1);
-
-                if (variableValues.length === 0) {
-                    throw new Error(`No values found for path '${path}' in data ${data}.`);
+                if(typeof data === 'object') {
+                    const path = getJsonPath(templateMark, context, this.path);
+                    const variableValues = jp.query(data, path, 1);
+                    if (variableValues.length === 0) {
+                        throw new Error(`No values found for path '${path}' in data ${data}.`);
+                    }
+                    else {
+                        // convert the value to a string, optionally using the formatter
+                        const variableValue = variableValues[0];
+                        const drafter = draftingMap.get(context.elementType);
+                        context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
+                    }
                 }
                 else {
-                    // convert the value to a string, optionally using the formatter
-                    const variableValue = variableValues[0];
-                    const drafter = draftingMap.get(context.elementType);
-                    context.value = drafter ? drafter(variableValue, context.format) : variableValue as string;
+                    // a list of enum values or primitives brings us here
+                    const variableValue = data;
+                    const type = introspector.getClassDeclaration(context.elementType);
+                    // we want to draft Enums as strings, not objects
+                    const drafter = draftingMap.get(type.isEnum() ? 'String' : context.elementType);
+                    context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
                 }
             }
 
@@ -240,7 +255,8 @@ function generateAgreement(templateMark: object, data: TemplateData): any {
             // with the result of evaluating the JS code or a boolean property
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
-                    context.isTrue = evaluateJavaScript(data, `return !!${context.condition}`) as unknown as boolean;
+                    const templateClass = introspector.getClassDeclaration(data.$class as string);
+                    context.isTrue = evaluateJavaScript(templateClass, data, `return !!${context.condition}`) as unknown as boolean;
                     if(context.isTrue) {
                         delete context.whenFalse;
                     }
@@ -274,7 +290,7 @@ function generateAgreement(templateMark: object, data: TemplateData): any {
                 const variableValues = jp.query(data, path, 1);
                 if (variableValues && variableValues.length) {
                     if(variableValues.length === 1) {
-                        context.hasSome = !!variableValues[0];
+                        context.hasSome = true;
                         delete context.whenNone;
                     }
                     else {
@@ -398,7 +414,7 @@ export class Engine {
             throw new Error(`Template data must be of type '${this.templateClass.getFullyQualifiedName()}'.`);
         }
         const typedTemplateMark = this.checkTypes(templateMark, data);
-        const ciceroMark = generateAgreement(typedTemplateMark, data);
+        const ciceroMark = generateAgreement(this.modelManager, typedTemplateMark, data);
         this.validateCiceroMark(ciceroMark);
         return ciceroMark;
     }

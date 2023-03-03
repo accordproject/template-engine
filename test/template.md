@@ -10,10 +10,14 @@ Your last visit was: _{{lastVisit as "DD/MM/YYYY"}}_.
 
 ## Orders
 
-{{#ulist orders}}
+{{#olist orders}}
 - {{sku}} : {{amount}}
-{{/ulist}}
+{{/olist}}
 
 {{#optional loyaltyStatus}}Your loyalty status: {{level}}{{else}}You do not have a loyalty status.{{/optional}}
+
+{{#optional favoriteColors}}## Favorite Colors{{/optional}}
+
+{{#if condition="favoriteColors && favoriteColors.indexOf('PINK') >= 0"}}You like PINK!{{/if}}
 
 Done.

@@ -43,7 +43,8 @@ test('should generate an agreement with variables, conditionals, formulae', asyn
         loyaltyStatus: {
             $class: 'test@1.0.0.LoyaltyStatus',
             level: 'Gold'
-        }
+        },
+        favoriteColors: ['RED', 'PINK']
     };
     const modelManager = new ModelManager();
     modelManager.addCTOModel(model);

@@ -15,6 +15,15 @@ concept LoyaltyStatus {
     o String level
 }
 
+enum Color {
+    o RED
+    o GREEN
+    o BLUE
+    o PINK
+    o BLACK
+    o WHITE
+}
+
 @template
 concept TemplateData {
     o String firstName
@@ -25,4 +34,5 @@ concept TemplateData {
     o Address address
     o Order[] orders
     o LoyaltyStatus loyaltyStatus optional
+    o Color[] favoriteColors optional
 }
