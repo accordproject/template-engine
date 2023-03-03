@@ -3,3 +3,11 @@ To rebuild the `template.json` from `template.md` you need to clone the `markdow
 ```
 node index.js transform --input ~/dev/template-engine/test/template.md --from markdown_template --to templatemark --model ~/dev/template-engine/test/model.cto --output ~/dev/template-engine/test/template.json
 ```
+
+To run tests switch to the root directory of this repo and run:
+
+```
+npm i (to install all dependencies)
+npm run models:get (only needs to be done one)
+npm test (to run the tests)
+```
