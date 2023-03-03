@@ -38,7 +38,11 @@ test('should generate an agreement with variables, conditionals, formulae', asyn
                 sku: 'DOODAH-X',
                 amount: 3
             }
-        ]
+        ],
+        loyaltyStatus: {
+            $class: 'test@1.0.0.LoyaltyStatus',
+            level: 'Gold'
+        }
     };
     const modelManager = new ModelManager();
     modelManager.addCTOModel(model);

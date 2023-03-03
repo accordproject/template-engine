@@ -63,8 +63,8 @@ concept Conditional extends Block {
 
 concept Optional extends Block {
   o Boolean hasSome
-  o Child[] whenSome
-  o Child[] whenNone
+  o Child[] whenSome optional
+  o Child[] whenNone optional
 }
 
 concept ListBlock extends Block {

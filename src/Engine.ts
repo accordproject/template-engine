@@ -39,6 +39,7 @@ const FORMATTED_VARIABLE_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.
 const WITH_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.WithDefinition$/;
 const LISTBLOCK_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ListBlockDefinition$/;
 const JOIN_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.JoinDefinition$/;
+const OPTIONAL_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.OptionalDefinition$/;
 
 // TODO??
 // ContractDefinition
@@ -117,7 +118,8 @@ function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
         if (obj.$class) {
             if(obj.$class === 'org.accordproject.templatemark@1.0.0.ListBlockDefinition' ||
             obj.$class === 'org.accordproject.templatemark@1.0.0.WithDefinition' ||
-            obj.$class === 'org.accordproject.templatemark@1.0.0.JoinDefinition') {
+            obj.$class === 'org.accordproject.templatemark@1.0.0.JoinDefinition' ||
+            obj.$class === 'org.accordproject.templatemark@1.0.0.OptionalDefinition') {
                 withPath.push(obj.name);
             }
         }
@@ -145,6 +147,8 @@ function generateAgreement(templateMark: object, data: TemplateData): any {
             }
 
             // convert a WithDefinition to a Paragraph in the output
+            // not 100% sure we want to do that ... we may need to process
+            // the child variable nodes and reparent them?
             if (WITH_DEFINITION_RE.test(nodeClass)) {
                 context.$class = 'org.accordproject.commonmark@1.0.0.Paragraph';
                 delete context.name;
@@ -245,6 +249,25 @@ function generateAgreement(templateMark: object, data: TemplateData): any {
                 }
                 else {
                     throw new Error('Condition node is missing condition.');
+                }
+            }
+
+            // add a 'hasSome' property to OptionalDefinition
+            else if (OPTIONAL_DEFINITION_RE.test(nodeClass)) {
+                const path = getJsonPath(templateMark, context, this.path);
+                const variableValues = jp.query(data, path, 1);
+                if (variableValues && variableValues.length) {
+                    if(variableValues.length === 1) {
+                        context.hasSome = !!variableValues[0];
+                        delete context.whenNone;
+                    }
+                    else {
+                        throw new Error(`Multiple values found for path '${path}' in data ${data}.`);
+                    }
+                }
+                else {
+                    context.hasSome = false;
+                    delete context.whenSome;
                 }
             }
         }

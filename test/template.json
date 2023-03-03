@@ -173,6 +173,33 @@
                     "$class": "org.accordproject.commonmark.Paragraph",
                     "nodes": [
                         {
+                            "$class": "org.accordproject.templatemark.OptionalDefinition",
+                            "whenSome": [
+                                {
+                                    "$class": "org.accordproject.commonmark.Text",
+                                    "text": "Your loyalty status: "
+                                },
+                                {
+                                    "$class": "org.accordproject.templatemark.VariableDefinition",
+                                    "name": "level",
+                                    "elementType": "String"
+                                }
+                            ],
+                            "whenNone": [
+                                {
+                                    "$class": "org.accordproject.commonmark.Text",
+                                    "text": "You do not have a loyalty status."
+                                }
+                            ],
+                            "name": "loyaltyStatus",
+                            "elementType": "test@1.0.0.LoyaltyStatus"
+                        }
+                    ]
+                },
+                {
+                    "$class": "org.accordproject.commonmark.Paragraph",
+                    "nodes": [
+                        {
                             "$class": "org.accordproject.commonmark.Text",
                             "text": "Done."
                         }
