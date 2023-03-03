@@ -1,5 +1,11 @@
 Hello {{firstName}} {{#join middleNames separator="-"}}{{this}}{{/join}} {{#if condition="lastName.startsWith('S')"}}Mister{{else}}Dude{{/if}}!
 
+{{#clause address}}
+Street: {{street}}\
+City: {{city}}\
+ZIP: {{zip}}
+{{/clause}}
+
 Your city is: {{#with address}}{{city}}{{/with}}.
 
 {{#if active}}Your account is active.{{else}}Your account has been deactivated.{{/if}}

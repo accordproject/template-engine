@@ -43,6 +43,18 @@ const OPTIONAL_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.Option
 type TemplateData = Record<string, unknown>;
 
 /**
+ * TemplateMark nodes that implicity change the data access scope
+ * by specifying the name of a property on the node.
+ */
+const NAVIGATION_NODES = [
+    'org.accordproject.templatemark@1.0.0.ListBlockDefinition',
+    'org.accordproject.templatemark@1.0.0.WithDefinition',
+    'org.accordproject.templatemark@1.0.0.JoinDefinition',
+    'org.accordproject.templatemark@1.0.0.OptionalDefinition',
+    'org.accordproject.templatemark@1.0.0.ClauseDefinition'
+];
+
+/**
  * Evaluates a JS expression
  * @param {ClassDeclaration} templateClass the Concerto class for the template data
  * @param {*} data the contract data
@@ -59,7 +71,7 @@ function evaluateJavaScript(templateClass:ClassDeclaration, data: TemplateData, 
     args.push('now');
     const values = args.map(p => data[p]);
     const types = values.map(v => typeof v);
-    const DEBUG = true;
+    const DEBUG = false;
     if (DEBUG) {
         console.debug('**** ' + JSON.stringify(data, null, 2));
         console.debug('**** ' + expression);
@@ -88,10 +100,10 @@ function evaluateJavaScript(templateClass:ClassDeclaration, data: TemplateData, 
  */
 function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
     if(!currentNode) {
-        throw new Error('Data must be supplied');
+        throw new Error('Node must be supplied');
     }
     if(!currentNode.name) {
-        throw new Error(`Data must have a name: ${JSON.stringify(currentNode)}`);
+        throw new Error(`Node must have a name: ${JSON.stringify(currentNode)}`);
     }
     if(currentNode.name.indexOf('.') >=0) {
         // prevent JSON path injection
@@ -108,10 +120,7 @@ function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
             throw new Error(`Failed to find data with path ${sub} and data ${JSON.stringify(rootData)}`);
         }
         if (obj.$class) {
-            if(obj.$class === 'org.accordproject.templatemark@1.0.0.ListBlockDefinition' ||
-            obj.$class === 'org.accordproject.templatemark@1.0.0.WithDefinition' ||
-            obj.$class === 'org.accordproject.templatemark@1.0.0.JoinDefinition' ||
-            obj.$class === 'org.accordproject.templatemark@1.0.0.OptionalDefinition') {
+            if(NAVIGATION_NODES.indexOf(obj.$class) >= 0) {
                 withPath.push(`['${obj.name}']`);
             }
         }
@@ -121,7 +130,7 @@ function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
         withPath.push(`['${currentNode.name}']`);
     }
 
-    return withPath.length > 0 ? `$${withPath.join('')}` : '$..*';
+    return withPath.length > 0 ? `$${withPath.join('')}` : '$';
 }
 
 /**

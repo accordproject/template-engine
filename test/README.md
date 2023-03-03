@@ -6,7 +6,7 @@ cd markdown-transform
 git checkout ergo-replacement
 npm i
 cd packages/markdown-cli
-node index.js transform --input ~/dev/template-engine/test/template.md --from markdown_template --to templatemark --model ~/dev/template-engine/test/model.cto --output ~/dev/template-engine/test/template.json
+node index.js transform --input ~/dev/template-engine/test/template.md --from markdown_template --to templatemark --model ~/dev/template-engine/test/model.cto --output ~/dev/template-engine/test/template.json --contract
 ```
 
 To run tests switch to the root directory of **this repo** and run:
