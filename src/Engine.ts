@@ -246,6 +246,12 @@ function generateAgreement(templateMark: object, data: TemplateData): any {
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
                     context.isTrue = evaluateJavaScript(data, `return !!${context.condition}`) as unknown as boolean;
+                    if(context.isTrue) {
+                        delete context.whenFalse;
+                    }
+                    else {
+                        delete context.whenTrue;
+                    }
                 }
                 else {
                     throw new Error('Condition node is missing condition.');
@@ -308,6 +314,10 @@ function migrateTemplateMark(templateMark: object): object {
     });
 }
 
+/**
+ * A template engine: merges the markup and logic of a template with
+ * JSON data to produce JSON data.
+ */
 export class Engine {
     modelManager: ModelManager;
     templateClass: ClassDeclaration;
