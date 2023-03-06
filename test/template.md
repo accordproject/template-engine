@@ -32,7 +32,7 @@ Your last visit was: _{{lastVisit as "DD/MM/YYYY"}}_.
 
 ## Favorite Colors
 
-{{% return preferences.favoriteColors.join(',') %}}
+{{% return preferences.favoriteColors.join() %}}
 
 {{#olist favoriteColors}}
 - {{this}}
