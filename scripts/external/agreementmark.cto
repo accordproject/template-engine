@@ -51,6 +51,8 @@ abstract concept Block extends Element {
 
 concept Clause extends Block {
   o String src optional
+  o String condition optional
+  o Boolean isTrue
 }
 
 concept Contract extends Block {

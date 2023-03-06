@@ -24,6 +24,10 @@ enum Color {
     o WHITE
 }
 
+concept Preferences {
+    o Color[] favoriteColors optional
+}
+
 @template
 concept TemplateData {
     o String firstName
@@ -34,5 +38,5 @@ concept TemplateData {
     o Address address
     o Order[] orders
     o LoyaltyStatus loyaltyStatus optional
-    o Color[] favoriteColors optional
+    o Preferences preferences
 }

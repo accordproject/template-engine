@@ -47,6 +47,7 @@ abstract concept BlockDefinition extends ElementDefinition {
 }
 
 concept ClauseDefinition extends BlockDefinition {
+  o String condition optional
 }
 
 concept ContractDefinition extends BlockDefinition {

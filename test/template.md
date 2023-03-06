@@ -1,5 +1,10 @@
 Hello {{firstName}} {{#join middleNames separator="-"}}{{this}}{{/join}} {{#if condition="lastName.startsWith('S')"}}Mister{{else}}Dude{{/if}}!
 
+## Middles Names
+{{#olist middleNames}}
+- {{this}}
+{{/olist}}
+
 {{#clause address}}
 Street: {{street}}\
 City: {{city}}\
@@ -22,10 +27,19 @@ Your last visit was: _{{lastVisit as "DD/MM/YYYY"}}_.
 
 {{#optional loyaltyStatus}}Your loyalty status: {{level}}{{else}}You do not have a loyalty status.{{/optional}}
 
-{{#optional favoriteColors}}## Favorite Colors{{/optional}}
 
-{{% return favoriteColors ? favoriteColors.join(',') : '' %}}
+{{#clause preferences condition="preferences.favoriteColors && preferences.favoriteColors.length > 0"}}
 
-{{#if condition="favoriteColors && favoriteColors.indexOf('PINK') >= 0"}}You like PINK!{{else}}Why don't you like PINK?{{/if}}
+## Favorite Colors
+
+{{% return preferences.favoriteColors.join(',') %}}
+
+{{#olist favoriteColors}}
+- {{this}}
+{{/olist}}
+
+{{#if condition="preferences.favoriteColors.indexOf('PINK') >= 0"}}You like PINK!{{else}}Why don't you like PINK?{{/if}}
+
+{{/clause}}
 
 Done.

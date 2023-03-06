@@ -22,6 +22,7 @@ import { TemplateMarkModel } from './externalModels/TemplateMarkModel';
 import { CommonMarkModel } from './externalModels/CommonMarkModel';
 import { AgreementMarkModel } from './externalModels/AgreementMarkModel';
 import { ConcertoMetaModel } from './externalModels/ConcertoMetaModel';
+import { ModelUtil } from '@accordproject/concerto-core';
 
 // used to migrate old template mark json to latest namespaces
 const TEMPLATEMARK_OLD_RE = /^(org\.accordproject\.templatemark)\.(\w+)$/;
@@ -39,6 +40,7 @@ const WITH_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.WithDefini
 const LISTBLOCK_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ListBlockDefinition$/;
 const JOIN_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.JoinDefinition$/;
 const OPTIONAL_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.OptionalDefinition$/;
+const CLAUSE_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ClauseDefinition$/;
 
 type TemplateData = Record<string, unknown>;
 
@@ -254,9 +256,9 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
                 else {
                     // a list of enum values or primitives brings us here
                     const variableValue = data;
-                    const type = introspector.getClassDeclaration(context.elementType);
+                    const type = (ModelUtil as any).isPrimitiveType(context.elementType) ? null : introspector.getClassDeclaration(context.elementType);
                     // we want to draft Enums as strings, not objects
-                    const drafter = draftingMap.get(type.isEnum() ? 'String' : context.elementType);
+                    const drafter = draftingMap.get(type && type.isEnum() ? 'String' : context.elementType);
                     context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
                 }
             }
@@ -291,6 +293,21 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
                             throw new Error(`Multiple values found for path '${path}' in data ${data}.`);
                         }
                     }
+                }
+            }
+
+            // only include the children of a clause if its condition is true
+            else if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
+                if (context.condition) {
+                    const templateClass = introspector.getClassDeclaration(data.$class as string);
+                    context.isTrue = evaluateJavaScript(templateClass, data, `return !!${context.condition}`) as unknown as boolean;
+                    if(!context.isTrue) {
+                        delete context.nodes;
+                        stopHere = true;
+                    }
+                }
+                else {
+                    context.isTrue = true;
                 }
             }
 
