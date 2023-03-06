@@ -38,7 +38,7 @@ Your last visit was: _{{lastVisit as "DD/MM/YYYY"}}_.
 - {{this}}
 {{/olist}}
 
-{{#if condition="preferences.favoriteColors.indexOf('PINK') >= 0"}}You like PINK!{{else}}Why don't you like PINK?{{/if}}
+{{#if condition="preferences.favoriteColors.includes('PINK')"}}You like PINK!{{else}}Why don't you like PINK?{{/if}}
 
 {{/clause}}
 
