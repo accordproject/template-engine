@@ -107,7 +107,7 @@
             "/node_modules/",
             "/scripts"
         ],
-        "collectCoverage": true,
+        "collectCoverage": false,
         "collectCoverageFrom": [
             "src/**/*.ts"
         ]

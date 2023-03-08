@@ -116,10 +116,11 @@ function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
     for (let n = 1; n < paths.length; n++) {
         const sub = paths.slice(0, n);
         const obj = traverse.get(rootData, sub);
-        if(!obj) {
-            throw new Error(`Failed to find data with path ${sub} and data ${JSON.stringify(rootData)}`);
-        }
-        if (obj.$class) {
+        // HACK
+        // if(obj===undefined) {
+        //     throw new Error(`Failed to find data with path ${sub} and data ${JSON.stringify(rootData, null, 2)}`);
+        // }
+        if (obj && obj.$class) {
             if(NAVIGATION_NODES.indexOf(obj.$class) >= 0) {
                 withPath.push(`['${obj.name}']`);
             }
@@ -319,6 +320,7 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
                 if (variableValues && variableValues.length) {
                     if(variableValues.length === 1) {
                         context.hasSome = true;
+                        context.whenNone = [];
                     }
                     else {
                         throw new Error(`Multiple values found for path '${path}' in data ${data}.`);
@@ -326,8 +328,10 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
                 }
                 else {
                     context.hasSome = false;
+                    context.whenSome = [];
                 }
-                context.nodes = [];
+                context.nodes = context.hasSome ? context.whenSome : context.whenNone;
+                console.log(JSON.stringify(context.nodes, null, 2));
             }
         }
         this.update(context, stopHere);

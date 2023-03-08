@@ -48,10 +48,10 @@ test('should generate an agreement with variables, conditionals, formulae', asyn
                 amount: 3
             }
         ],
-        loyaltyStatus: {
-            $class: 'test@1.0.0.LoyaltyStatus',
-            level: 'Gold'
-        },
+        // loyaltyStatus: {
+        //     $class: 'test@1.0.0.LoyaltyStatus',
+        //     level: 'Gold'
+        // },
         preferences: {
             $class: 'test@1.0.0.Preferences',
             favoriteColors: ['RED', 'PINK']
@@ -64,6 +64,7 @@ test('should generate an agreement with variables, conditionals, formulae', asyn
     const templateMarkTransformer = new TemplateMarkTransformer();
 
     const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate({content: template}, modelManager, 'contract', { verbose: false });
+    console.log(JSON.stringify(templateMarkDom, null, 2));
 
     const ciceroMark = engine.generate(templateMarkDom, data);
     console.log(JSON.stringify(ciceroMark, null, 2));
