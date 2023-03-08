@@ -18,16 +18,8 @@ import traverse from 'traverse';
 
 import { ClassDeclaration, Factory, Introspector, ModelManager, Serializer } from '@accordproject/concerto-core';
 import { draftingMap } from './drafting';
-import { TemplateMarkModel } from './externalModels/TemplateMarkModel';
-import { CommonMarkModel } from './externalModels/CommonMarkModel';
-import { AgreementMarkModel } from './externalModels/AgreementMarkModel';
-import { ConcertoMetaModel } from './externalModels/ConcertoMetaModel';
+import { TemplateMarkModel, CommonMarkModel, CiceroMarkModel, ConcertoMetaModel } from '@accordproject/markdown-common';
 import { ModelUtil } from '@accordproject/concerto-core';
-
-// used to migrate old template mark json to latest namespaces
-const TEMPLATEMARK_OLD_RE = /^(org\.accordproject\.templatemark)\.(\w+)$/;
-const COMMONMARK_OLD_RE = /^(org\.accordproject\.commonmark)\.(\w+)$/;
-const CONCERTOMETAMODEL_OLD_RE = /^(concerto\.metamodel)\.(\w+)$/;
 
 // use to create agreementmark from templatemark
 const TEMPLATEMARK_RE = /^(org\.accordproject\.templatemark)@(.+)\.(\w+)Definition$/;
@@ -41,6 +33,7 @@ const LISTBLOCK_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ListB
 const JOIN_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.JoinDefinition$/;
 const OPTIONAL_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.OptionalDefinition$/;
 const CLAUSE_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ClauseDefinition$/;
+const CONTRACT_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ContractDefinition$/;
 
 type TemplateData = Record<string, unknown>;
 
@@ -49,11 +42,11 @@ type TemplateData = Record<string, unknown>;
  * by specifying the name of a property on the node.
  */
 const NAVIGATION_NODES = [
-    'org.accordproject.templatemark@1.0.0.ListBlockDefinition',
-    'org.accordproject.templatemark@1.0.0.WithDefinition',
-    'org.accordproject.templatemark@1.0.0.JoinDefinition',
-    'org.accordproject.templatemark@1.0.0.OptionalDefinition',
-    'org.accordproject.templatemark@1.0.0.ClauseDefinition'
+    `${TemplateMarkModel.NAMESPACE}.ListBlockDefinition`,
+    `${TemplateMarkModel.NAMESPACE}.WithDefinition`,
+    `${TemplateMarkModel.NAMESPACE}.JoinDefinition`,
+    `${TemplateMarkModel.NAMESPACE}.OptionalDefinition`,
+    `${TemplateMarkModel.NAMESPACE}.ClauseDefinition`
 ];
 
 /**
@@ -81,12 +74,17 @@ function evaluateJavaScript(templateClass:ClassDeclaration, data: TemplateData, 
         console.debug('**** ' + values);
         console.debug('**** ' + types);
     }
-    const fun = new Function(...args, expression); // SECURITY!
-    const result = fun(...values);
-    if (DEBUG) {
-        console.debug('**** ' + result);
+    try {
+        const fun = new Function(...args, expression); // SECURITY!
+        const result = fun(...values);
+        if (DEBUG) {
+            console.debug('**** ' + result);
+        }
+        return result;
     }
-    return result;
+    catch(err) {
+        throw new Error(`Caught error ${err} evaluting ${expression} with data ${JSON.stringify(data,null,2)}`);
+    }
 }
 
 /**
@@ -149,17 +147,24 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
         if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
             const nodeClass = context.$class as string;
 
-            // rewrite node types, mapping from TemplateMark namespace to AgreementMark
+            // rewrite node types, mapping from TemplateMark namespace to CiceroMark
             const match = nodeClass.match(TEMPLATEMARK_RE);
             if (match && match.length > 1) {
-                context.$class = `org.accordproject.agreementmark@${match[2]}.${match[3]}`;
+                context.$class = `${CiceroMarkModel.NAMESPACE}.${match[3]}`;
+            }
+
+            // convert a contract node to a clause note HACK
+            if (CONTRACT_DEFINITION_RE.test(nodeClass)) {
+                context.$class = `${CommonMarkModel.NAMESPACE}.Paragraph`;
+                delete context.name;
+                delete context.elementType;
             }
 
             // convert a WithDefinition to a Paragraph in the output
             // not 100% sure we want to do that ... we may need to process
             // the child variable nodes and reparent them?
             if (WITH_DEFINITION_RE.test(nodeClass)) {
-                context.$class = 'org.accordproject.commonmark@1.0.0.Paragraph';
+                context.$class = `${CommonMarkModel.NAMESPACE}.Paragraph`;
                 delete context.name;
                 delete context.elementType;
             }
@@ -169,8 +174,9 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
             else if (FORMULA_DEFINITION_RE.test(nodeClass)) {
                 if (context.code) {
                     const templateClass = introspector.getClassDeclaration(data.$class as string);
-                    const result = evaluateJavaScript(templateClass, data, context.code);
+                    const result = evaluateJavaScript(templateClass, data, context.code.contents);
                     context.value = typeof result === 'string' ? result : JSON.stringify(result);
+                    delete context.code;
                 }
                 else {
                     throw new Error('Formula node is missing code.');
@@ -191,14 +197,14 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
                         throw new Error(`Values found for path '${path}' in data ${data} is not an array: ${arrayData}.`);
                     }
                     else {
-                        context.$class = 'org.accordproject.commonmark@1.0.0.List';
+                        context.$class = `${CommonMarkModel.NAMESPACE}.List`;
                         delete context.elementType;
                         delete context.name;
                         context.nodes = arrayData.map( arrayItem => {
                             // arrayItem is now the data for the nested traversal
                             const subResult = generateAgreement(modelManager, context.nodes[0].nodes[0], arrayItem);
                             return {
-                                $class: 'org.accordproject.commonmark@1.0.0.Item',
+                                $class: `${CommonMarkModel.NAMESPACE}.Item`,
                                 nodes: subResult.nodes ? subResult.nodes : []
                             };
                         });
@@ -221,7 +227,7 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
                         throw new Error(`Values found for path '${path}' in data ${data} is not an array: ${arrayData}.`);
                     }
                     else {
-                        context.$class = 'org.accordproject.commonmark@1.0.0.Text';
+                        context.$class = `${CommonMarkModel.NAMESPACE}.Text`;
                         const drafter = draftingMap.get(context.elementType);
                         context.text = arrayData.map( arrayItem => {
                             return drafter ? drafter(arrayItem, context.format) : arrayItem as string;
@@ -268,13 +274,7 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
                     const templateClass = introspector.getClassDeclaration(data.$class as string);
-                    context.isTrue = evaluateJavaScript(templateClass, data, `return !!${context.condition}`) as unknown as boolean;
-                    if(context.isTrue) {
-                        delete context.whenFalse;
-                    }
-                    else {
-                        delete context.whenTrue;
-                    }
+                    context.isTrue = evaluateJavaScript(templateClass, data, `return !!${context.condition.contents}`) as unknown as boolean;
                 }
                 else {
                     const path = getJsonPath(templateMark, context, this.path);
@@ -282,33 +282,34 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
                     if (variableValues && variableValues.length) {
                         if(variableValues.length === 1) {
                             context.isTrue = !!variableValues[0];
-                            if(context.isTrue) {
-                                delete context.whenFalse;
-                            }
-                            else {
-                                delete context.whenTrue;
-                            }
                         }
                         else {
                             throw new Error(`Multiple values found for path '${path}' in data ${data}.`);
                         }
                     }
+                    else {
+                        context.isTrue = false;
+                    }
                 }
+                context.nodes = context.isTrue ? context.whenTrue : context.whenFalse;
+                delete context.condition;
+                delete context.dependencies;
             }
 
             // only include the children of a clause if its condition is true
             else if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
                     const templateClass = introspector.getClassDeclaration(data.$class as string);
-                    context.isTrue = evaluateJavaScript(templateClass, data, `return !!${context.condition}`) as unknown as boolean;
-                    if(!context.isTrue) {
+                    const result = evaluateJavaScript(templateClass, data, `return !!${context.condition.contents}`) as unknown as boolean;
+                    if(!result) {
                         delete context.nodes;
                         stopHere = true;
                     }
                 }
                 else {
-                    context.isTrue = true;
+                    // context.isTrue = true; // TODO
                 }
+                delete context.condition;
             }
 
             // add a 'hasSome' property to OptionalDefinition
@@ -318,7 +319,6 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
                 if (variableValues && variableValues.length) {
                     if(variableValues.length === 1) {
                         context.hasSome = true;
-                        delete context.whenNone;
                     }
                     else {
                         throw new Error(`Multiple values found for path '${path}' in data ${data}.`);
@@ -326,44 +326,11 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
                 }
                 else {
                     context.hasSome = false;
-                    delete context.whenSome;
                 }
+                context.nodes = [];
             }
         }
         this.update(context, stopHere);
-    });
-}
-
-/**
- * Migrates a TemplateMark JSON document without namespace versions
- * to a document with namespace versions.
- * @param {*} templateMark - the TemplateMark JSON document
- * @returns {*} the TemplateMark JSON with namespace versions
- */
-function migrateTemplateMark(templateMark: object): object {
-    return traverse(templateMark).map(function (x: any) {
-        if (typeof x === 'object' && x.$class && typeof x.$class === 'string') {
-            const nodeClass = x.$class as string;
-            {
-                const match = nodeClass.match(TEMPLATEMARK_OLD_RE);
-                if (match && match.length > 1) {
-                    x.$class = `org.accordproject.templatemark@1.0.0.${match[2]}`;
-                }
-            }
-            {
-                const match = nodeClass.match(COMMONMARK_OLD_RE);
-                if (match && match.length > 1) {
-                    x.$class = `org.accordproject.commonmark@1.0.0.${match[2]}`;
-                }
-            }
-            {
-                const match = nodeClass.match(CONCERTOMETAMODEL_OLD_RE);
-                if (match && match.length > 1) {
-                    x.$class = `concerto.metamodel@1.0.0.${match[2]}`;
-                }
-            }
-        }
-        this.update(x);
     });
 }
 
@@ -391,15 +358,6 @@ export class Engine {
     }
 
     /**
-     * Migrates a template mark JSON document
-     * @param {*} templateMark the TemplateMark JSON object
-     * @returns {*} TemplateMark JSON migrated to latest namespace version
-     */
-    migrate(templateMark: object): object {
-        return migrateTemplateMark(templateMark);
-    }
-
-    /**
      * Checks that a TemplateMark JSON document is valid with respect to the
      * TemplateMark model, as well as the template model.
      *
@@ -413,24 +371,33 @@ export class Engine {
      */
     checkTypes(templateMark: object, templateData: object): object {
         const modelManager = new ModelManager({ strict: true });
-        modelManager.addCTOModel(ConcertoMetaModel, 'concertometamodel.cto');
-        modelManager.addCTOModel(CommonMarkModel, 'commonmark.cto');
-        modelManager.addCTOModel(TemplateMarkModel, 'templatemark.cto');
+        modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
+        modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
+        modelManager.addCTOModel(TemplateMarkModel.MODEL, 'templatemark.cto');
         const factory = new Factory(modelManager);
         const serializer = new Serializer(factory, modelManager);
-        serializer.fromJSON(templateMark);
-        return templateMark;
+        try {
+            serializer.fromJSON(templateMark);
+            return templateMark;
+        }
+        catch(err) {
+            throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(templateMark, null, 2)}`);
+        }
     }
 
     validateCiceroMark(ciceroMark: object) {
         const modelManager = new ModelManager({ strict: true });
-        modelManager.addCTOModel(ConcertoMetaModel, 'concertometamodel.cto');
-        modelManager.addCTOModel(CommonMarkModel, 'commonmark.cto');
-        modelManager.addCTOModel(AgreementMarkModel, 'agreementmark.cto');
+        modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
+        modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
+        modelManager.addCTOModel(CiceroMarkModel.MODEL, 'ciceromark.cto');
         const factory = new Factory(modelManager);
         const serializer = new Serializer(factory, modelManager);
-        serializer.fromJSON(ciceroMark);
-        return true;
+        try {
+            return serializer.fromJSON(ciceroMark);
+        }
+        catch(err) {
+            throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(ciceroMark, null, 2)}`);
+        }
     }
 
     generate(templateMark: object, data: TemplateData): any {
@@ -442,7 +409,6 @@ export class Engine {
         }
         const typedTemplateMark = this.checkTypes(templateMark, data);
         const ciceroMark = generateAgreement(this.modelManager, typedTemplateMark, data);
-        this.validateCiceroMark(ciceroMark);
-        return ciceroMark;
+        return this.validateCiceroMark(ciceroMark);
     }
 }

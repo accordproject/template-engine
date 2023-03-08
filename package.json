@@ -35,12 +35,15 @@
     "license": "Apache-2.0",
     "dependencies": {
         "@accordproject/concerto-core": "^3.6.0",
+        "@accordproject/markdown-common": "0.16.6-20230307230034",
         "dayjs": "1.11.7",
         "flow-remove-types": "^2.198.2",
         "jsonpath": "^1.1.1",
         "traverse": "^0.6.7"
     },
     "devDependencies": {
+        "@accordproject/markdown-template": "^0.16.6-20230307230034",
+        "@accordproject/markdown-html": "^0.16.6-20230307230034",
         "@types/jest": "28.1.1",
         "@types/jsonpath": "^0.2.0",
         "@types/semver": "7.3.10",

@@ -4,3 +4,4 @@ dist
 .DS_Store
 scripts/external/tmp/
 src/externalModels
+output.html

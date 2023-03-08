@@ -1,20 +1,28 @@
 import { ModelManager } from '@accordproject/concerto-core';
-import { readFileSync } from 'fs';
+import { TemplateMarkTransformer } from '@accordproject/markdown-template';
+import { HtmlTransformer } from '@accordproject/markdown-html';
+import { CommonMarkModel } from '@accordproject/markdown-common';
+
+import { readFileSync, writeFileSync } from 'fs';
 import { Engine } from '../src/';
 
-/**
- * Define the data model for the template. The model must have a concept with
- * the @template decorator. The types of properties allow the template to be
- * type-checked.
- */
-const model = readFileSync('./test/model.cto', 'utf-8');
-
-/**
- * Define the structure of the template using a TemplateMark JSON DOM.
- */
-const oldTemplateMark = JSON.parse(readFileSync('./test/template.json', 'utf-8'));
-
 test('should generate an agreement with variables, conditionals, formulae', async () => {
+
+    /**
+     * Define the data model for the template. The model must have a concept with
+     * the @template decorator. The types of properties allow the template to be
+     * type-checked.
+    */
+    const model = readFileSync('./test/model.cto', 'utf-8');
+
+    /**
+     * Load the template, rich-text with variables, conditional sections etc
+     */
+    const template = readFileSync('./test/template.md', 'utf-8');
+
+    /**
+     * Define the data we will merge with the template - an instance of the template model
+     */
     const data = {
         $class: 'test@1.0.0.TemplateData',
         firstName: 'Dan',
@@ -49,12 +57,23 @@ test('should generate an agreement with variables, conditionals, formulae', asyn
             favoriteColors: ['RED', 'PINK']
         }
     };
-    const modelManager = new ModelManager();
+    const modelManager = new ModelManager({ strict: true });
     modelManager.addCTOModel(model);
     const engine = new Engine(modelManager);
 
-    const templateMark = engine.migrate(oldTemplateMark);
-    const agreementMark = engine.generate(templateMark, data);
-    expect(agreementMark.$class).toBe('org.accordproject.commonmark@1.0.0.Document');
-    console.log(JSON.stringify(agreementMark, null, 2 ));
+    const templateMarkTransformer = new TemplateMarkTransformer();
+
+    const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate({content: template}, modelManager, 'contract', { verbose: false });
+
+    const ciceroMark = engine.generate(templateMarkDom, data);
+    console.log(JSON.stringify(ciceroMark, null, 2));
+    expect(ciceroMark.getFullyQualifiedType()).toBe(`${CommonMarkModel.NAMESPACE}.Document`);
+    const htmlTransformer = new HtmlTransformer();
+    try {
+        const html = htmlTransformer.toHtml(ciceroMark);
+        writeFileSync('./output.html', html);
+    }
+    catch(err) {
+        console.log(err);
+    }
 });

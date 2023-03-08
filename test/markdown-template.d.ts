@@ -11,9 +11,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-export const NS_PREFIX_{{ name }} = '{{ namespace }}' + '.';
-
-export const {{ name }} = `
-{{{ model }}}
-`;
+declare module '@accordproject/markdown-template'
+declare module '@accordproject/markdown-html'

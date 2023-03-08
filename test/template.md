@@ -1,4 +1,4 @@
-Hello {{firstName}} {{#join middleNames separator="-"}}{{this}}{{/join}} {{#if condition="lastName.startsWith('S')"}}Mister{{else}}Dude{{/if}}!
+Hello {{firstName}} {{#join middleNames separator="-"}}{{this}}{{/join}} {{#if lastName condition="lastName.startsWith('S')"}}Mister{{else}}Dude{{/if}}!
 
 ## Middles Names
 {{#olist middleNames}}
@@ -11,7 +11,7 @@ City: {{city}}\
 ZIP: {{zip}}
 {{/clause}}
 
-Your city is: {{#with address}}{{city}}{{/with}}.
+Your city is: {{#with address}}{{city}}.{{/with}}
 
 {{#if active}}Your account is active.{{else}}Your account has been deactivated.{{/if}}
 
@@ -38,7 +38,7 @@ Your last visit was: _{{lastVisit as "DD/MM/YYYY"}}_.
 - {{this}}
 {{/olist}}
 
-{{#if condition="preferences.favoriteColors.includes('PINK')"}}You like PINK!{{else}}Why don't you like PINK?{{/if}}
+{{#if favoriteColors condition="preferences.favoriteColors.includes('PINK')"}}You like PINK!{{else}}Why don't you like PINK!{{/if}}
 
 {{/clause}}
 
