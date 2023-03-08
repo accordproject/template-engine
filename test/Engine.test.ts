@@ -6,6 +6,35 @@ import { CommonMarkModel } from '@accordproject/markdown-common';
 import { readFileSync, writeFileSync } from 'fs';
 import { Engine } from '../src/';
 
+const CLAUSE_LIBRARY = {
+    'clauses': [
+        {
+            'category': 'reference',
+            'author': 'Dan',
+            'body': 'Dad jokes',
+            'risk': 8.95
+        },
+        {
+            'category': 'reference',
+            'author': 'Dan',
+            'body': 'Programming for fun and profit',
+            'risk': 1.95
+        },
+        {
+            'category': 'onboarding',
+            'author': 'Peter',
+            'body': 'Legal stuff',
+            'risk': 2.95
+        },
+        {
+            'category': 'offboarding',
+            'author': 'Matt',
+            'body': 'All goodness',
+            'risk': 4.95
+        }
+    ]
+};
+
 test('should generate an agreement with variables, conditionals, formulae', async () => {
 
     /**
@@ -59,15 +88,15 @@ test('should generate an agreement with variables, conditionals, formulae', asyn
     };
     const modelManager = new ModelManager({ strict: true });
     modelManager.addCTOModel(model);
-    const engine = new Engine(modelManager);
+    const engine = new Engine(modelManager, CLAUSE_LIBRARY);
 
     const templateMarkTransformer = new TemplateMarkTransformer();
 
     const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate({content: template}, modelManager, 'contract', { verbose: false });
-    console.log(JSON.stringify(templateMarkDom, null, 2));
+    // console.log(JSON.stringify(templateMarkDom, null, 2));
 
     const ciceroMark = engine.generate(templateMarkDom, data);
-    console.log(JSON.stringify(ciceroMark, null, 2));
+    // console.log(JSON.stringify(ciceroMark, null, 2));
     expect(ciceroMark.getFullyQualifiedType()).toBe(`${CommonMarkModel.NAMESPACE}.Document`);
     const htmlTransformer = new HtmlTransformer();
     try {

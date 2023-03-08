@@ -47,4 +47,30 @@ Your favorite colors are: {{% return preferences.favoriteColors.join(' and ') %}
 
 {{/clause}}
 
+## Dynamic Query of Clauses
+
+### Onboarding Clauses
+
+> {{% 
+    return jp.query(library, `$.clauses[?(@.category=="onboarding")]`);
+%}}
+
+### Authored by {{firstName}}
+
+> {{% 
+    return jp.query(library, `$.clauses[?(@.author=="${firstName}")]`);
+%}}
+
+### High Risk
+
+> {{% 
+    return jp.query(library, `$.clauses[?(@.risk>4)]`);
+%}}
+
+### Low Risk and authored by {{firstName}}
+
+> {{% 
+    return jp.query(library, `$.clauses[?(@.risk<3 && @.author=="${firstName}")]`);
+%}}
+
 Done.

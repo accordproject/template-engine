@@ -51,19 +51,24 @@ const NAVIGATION_NODES = [
 
 /**
  * Evaluates a JS expression
+ * @param {*} clauseLibrary the clause library
  * @param {ClassDeclaration} templateClass the Concerto class for the template data
  * @param {*} data the contract data
  * @param {string} expression the JS expression
  * @param {Date} now the current value for now
  * @returns {object} the result of evaluating the expression against the data
  */
-function evaluateJavaScript(templateClass:ClassDeclaration, data: TemplateData, expression: string, now?: dayjs.Dayjs): object {
+function evaluateJavaScript(clauseLibrary:object, templateClass:ClassDeclaration, data: TemplateData, expression: string, now?: dayjs.Dayjs): object {
     if (!data || !expression || !templateClass) {
         throw new Error(`Cannot evaluate JS ${expression} against ${data}`);
     }
     data.now = now ? now : dayjs();
+    data.library = clauseLibrary;
+    data.jp = jp;
     const args = templateClass.getOwnProperties().map(p => p.name);
     args.push('now');
+    args.push('library');
+    args.push('jp');
     const values = args.map(p => data[p]);
     const types = values.map(v => typeof v);
     const DEBUG = false;
@@ -137,11 +142,12 @@ function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
 /**
  * Generates an AgreementMark JSON document from a template plus data.
  * @param {ModelManager} modelManager - the template model
+ * @param {*} clauseLibrary - the clause library
  * @param {*} templateMark - the TemplateMark JSON document
  * @param {*} data - the template data JSON
  * @returns {*} the AgreementMark JSON
  */
-function generateAgreement(modelManager:ModelManager, templateMark: object, data: TemplateData): any {
+function generateAgreement(modelManager:ModelManager, clauseLibrary:object, templateMark: object, data: TemplateData): any {
     const introspector = new Introspector(modelManager);
     return traverse(templateMark).map(function (context: any) {
         let stopHere = false;
@@ -175,8 +181,8 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
             else if (FORMULA_DEFINITION_RE.test(nodeClass)) {
                 if (context.code) {
                     const templateClass = introspector.getClassDeclaration(data.$class as string);
-                    const result = evaluateJavaScript(templateClass, data, context.code.contents);
-                    context.value = typeof result === 'string' ? result : JSON.stringify(result);
+                    const result = evaluateJavaScript(clauseLibrary, templateClass, data, context.code.contents);
+                    context.value = result ? typeof result === 'string' ? result : JSON.stringify(result) : 'No result from formula!';
                     delete context.code;
                 }
                 else {
@@ -203,7 +209,7 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
                         delete context.name;
                         context.nodes = arrayData.map( arrayItem => {
                             // arrayItem is now the data for the nested traversal
-                            const subResult = generateAgreement(modelManager, context.nodes[0].nodes[0], arrayItem);
+                            const subResult = generateAgreement(modelManager, clauseLibrary, context.nodes[0].nodes[0], arrayItem);
                             return {
                                 $class: `${CommonMarkModel.NAMESPACE}.Item`,
                                 nodes: subResult.nodes ? subResult.nodes : []
@@ -275,7 +281,7 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
                     const templateClass = introspector.getClassDeclaration(data.$class as string);
-                    context.isTrue = evaluateJavaScript(templateClass, data, `return !!${context.condition.contents}`) as unknown as boolean;
+                    context.isTrue = evaluateJavaScript(clauseLibrary, templateClass, data, `return !!${context.condition.contents}`) as unknown as boolean;
                 }
                 else {
                     const path = getJsonPath(templateMark, context, this.path);
@@ -301,7 +307,7 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
             else if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
                     const templateClass = introspector.getClassDeclaration(data.$class as string);
-                    const result = evaluateJavaScript(templateClass, data, `return !!${context.condition.contents}`) as unknown as boolean;
+                    const result = evaluateJavaScript(clauseLibrary, templateClass, data, `return !!${context.condition.contents}`) as unknown as boolean;
                     if(!result) {
                         delete context.nodes;
                         stopHere = true;
@@ -345,9 +351,11 @@ function generateAgreement(modelManager:ModelManager, templateMark: object, data
 export class Engine {
     modelManager: ModelManager;
     templateClass: ClassDeclaration;
+    clauseLibrary: object;
 
-    constructor(modelManager: ModelManager) {
+    constructor(modelManager: ModelManager, clauseLibrary:object) {
         this.modelManager = modelManager;
+        this.clauseLibrary = clauseLibrary;
         const introspector = new Introspector(this.modelManager);
         const templateModels = introspector.getClassDeclarations().filter((item) => {
             return !item.isAbstract() && item.getDecorator('template');
@@ -412,7 +420,7 @@ export class Engine {
             throw new Error(`Template data must be of type '${this.templateClass.getFullyQualifiedName()}'.`);
         }
         const typedTemplateMark = this.checkTypes(templateMark, data);
-        const ciceroMark = generateAgreement(this.modelManager, typedTemplateMark, data);
+        const ciceroMark = generateAgreement(this.modelManager, this.clauseLibrary, typedTemplateMark, data);
         return this.validateCiceroMark(ciceroMark);
     }
 }
