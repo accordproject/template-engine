@@ -13,8 +13,9 @@
  */
 import { FileWriter } from '@accordproject/concerto-util';
 import { TemplateMarkModel,CommonMarkModel } from '@accordproject/markdown-common';
+import { IFormattedVariable } from '../model-gen/org.accordproject.ciceromark@0.6.0';
 import { IFormattedVariableDefinition } from '../model-gen/org.accordproject.templatemark@0.4.0';
-import { AbstractComplexCompiler, getTypeScriptType, writeCloseDataScope, writeCloseGenerateScope, writeOpenDataScope, writeOpenGenerateScope } from './Common';
+import { AbstractComplexCompiler, getTypeScriptType, makeCiceroMark, writeCloseDataScope, writeCloseGenerateScope, writeOpenDataScope, writeOpenGenerateScope } from './Common';
 
 export class FormattedVariable extends AbstractComplexCompiler {
     static TYPE = `${TemplateMarkModel.NAMESPACE}.FormattedVariableDefinition`;
@@ -22,6 +23,7 @@ export class FormattedVariable extends AbstractComplexCompiler {
         super(true);
     }
     generate(fw:FileWriter, level:number, templateMarkNode:IFormattedVariableDefinition) {
+        const clone = makeCiceroMark(templateMarkNode) as IFormattedVariable;
         writeOpenGenerateScope(fw,level);
         if(templateMarkNode.name !== 'this') {
             writeOpenDataScope(fw,level,templateMarkNode.name);
@@ -31,7 +33,9 @@ export class FormattedVariable extends AbstractComplexCompiler {
         if(templateMarkNode.name !== 'this') {
             writeCloseDataScope(fw,level);
         }
-        fw.writeLine(level, `return { $class: '${CommonMarkModel.NAMESPACE}.Text', text: text } as ${getTypeScriptType(templateMarkNode.$class)};`);
+        fw.writeLine(level, `const variable:any = ${JSON.stringify(clone)};`);
+        fw.writeLine(level, 'variable.value = text;');
+        fw.writeLine(level, `return variable as ${getTypeScriptType(clone.$class)};`);
         writeCloseGenerateScope(fw,level);
     }
 }
