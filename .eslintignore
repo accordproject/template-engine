@@ -19,3 +19,5 @@ lib/parser.js
 test/data
 dist
 scripts
+output
+src/model-gen

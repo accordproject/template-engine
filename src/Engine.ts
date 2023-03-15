@@ -21,33 +21,22 @@ import { draftingMap } from './drafting';
 import { TemplateMarkModel, CommonMarkModel, CiceroMarkModel, ConcertoMetaModel } from '@accordproject/markdown-common';
 import { ModelUtil } from '@accordproject/concerto-core';
 
-// use to create agreementmark from templatemark
-const TEMPLATEMARK_RE = /^(org\.accordproject\.templatemark)@(.+)\.(\w+)Definition$/;
-const FORMULA_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.FormulaDefinition$/;
-const VARIABLE_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.VariableDefinition$/;
-const CONDITIONAL_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ConditionalDefinition$/;
-const ENUM_VARIABLE_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.EnumVariableDefinition$/;
-const FORMATTED_VARIABLE_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.FormattedVariableDefinition$/;
-const WITH_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.WithDefinition$/;
-const LISTBLOCK_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ListBlockDefinition$/;
-const JOIN_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.JoinDefinition$/;
-const OPTIONAL_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.OptionalDefinition$/;
-const CLAUSE_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ClauseDefinition$/;
-const CONTRACT_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ContractDefinition$/;
-
-type TemplateData = Record<string, unknown>;
-
-/**
- * TemplateMark nodes that implicity change the data access scope
- * by specifying the name of a property on the node.
- */
-const NAVIGATION_NODES = [
-    `${TemplateMarkModel.NAMESPACE}.ListBlockDefinition`,
-    `${TemplateMarkModel.NAMESPACE}.WithDefinition`,
-    `${TemplateMarkModel.NAMESPACE}.JoinDefinition`,
-    `${TemplateMarkModel.NAMESPACE}.OptionalDefinition`,
-    `${TemplateMarkModel.NAMESPACE}.ClauseDefinition`
-];
+import {
+    TEMPLATEMARK_RE,
+    FORMULA_DEFINITION_RE,
+    VARIABLE_DEFINITION_RE,
+    CONDITIONAL_DEFINITION_RE,
+    ENUM_VARIABLE_DEFINITION_RE,
+    FORMATTED_VARIABLE_DEFINITION_RE,
+    WITH_DEFINITION_RE,
+    LISTBLOCK_DEFINITION_RE,
+    JOIN_DEFINITION_RE,
+    OPTIONAL_DEFINITION_RE,
+    CLAUSE_DEFINITION_RE,
+    CONTRACT_DEFINITION_RE,
+    TemplateData,
+    NAVIGATION_NODES
+} from './Common';
 
 /**
  * Evaluates a JS expression

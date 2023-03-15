@@ -13,6 +13,13 @@ variable values from the supplied agreement data.
 
 > Note: Use the @accordproject/markdown-transform project to convert templates to TemplateMark and to convert AgreementMark to output formats (HTML, PDF, DOCX etc.)
 
+## References
+
+Scala Play: https://www.playframework.com/documentation/2.1.0/ScalaTemplates
+Dart (deprecated): http://blog.sethladd.com/2012/03/first-look-at-darts-html-template.html
+Go Lang: http://sunfmin.com/2013/03/22/a-compiled-template-for-golang.html
+JSP: https://gist.github.com/sunfmin/5124605
+
 ## Install
 
 ```
