@@ -12,18 +12,25 @@
  * limitations under the License.
  */
 import { FileWriter } from '@accordproject/concerto-util';
-import { TemplateMarkModel,CommonMarkModel } from '@accordproject/markdown-common';
-import { IFormattedVariableDefinition } from '../model-gen/org.accordproject.templatemark@0.4.0';
-import { AbstractComplexCompiler, getTypeScriptType, writeCloseGenerateScope, writeOpenGenerateScope } from './Common';
+import { TemplateMarkModel } from '@accordproject/markdown-common';
+import { IFormula } from '../model-gen/org.accordproject.ciceromark@0.6.0';
+import { IFormulaDefinition } from '../model-gen/org.accordproject.templatemark@0.4.0';
+import { AbstractComplexCompiler, getTypeScriptType, makeCiceroMark, writeCloseGenerateScope, writeOpenGenerateScope } from './Common';
 
 export class Formula extends AbstractComplexCompiler {
     static TYPE = `${TemplateMarkModel.NAMESPACE}.FormulaDefinition`;
     constructor() {
         super(true);
     }
-    generate(fw:FileWriter, level:number, templateMarkNode:IFormattedVariableDefinition) {
+    generate(fw:FileWriter, level:number, templateMarkNode:IFormulaDefinition) {
+        const clone = makeCiceroMark(templateMarkNode) as IFormula;
         writeOpenGenerateScope(fw,level);
-        fw.writeLine(level, `return { $class: '${CommonMarkModel.NAMESPACE}.Text', text: UserCode.${templateMarkNode.name}(data,library).toString() } as ${getTypeScriptType(templateMarkNode.$class)};`);
+        fw.writeLine(level, `const formulaResult = UserCode.${templateMarkNode.name}(data,library);`);
+        fw.writeLine(level, 'const text = JSON.stringify(formulaResult);');
+        fw.writeLine(level, `const formula:any = ${JSON.stringify(clone)};`);
+        fw.writeLine(level, 'formula.value = text;');
+        fw.writeLine(level, `formula.code = ${JSON.stringify(templateMarkNode.code.contents)};`); // HACK - update model
+        fw.writeLine(level, `return formula as ${getTypeScriptType(clone.$class)};`);
         writeCloseGenerateScope(fw,level);
     }
 }
