@@ -36,8 +36,8 @@ export function writeProlog(fw:FileWriter, level:number, templateClass:ClassDecl
     fw.writeLine(level, `const docNode = {$class: '${CommonMarkModel.NAMESPACE}.Document', xmlns: '${CommonMarkModel.NAMESPACE}', nodes: []} as CommonMark.INode;`);
     fw.writeLine(level, 'const $nodes:CommonMark.INode[] = [];'); // the stack of output CiceroMark nodes
     fw.writeLine(level, 'const $data:any[] = [];'); // the stack of 'this' used for data access
-    fw.writeLine(level, 'let $result:any = docNode;'); // document root
-    fw.writeLine(level, 'Runtime.push($data, data);'); // data
+    fw.writeLine(level, 'let $result:any = docNode;'); // document root, or the return value
+    fw.writeLine(level, 'Runtime.push($data, data);'); // push the 'data' to the stack so we have an initial 'this';
 }
 
 export function writeEpilog(fw:FileWriter, level:number) {

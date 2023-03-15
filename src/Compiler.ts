@@ -98,6 +98,16 @@ export class Compiler {
         modelManager.accept(tsVisitor, parameters);
     }
 
+    /**
+     * The main iteration function over templatemark. This function
+     * looks up an INodeCompiler that can handle each templatemark node
+     * and delegates to it for code generation.
+     * Note that the result of code generation (a CiceroMark node) is left in 
+     * the $result global varianble.
+     * @param {FileWriter} fw  the file writer to use
+     * @param {number} level the indentation level
+     * @param {object} templateMark the templatemark node to iterate over
+     */
     static doIt(fw:FileWriter, level:number, templateMark: any) {
         fw.writeLine(level, `// start processing ${ModelUtil.getShortName(templateMark.$class)}`);
         traverse(templateMark).forEach(function (context: any) {
@@ -130,14 +140,10 @@ export class Compiler {
      * Conditionals and formulae will call the functions produced by
      * compileUserCode.
      *
-     * Note that code generation is itself recursive, for example, when
+     * Note that code generation process is itself recursive, for example, when
      * a list definition node is encountered the list must be iterated over
      * based on a variable value coming from data, and code must be
      * generated to produce each list item.
-     *
-     * '$curNode' is the current ciceromark node that is being populated.
-     * Typescript lexical scoping (blocks) is used to introduce local
-     * variables.
      *
      * All internal variables are prefixed with '$' to ensure (?)
      * that they cannot collide with end user variable names.
