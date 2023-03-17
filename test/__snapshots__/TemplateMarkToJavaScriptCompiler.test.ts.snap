@@ -55,12 +55,22 @@ Object {
               "$class": "org.accordproject.templatemark@0.4.0.ConditionalDefinition",
               "condition": Object {
                 "$class": "org.accordproject.templatemark@0.4.0.Code",
-                "contents": "return lastName.startsWith('S')",
+                "contents": "export function condition_nodes_0_nodes_1_nodes_5(data, library, now) {
+    const firstName = data.firstName;
+    const lastName = data.lastName;
+    const middleNames = data.middleNames;
+    const active = data.active;
+    const lastVisit = data.lastVisit;
+    const address = data.address;
+    const orders = data.orders;
+    const loyaltyStatus = data.loyaltyStatus;
+    const preferences = data.preferences;
+    return lastName.startsWith('S');
+}
+",
                 "type": "ES_2020",
               },
-              "dependencies": Array [
-                "lastName",
-              ],
+              "dependencies": Array [],
               "functionName": "condition_nodes_0_nodes_1_nodes_5",
               "name": "lastName",
               "whenFalse": Array [
@@ -288,7 +298,7 @@ Object {
                       "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
                       "code": Object {
                         "$class": "org.accordproject.templatemark@0.4.0.Code",
-                        "contents": "export function formula_53113a901ca88208df47bc83374866e8d497d84099c0f88123c918ff1960b17e(data, library) {
+                        "contents": "export function formula_53113a901ca88208df47bc83374866e8d497d84099c0f88123c918ff1960b17e(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -298,16 +308,12 @@ Object {
     const orders = data.orders;
     const loyaltyStatus = data.loyaltyStatus;
     const preferences = data.preferences;
-    const now = dayjs();
     return now.diff(lastVisit, 'day');
 }
 ",
                         "type": "ES_2020",
                       },
-                      "dependencies": Array [
-                        "now",
-                        "lastVisit",
-                      ],
+                      "dependencies": Array [],
                       "name": "formula_53113a901ca88208df47bc83374866e8d497d84099c0f88123c918ff1960b17e",
                     },
                   ],
@@ -334,6 +340,43 @@ Object {
                   "text": ".",
                 },
               ],
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+              "code": Object {
+                "$class": "org.accordproject.templatemark@0.4.0.Code",
+                "contents": "export function formula_7841bd178366af21ea233d10968eaf538d12fb7a50cbaf9cbe1b51a00cb0f6a8(data, library, now) {
+    const firstName = data.firstName;
+    const lastName = data.lastName;
+    const middleNames = data.middleNames;
+    const active = data.active;
+    const lastVisit = data.lastVisit;
+    const address = data.address;
+    const orders = data.orders;
+    const loyaltyStatus = data.loyaltyStatus;
+    const preferences = data.preferences;
+    // test we can use typescript!
+    const addressBook = new Map();
+    addressBook.set('123', 'Dan Selman');
+    addressBook.set('234', 'Isaac Selman');
+    addressBook.set('456', 'Tenzin Selman');
+    addressBook.set('789', 'Mi-a Selman');
+    let result = '';
+    addressBook.forEach((value, key) => {
+        result += \`[\${key} : \${value}]\`;
+    });
+    return result;
+}
+",
+                "type": "ES_2020",
+              },
+              "dependencies": Array [],
+              "name": "formula_7841bd178366af21ea233d10968eaf538d12fb7a50cbaf9cbe1b51a00cb0f6a8",
             },
           ],
         },
@@ -430,7 +473,7 @@ Object {
           "$class": "org.accordproject.templatemark@0.4.0.ClauseDefinition",
           "condition": Object {
             "$class": "org.accordproject.templatemark@0.4.0.Code",
-            "contents": "export function condition_nodes_0_nodes_13(data, library) {
+            "contents": "export function condition_nodes_0_nodes_14(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -440,14 +483,13 @@ Object {
     const orders = data.orders;
     const loyaltyStatus = data.loyaltyStatus;
     const preferences = data.preferences;
-    const now = dayjs();
     return preferences.favoriteColors !== undefined && preferences.favoriteColors.length > 0;
 }
 ",
             "type": "ES_2020",
           },
           "elementType": "test@1.0.0.Preferences",
-          "functionName": "condition_nodes_0_nodes_13",
+          "functionName": "condition_nodes_0_nodes_14",
           "name": "preferences",
           "nodes": Array [
             Object {
@@ -471,7 +513,7 @@ Object {
                   "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
                   "code": Object {
                     "$class": "org.accordproject.templatemark@0.4.0.Code",
-                    "contents": "export function formula_4b8f7e95470eda90057c4648aac4e4c7abb3f93559ed348246b6a15ec1fea473(data, library) {
+                    "contents": "export function formula_4b8f7e95470eda90057c4648aac4e4c7abb3f93559ed348246b6a15ec1fea473(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -481,17 +523,12 @@ Object {
     const orders = data.orders;
     const loyaltyStatus = data.loyaltyStatus;
     const preferences = data.preferences;
-    const now = dayjs();
     return preferences.favoriteColors !== undefined ? preferences.favoriteColors.join(' and ') : 'No favorite colors!';
 }
 ",
                     "type": "ES_2020",
                   },
-                  "dependencies": Array [
-                    "preferences",
-                    "undefined",
-                    "preferences",
-                  ],
+                  "dependencies": Array [],
                   "name": "formula_4b8f7e95470eda90057c4648aac4e4c7abb3f93559ed348246b6a15ec1fea473",
                 },
               ],
@@ -546,15 +583,23 @@ Object {
                   "$class": "org.accordproject.templatemark@0.4.0.ConditionalDefinition",
                   "condition": Object {
                     "$class": "org.accordproject.templatemark@0.4.0.Code",
-                    "contents": "return preferences.favoriteColors !== undefined && preferences.favoriteColors.includes('PINK')",
+                    "contents": "export function condition_nodes_0_nodes_14_nodes_4_nodes_0(data, library, now) {
+    const firstName = data.firstName;
+    const lastName = data.lastName;
+    const middleNames = data.middleNames;
+    const active = data.active;
+    const lastVisit = data.lastVisit;
+    const address = data.address;
+    const orders = data.orders;
+    const loyaltyStatus = data.loyaltyStatus;
+    const preferences = data.preferences;
+    return preferences.favoriteColors !== undefined && preferences.favoriteColors.includes('PINK');
+}
+",
                     "type": "ES_2020",
                   },
-                  "dependencies": Array [
-                    "preferences",
-                    "undefined",
-                    "preferences",
-                  ],
-                  "functionName": "condition_nodes_0_nodes_13_nodes_4_nodes_0",
+                  "dependencies": Array [],
+                  "functionName": "condition_nodes_0_nodes_14_nodes_4_nodes_0",
                   "name": "favoriteColors",
                   "whenFalse": Array [
                     Object {
@@ -603,7 +648,7 @@ Object {
                   "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
                   "code": Object {
                     "$class": "org.accordproject.templatemark@0.4.0.Code",
-                    "contents": "export function formula_a8a1d7714d95baa82f730e0105d2f2d0a9fc25ee9b6055058cc09667c01c01ab(data, library) {
+                    "contents": "export function formula_a8a1d7714d95baa82f730e0105d2f2d0a9fc25ee9b6055058cc09667c01c01ab(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -613,16 +658,12 @@ Object {
     const orders = data.orders;
     const loyaltyStatus = data.loyaltyStatus;
     const preferences = data.preferences;
-    const now = dayjs();
     return jp.query(library, \`$.clauses[?(@.category==\\"onboarding\\")]\`);
 }
 ",
                     "type": "ES_2020",
                   },
-                  "dependencies": Array [
-                    "jp",
-                    "library",
-                  ],
+                  "dependencies": Array [],
                   "name": "formula_a8a1d7714d95baa82f730e0105d2f2d0a9fc25ee9b6055058cc09667c01c01ab",
                 },
               ],
@@ -654,7 +695,7 @@ Object {
                   "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
                   "code": Object {
                     "$class": "org.accordproject.templatemark@0.4.0.Code",
-                    "contents": "export function formula_daca9cb2f5bc16b65f544e6f408c1e3121d50a3251ec4fbe2f27132818acc3d2(data, library) {
+                    "contents": "export function formula_daca9cb2f5bc16b65f544e6f408c1e3121d50a3251ec4fbe2f27132818acc3d2(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -664,17 +705,12 @@ Object {
     const orders = data.orders;
     const loyaltyStatus = data.loyaltyStatus;
     const preferences = data.preferences;
-    const now = dayjs();
     return jp.query(library, \`$.clauses[?(@.author==\\"\${firstName}\\")]\`);
 }
 ",
                     "type": "ES_2020",
                   },
-                  "dependencies": Array [
-                    "jp",
-                    "library",
-                    "firstName",
-                  ],
+                  "dependencies": Array [],
                   "name": "formula_daca9cb2f5bc16b65f544e6f408c1e3121d50a3251ec4fbe2f27132818acc3d2",
                 },
               ],
@@ -701,7 +737,7 @@ Object {
                   "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
                   "code": Object {
                     "$class": "org.accordproject.templatemark@0.4.0.Code",
-                    "contents": "export function formula_4c874b2977b5eef204e4987efc0a5594c7cce66403e54c17daa1e1c721d755a0(data, library) {
+                    "contents": "export function formula_4c874b2977b5eef204e4987efc0a5594c7cce66403e54c17daa1e1c721d755a0(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -711,16 +747,12 @@ Object {
     const orders = data.orders;
     const loyaltyStatus = data.loyaltyStatus;
     const preferences = data.preferences;
-    const now = dayjs();
     return jp.query(library, \`$.clauses[?(@.risk>4)]\`);
 }
 ",
                     "type": "ES_2020",
                   },
-                  "dependencies": Array [
-                    "jp",
-                    "library",
-                  ],
+                  "dependencies": Array [],
                   "name": "formula_4c874b2977b5eef204e4987efc0a5594c7cce66403e54c17daa1e1c721d755a0",
                 },
               ],
@@ -752,7 +784,7 @@ Object {
                   "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
                   "code": Object {
                     "$class": "org.accordproject.templatemark@0.4.0.Code",
-                    "contents": "export function formula_646a6cadec2125e4fd9e4b756aac72bc618b528967f04d325b28a817774441dd(data, library) {
+                    "contents": "export function formula_646a6cadec2125e4fd9e4b756aac72bc618b528967f04d325b28a817774441dd(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -762,17 +794,12 @@ Object {
     const orders = data.orders;
     const loyaltyStatus = data.loyaltyStatus;
     const preferences = data.preferences;
-    const now = dayjs();
     return jp.query(library, \`$.clauses[?(@.risk<3 && @.author==\\"\${firstName}\\")]\`);
 }
 ",
                     "type": "ES_2020",
                   },
-                  "dependencies": Array [
-                    "jp",
-                    "library",
-                    "firstName",
-                  ],
+                  "dependencies": Array [],
                   "name": "formula_646a6cadec2125e4fd9e4b756aac72bc618b528967f04d325b28a817774441dd",
                 },
               ],

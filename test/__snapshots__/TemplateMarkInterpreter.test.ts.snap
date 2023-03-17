@@ -309,10 +309,7 @@ Object {
                   "nodes": Array [
                     Object {
                       "$class": "org.accordproject.ciceromark@0.6.0.Formula",
-                      "dependencies": Array [
-                        "now",
-                        "lastVisit",
-                      ],
+                      "dependencies": Array [],
                       "name": "formula_53113a901ca88208df47bc83374866e8d497d84099c0f88123c918ff1960b17e",
                       "value": "66",
                     },
@@ -341,6 +338,17 @@ Object {
                   "text": ".",
                 },
               ],
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+              "dependencies": Array [],
+              "name": "formula_7841bd178366af21ea233d10968eaf538d12fb7a50cbaf9cbe1b51a00cb0f6a8",
+              "value": "[123 : Dan Selman][234 : Isaac Selman][456 : Tenzin Selman][789 : Mi-a Selman]",
             },
           ],
         },
@@ -483,11 +491,7 @@ Object {
                 },
                 Object {
                   "$class": "org.accordproject.ciceromark@0.6.0.Formula",
-                  "dependencies": Array [
-                    "preferences",
-                    "undefined",
-                    "preferences",
-                  ],
+                  "dependencies": Array [],
                   "name": "formula_4b8f7e95470eda90057c4648aac4e4c7abb3f93559ed348246b6a15ec1fea473",
                   "value": "RED and PINK",
                 },
@@ -603,10 +607,7 @@ Object {
               "nodes": Array [
                 Object {
                   "$class": "org.accordproject.ciceromark@0.6.0.Formula",
-                  "dependencies": Array [
-                    "jp",
-                    "library",
-                  ],
+                  "dependencies": Array [],
                   "name": "formula_a8a1d7714d95baa82f730e0105d2f2d0a9fc25ee9b6055058cc09667c01c01ab",
                   "value": "[{\\"category\\":\\"onboarding\\",\\"author\\":\\"Peter\\",\\"body\\":\\"Legal stuff\\",\\"risk\\":2.95}]",
                 },
@@ -638,11 +639,7 @@ Object {
               "nodes": Array [
                 Object {
                   "$class": "org.accordproject.ciceromark@0.6.0.Formula",
-                  "dependencies": Array [
-                    "jp",
-                    "library",
-                    "firstName",
-                  ],
+                  "dependencies": Array [],
                   "name": "formula_daca9cb2f5bc16b65f544e6f408c1e3121d50a3251ec4fbe2f27132818acc3d2",
                   "value": "[{\\"category\\":\\"reference\\",\\"author\\":\\"Dan\\",\\"body\\":\\"Dad jokes\\",\\"risk\\":8.95},{\\"category\\":\\"reference\\",\\"author\\":\\"Dan\\",\\"body\\":\\"Programming for fun and profit\\",\\"risk\\":1.95}]",
                 },
@@ -668,10 +665,7 @@ Object {
               "nodes": Array [
                 Object {
                   "$class": "org.accordproject.ciceromark@0.6.0.Formula",
-                  "dependencies": Array [
-                    "jp",
-                    "library",
-                  ],
+                  "dependencies": Array [],
                   "name": "formula_4c874b2977b5eef204e4987efc0a5594c7cce66403e54c17daa1e1c721d755a0",
                   "value": "[{\\"category\\":\\"reference\\",\\"author\\":\\"Dan\\",\\"body\\":\\"Dad jokes\\",\\"risk\\":8.95},{\\"category\\":\\"offboarding\\",\\"author\\":\\"Matt\\",\\"body\\":\\"All goodness\\",\\"risk\\":4.95}]",
                 },
@@ -703,11 +697,7 @@ Object {
               "nodes": Array [
                 Object {
                   "$class": "org.accordproject.ciceromark@0.6.0.Formula",
-                  "dependencies": Array [
-                    "jp",
-                    "library",
-                    "firstName",
-                  ],
+                  "dependencies": Array [],
                   "name": "formula_646a6cadec2125e4fd9e4b756aac72bc618b528967f04d325b28a817774441dd",
                   "value": "[{\\"category\\":\\"reference\\",\\"author\\":\\"Dan\\",\\"body\\":\\"Programming for fun and profit\\",\\"risk\\":1.95}]",
                 },

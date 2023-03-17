@@ -16,7 +16,6 @@ export function condition_nodes_0_nodes_13_nodes_4_nodes_0(data:TemplateModel.IT
     const orders = data.orders;
     const loyaltyStatus = data.loyaltyStatus;
     const preferences = data.preferences;
-    const now = dayjs();
     return preferences.favoriteColors !== undefined && preferences.favoriteColors.includes('PINK')
 }`;
         const modelManager = new ModelManager();

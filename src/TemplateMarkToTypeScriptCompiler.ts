@@ -16,12 +16,13 @@ import { copySync } from 'fs-extra';
 
 import { TemplateMarkModel, CiceroMarkModel, CommonMarkModel, ConcertoMetaModel } from '@accordproject/markdown-common';
 
-import { ClassDeclaration, ModelManager, ModelUtil, Resource } from '@accordproject/concerto-core';
+import { ClassDeclaration, ModelManager, ModelUtil, Property, Resource } from '@accordproject/concerto-core';
 import { CodeGen } from '@accordproject/concerto-tools';
 import { FileWriter } from '@accordproject/concerto-util';
 import { getCompiler } from './compilers/NodeCompilers';
 import { RUNTIME_DIR, writeEpilog, writeImports, writeProlog } from './compilers/Common';
 import { getTemplateClassDeclaration } from './Common';
+import dayjs from 'dayjs';
 
 export type ProcessingFunction = (fw:FileWriter, level:number, resource:any) => void;
 
@@ -46,14 +47,14 @@ export class TemplateMarkToTypeScriptCompiler {
     writeFunctionToString(functionName: string, returnType:string, code: string) : string {
         let result = '';
         result += '/// ---cut---\n';
-        result += `export function ${functionName}(data:TemplateModel.I${this.templateClass.getName()}, library:any) : ${returnType} {\n`;
-        this.templateClass.getProperties().forEach((p: any) => {
+        result += `export function ${functionName}(data:TemplateModel.I${this.templateClass.getName()}, library:any, now:dayjs.Dayjs) : ${returnType} {\n`;
+        this.templateClass.getProperties().forEach((p: Property) => {
             result += `   const ${p.getName()} = data.${p.getName()};\n`;
         });
-        result += '   const now = dayjs();\n';
         result += '   ' + code.trim() + '\n';
         result += '}\n';
         result += '\n';
+
         return result;
     }
 

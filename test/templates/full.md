@@ -23,6 +23,20 @@ Your city is: {{#with address}}***{{city}}***.{{/with}}
 > Thank you for visiting us **{{% return now.diff(lastVisit,'day') %}}** days ago.\
 Your last visit was: {{lastVisit as "MM/DD/YYYY"}}.
 
+{{%
+// test we can use typescript!
+const addressBook:Map<string,string> = new Map<string,string>();
+addressBook.set('123', 'Dan Selman');
+addressBook.set('234', 'Isaac Selman');
+addressBook.set('456', 'Tenzin Selman');
+addressBook.set('789', 'Mi-a Selman');
+let result = '';
+addressBook.forEach((value, key) => {
+   result += `[${key} : ${value}]`;
+});
+return result;
+%}}
+
 ## Orders
 
 {{#olist orders}}

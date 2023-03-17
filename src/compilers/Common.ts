@@ -27,12 +27,13 @@ export function writeImports(fw:FileWriter, level:number, templateClass:ClassDec
     fw.writeLine(level, `import * as CommonMark from './${CommonMarkModel.NAMESPACE}';`);
     fw.writeLine(level, `import * as CiceroMark from './${CiceroMarkModel.NAMESPACE}';`);
     fw.writeLine(level, `import * as TemplateModel from './${templateClass.getNamespace()}';`);
+    fw.writeLine(level, 'import dayjs from \'dayjs\';');
     fw.writeLine(level, 'import * as UserCode from \'./usercode\';');
     fw.writeLine(level, `import { draftingMap as $draftingMap } from './${RUNTIME_DIR}/drafting';`);
     fw.writeLine(level, `import * as Runtime from './${RUNTIME_DIR}/TypeScriptRuntime';`);
 }
 export function writeProlog(fw:FileWriter, level:number, templateClass:ClassDeclaration) {
-    fw.writeLine(level, `export function generator(data:TemplateModel.I${templateClass.getName()}, library:any) : CommonMark.IDocument {`);
+    fw.writeLine(level, `export function generator(data:TemplateModel.I${templateClass.getName()}, library:any, now:dayjs.Dayjs) : CommonMark.IDocument {`);
     fw.writeLine(level, `const docNode = {$class: '${CommonMarkModel.NAMESPACE}.Document', xmlns: '${CommonMarkModel.NAMESPACE}', nodes: []} as CommonMark.INode;`);
     fw.writeLine(level, 'const $nodes:CommonMark.INode[] = [];'); // the stack of output CiceroMark nodes
     fw.writeLine(level, 'const $data:any[] = [];'); // the stack of 'this' used for data access

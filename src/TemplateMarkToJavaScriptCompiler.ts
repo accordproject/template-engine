@@ -22,7 +22,7 @@ import { TemplateMarkToTypeScriptCompiler } from './TemplateMarkToTypeScriptComp
 
 const CODE_NODES = [
     `${TemplateMarkModel.NAMESPACE}.FormulaDefinition`,
-    `${TemplateMarkModel.NAMESPACE}.ConditionDefinition`,
+    `${TemplateMarkModel.NAMESPACE}.ConditionalDefinition`,
     `${TemplateMarkModel.NAMESPACE}.ClauseDefinition`,
 ];
 
