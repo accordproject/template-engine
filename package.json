@@ -23,7 +23,8 @@
         "compile-template": "jest ./test/Compiler.test.ts",
         "compile-js": "jest ./test/TypeScriptCompiler.test.ts",
         "run-template": "jest ./test/Runner.test.ts",
-        "test:watch": "jest --watchAll"
+        "test:watch": "jest --watchAll",
+        "updateCompiledTemplates" : "rm -rf ./test/compiled-templates/ && mkdir ./test/compiled-templates/ && cp -r ./output/full ./test/compiled-templates/ "
     },
     "repository": {
         "type": "git",

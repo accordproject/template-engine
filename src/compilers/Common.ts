@@ -69,8 +69,8 @@ export function writeCloseNodeScope(fw:FileWriter, level:number) {
 }
 
 // save $curNode into $stack, so we can pop it when the scope closes
-export function writeOpenDataScope(fw:FileWriter, level:number, name:string) {
-    fw.writeLine(level, `Runtime.push($data, Runtime.peekProperty($data, '${name}'));`);
+export function writeOpenDataScope(fw:FileWriter, level:number, name:string, allowUndefined=false) {
+    fw.writeLine(level, `Runtime.push($data, Runtime.peekProperty($data, '${name}', ${allowUndefined}));`);
 }
 
 // closes the scope, popping the stack and setting $curNode

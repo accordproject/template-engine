@@ -28,7 +28,7 @@ export class Optional extends AbstractComplexCompiler {
     enter(fw:FileWriter, level:number,templateMarkNode:IOptionalDefinition) {
         writeDebug(fw, level, templateMarkNode);
         writeOpenNodeScope(fw,level);
-        writeOpenDataScope(fw,level,templateMarkNode.name);
+        writeOpenDataScope(fw,level,templateMarkNode.name, true); // allow pushing undefined onto the stack
     }
 
     generate(fw:FileWriter, level:number, templateMarkNode:IOptionalDefinition, doIt:ProcessingFunction) {
@@ -38,7 +38,7 @@ export class Optional extends AbstractComplexCompiler {
         delete clone.whenNone;
         writeOpenGenerateScope(fw, level);
         fw.writeLine(level, `const result = ${JSON.stringify(clone)} as ${getTypeScriptType(templateMarkNode.$class)};`);
-        fw.writeLine(level, 'const hasSome:boolean = Runtime.peek($data) !== undefined;');
+        fw.writeLine(level, 'const hasSome:boolean = !(Runtime.peek($data) === null || Runtime.peek($data) === undefined);');
         fw.writeLine(level, '(result as CiceroMark.IOptional).hasSome = hasSome;');
         fw.writeLine(level, 'if(hasSome) {');
         doIt(fw, level+1, {$class: `${CommonMarkModel.NAMESPACE}.Paragraph`, nodes: templateMarkNode.whenSome});
@@ -53,6 +53,9 @@ export class Optional extends AbstractComplexCompiler {
         fw.writeLine(level, 'return result;');
         fw.writeLine(level, '}');
         writeCloseGenerateScope(fw, level);
+        delete templateMarkNode.nodes;
+        delete (templateMarkNode as any).whenSome; // already handled
+        delete (templateMarkNode as any).whenNone;
     }
 
     exit(fw:FileWriter, level:number) {

@@ -17,6 +17,7 @@ node_modules
 out
 lib/parser.js
 test/data
+test/compiled-templates
 dist
 scripts
 output
