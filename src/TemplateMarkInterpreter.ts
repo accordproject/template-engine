@@ -35,7 +35,8 @@ import {
     CLAUSE_DEFINITION_RE,
     CONTRACT_DEFINITION_RE,
     TemplateData,
-    NAVIGATION_NODES
+    NAVIGATION_NODES,
+    getTemplateClassDeclaration
 } from './Common';
 
 /**
@@ -77,7 +78,7 @@ function evaluateJavaScript(clauseLibrary:object, templateClass:ClassDeclaration
         return result;
     }
     catch(err) {
-        throw new Error(`Caught error ${err} evaluting ${expression} with data ${JSON.stringify(data,null,2)}`);
+        throw new Error(`Caught error ${err} evaluting ${expression} with data ${data}`);
     }
 }
 
@@ -270,7 +271,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
                     const templateClass = introspector.getClassDeclaration(data.$class as string);
-                    context.isTrue = evaluateJavaScript(clauseLibrary, templateClass, data, `return !!${context.condition.contents}`) as unknown as boolean;
+                    context.isTrue = evaluateJavaScript(clauseLibrary, templateClass, data, context.condition.contents) as unknown as boolean;
                 }
                 else {
                     const path = getJsonPath(templateMark, context, this.path);
@@ -296,7 +297,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
             else if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
                     const templateClass = introspector.getClassDeclaration(data.$class as string);
-                    const result = evaluateJavaScript(clauseLibrary, templateClass, data, `return !!${context.condition.contents}`) as unknown as boolean;
+                    const result = evaluateJavaScript(clauseLibrary, templateClass, data, context.condition.contents) as unknown as boolean;
                     if(!result) {
                         delete context.nodes;
                         stopHere = true;
@@ -326,7 +327,6 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
                     context.whenSome = [];
                 }
                 context.nodes = context.hasSome ? context.whenSome : context.whenNone;
-                console.log(JSON.stringify(context.nodes, null, 2));
             }
         }
         this.update(context, stopHere);
@@ -337,7 +337,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
  * A template engine: merges the markup and logic of a template with
  * JSON data to produce JSON data.
  */
-export class Engine {
+export class TemplateMarkInterpreter {
     modelManager: ModelManager;
     templateClass: ClassDeclaration;
     clauseLibrary: object;
@@ -345,17 +345,7 @@ export class Engine {
     constructor(modelManager: ModelManager, clauseLibrary:object) {
         this.modelManager = modelManager;
         this.clauseLibrary = clauseLibrary;
-        const introspector = new Introspector(this.modelManager);
-        const templateModels = introspector.getClassDeclarations().filter((item) => {
-            return !item.isAbstract() && item.getDecorator('template');
-        });
-        if (templateModels.length > 1) {
-            throw new Error('Found multiple concepts with @template decorator. The model for the template must contain a single concept with the @template decorator.');
-        } else if (templateModels.length === 0) {
-            throw new Error('Failed to find a concept with the @template decorator. The model for the template must contain a single concept with the @template decoratpr.');
-        } else {
-            this.templateClass = templateModels[0];
-        }
+        this.templateClass = getTemplateClassDeclaration(this.modelManager);
     }
 
     /**
@@ -366,11 +356,10 @@ export class Engine {
      * 1. Variable names are valid properties in the template model
      * 2. Optional properties have guards
      * @param {*} templateMark the TemplateMark JSON object
-     * @param {*} templateData the agreement data
      * @returns {*} TemplateMark JSON that has been typed checked and has type metadata added
      * @throws {Error} if the templateMark document is invalid
      */
-    checkTypes(templateMark: object, templateData: object): object {
+    checkTypes(templateMark: object): object {
         const modelManager = new ModelManager({ strict: true });
         modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
         modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
@@ -401,14 +390,14 @@ export class Engine {
         }
     }
 
-    generate(templateMark: object, data: TemplateData): any {
+    async generate(templateMark: object, data: TemplateData): Promise<any> {
         const factory = new Factory(this.modelManager);
         const serializer = new Serializer(factory, this.modelManager);
         const templateData = serializer.fromJSON(data);
         if (templateData.getFullyQualifiedType() !== this.templateClass.getFullyQualifiedName()) {
             throw new Error(`Template data must be of type '${this.templateClass.getFullyQualifiedName()}'.`);
         }
-        const typedTemplateMark = this.checkTypes(templateMark, data);
+        const typedTemplateMark = this.checkTypes(templateMark);
         const ciceroMark = generateAgreement(this.modelManager, this.clauseLibrary, typedTemplateMark, data);
         return this.validateCiceroMark(ciceroMark);
     }

@@ -12,4 +12,4 @@
  * limitations under the License.
  */
 
-export { Engine } from './Engine';
+export { TemplateMarkInterpreter } from './TemplateMarkInterpreter';

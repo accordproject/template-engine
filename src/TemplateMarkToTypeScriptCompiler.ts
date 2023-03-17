@@ -16,11 +16,12 @@ import { copySync } from 'fs-extra';
 
 import { TemplateMarkModel, CiceroMarkModel, CommonMarkModel, ConcertoMetaModel } from '@accordproject/markdown-common';
 
-import { ClassDeclaration, Introspector, ModelManager, ModelUtil, Resource } from '@accordproject/concerto-core';
+import { ClassDeclaration, ModelManager, ModelUtil, Resource } from '@accordproject/concerto-core';
 import { CodeGen } from '@accordproject/concerto-tools';
 import { FileWriter } from '@accordproject/concerto-util';
 import { getCompiler } from './compilers/NodeCompilers';
 import { RUNTIME_DIR, writeEpilog, writeImports, writeProlog } from './compilers/Common';
+import { getTemplateClassDeclaration } from './Common';
 
 export type ProcessingFunction = (fw:FileWriter, level:number, resource:any) => void;
 
@@ -33,34 +34,31 @@ export type CompilationOptions = {
  * Converts TemplateMark DOM to a Typescript function, that, when run with JSON data
  * that conforms to the template model will produce AgreementMark JSON output.
  */
-export class Compiler {
+export class TemplateMarkToTypeScriptCompiler {
     modelManager: ModelManager;
     templateClass: ClassDeclaration;
 
     constructor(modelManager: ModelManager) {
         this.modelManager = modelManager;
-        const introspector = new Introspector(this.modelManager);
-        const templateModels = introspector.getClassDeclarations().filter((item) => {
-            return !item.isAbstract() && item.getDecorator('template');
+        this.templateClass = getTemplateClassDeclaration(this.modelManager);
+    }
+
+    writeFunctionToString(functionName: string, returnType:string, code: string) : string {
+        let result = '';
+        result += '/// ---cut---\n';
+        result += `export function ${functionName}(data:TemplateModel.I${this.templateClass.getName()}, library:any) : ${returnType} {\n`;
+        this.templateClass.getProperties().forEach((p: any) => {
+            result += `   const ${p.getName()} = data.${p.getName()};\n`;
         });
-        if (templateModels.length > 1) {
-            throw new Error('Found multiple concepts with @template decorator. The model for the template must contain a single concept with the @template decorator.');
-        } else if (templateModels.length === 0) {
-            throw new Error('Failed to find a concept with the @template decorator. The model for the template must contain a single concept with the @template decoratpr.');
-        } else {
-            this.templateClass = templateModels[0];
-        }
+        result += '   const now = dayjs();\n';
+        result += '   ' + code.trim() + '\n';
+        result += '}\n';
+        result += '\n';
+        return result;
     }
 
     writeFunction(fw: FileWriter, functionName: string, returnType:string, code: string) {
-        fw.writeLine(0, `export function ${functionName}(data:TemplateModel.I${this.templateClass.getName()}, library:any) : ${returnType} {`);
-        this.templateClass.getProperties().forEach((p: any) => {
-            fw.writeLine(1, `const ${p.getName()} = data.${p.getName()};`);
-        });
-        fw.writeLine(1, 'const now = dayjs();');
-        fw.writeLine(1, code.trim());
-        fw.writeLine(0, '}');
-        fw.writeLine(0, '');
+        fw.writeLine(0, this.writeFunctionToString(functionName, returnType, code));
     }
 
     /**
@@ -102,7 +100,7 @@ export class Compiler {
      * The main iteration function over templatemark. This function
      * looks up an INodeCompiler that can handle each templatemark node
      * and delegates to it for code generation.
-     * Note that the result of code generation (a CiceroMark node) is left in 
+     * Note that the result of code generation (a CiceroMark node) is left in
      * the $result global varianble.
      * @param {FileWriter} fw  the file writer to use
      * @param {number} level the indentation level
@@ -119,7 +117,7 @@ export class Compiler {
 
                 this.before( () => {
                     compiler.enter(fw, sourceLevel, context);
-                    compiler.generate(fw, sourceLevel, context, Compiler.doIt);
+                    compiler.generate(fw, sourceLevel, context, TemplateMarkToTypeScriptCompiler.doIt);
                 });
 
                 this.after( () => {
@@ -165,7 +163,7 @@ export class Compiler {
         fw.writeLine(0, '// GENERATOR');
         writeProlog(fw, 0, this.templateClass);
 
-        Compiler.doIt(fw, 1, templateMark);
+        TemplateMarkToTypeScriptCompiler.doIt(fw, 1, templateMark);
 
         writeEpilog(fw,0);
         fw.closeFile();
@@ -173,7 +171,7 @@ export class Compiler {
 
     copyRuntime(outputDir: string) {
         copySync('./src/drafting', `${outputDir}/${RUNTIME_DIR}/drafting`);
-        copySync('./src/Runtime.ts', `${outputDir}/${RUNTIME_DIR}/Runtime.ts`);
+        copySync('./src/TypeScriptRuntime.ts', `${outputDir}/${RUNTIME_DIR}/TypeScriptRuntime.ts`);
     }
 
     compile(templateMark: Resource, outputDir: string, options?:CompilationOptions) {
@@ -183,7 +181,7 @@ export class Compiler {
         this.generateTypeScript(this.getCiceroMarkModelManager(), `${outputDir}`);
 
         // generate names for all the nodes containing user code
-        const namedTemplateMark = this.nameUserCode(templateMark);
+        const namedTemplateMark = TemplateMarkToTypeScriptCompiler.nameUserCode(templateMark.toJSON());
 
         // compile the user code
         this.compileUserCode(namedTemplateMark, outputDir);
@@ -199,8 +197,7 @@ export class Compiler {
         }
     }
 
-    nameUserCode(templateMark: Resource) {
-        const templateMarkDom = templateMark.toJSON();
+    static nameUserCode(templateMarkDom: any) {
         return traverse(templateMarkDom).map(function (x) {
             if (x && ((x.$class === `${TemplateMarkModel.NAMESPACE}.ConditionalDefinition` && x.condition) ||
                 (`${TemplateMarkModel.NAMESPACE}.ClauseDefinition` && x.condition))) {
@@ -263,13 +260,13 @@ export class Compiler {
 
         fw.writeLine(0, '// CONDITIONALS');
         conditionalNodes.forEach((fun: any) => {
-            this.writeFunction(fw, `${fun.name}`, 'boolean', `return ${fun.code.contents}`);
+            this.writeFunction(fw, `${fun.name}`, 'boolean', fun.code.contents);
         });
         fw.writeLine(0, '');
 
         fw.writeLine(0, '// CLAUSES');
         clauseNodes.forEach((fun: any) => {
-            this.writeFunction(fw, `${fun.name}`, 'boolean', `return ${fun.code.contents}`);
+            this.writeFunction(fw, `${fun.name}`, 'boolean', fun.code.contents);
         });
         fw.writeLine(0, '');
 

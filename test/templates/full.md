@@ -1,6 +1,6 @@
 # Welcome!
 
-Hello {{firstName}} {{#join middleNames separator="-"}}{{this}}{{/join}} {{#if lastName condition="lastName.startsWith('S')"}}Mister{{else}}Dude{{/if}}!
+Hello {{firstName}} {{#join middleNames separator="-"}}{{this}}{{/join}} {{#if lastName condition="return lastName.startsWith('S')"}}Mister{{else}}Dude{{/if}}!
 
 ## Middle Names
 {{#olist middleNames}}
@@ -31,7 +31,7 @@ Your last visit was: {{lastVisit as "MM/DD/YYYY"}}.
 
 {{#optional loyaltyStatus}}Your loyalty status: {{level}}{{else}}You do not have a loyalty status.{{/optional}}
 
-{{#clause preferences condition="preferences.favoriteColors !== undefined && preferences.favoriteColors.length > 0"}}
+{{#clause preferences condition="return preferences.favoriteColors !== undefined && preferences.favoriteColors.length > 0"}}
 
 ## Favorite Colors
 
@@ -43,7 +43,7 @@ Your favorite colors are: {{% return preferences.favoriteColors !== undefined ? 
 - {{this}}
 {{/olist}}
 
-{{#if favoriteColors condition="preferences.favoriteColors !== undefined && preferences.favoriteColors.includes(TemplateModel.Color.PINK)"}}You like pink!{{else}}Why don't you like PINK!{{/if}}
+{{#if favoriteColors condition="return preferences.favoriteColors !== undefined && preferences.favoriteColors.includes('PINK')"}}You like pink!{{else}}Why don't you like PINK!{{/if}}
 
 {{/clause}}
 

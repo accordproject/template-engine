@@ -13,6 +13,12 @@
  */
 const DEBUG = false;
 
+/**
+ * These utility functions are used by the typescript code that
+ * is generated from TemplateMark. They manage a stack to improve
+ * debuggability.
+ */
+
 function dump(op:string, $data:any[]) {
     if(DEBUG) {
         console.log(`${op}: ${JSON.stringify($data)}`);

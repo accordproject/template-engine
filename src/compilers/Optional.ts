@@ -14,9 +14,8 @@
 import { FileWriter } from '@accordproject/concerto-util';
 import { CommonMarkModel,TemplateMarkModel } from '@accordproject/markdown-common';
 
-import { ProcessingFunction } from '../Compiler';
-import { IOptional } from '../model-gen/org.accordproject.ciceromark@0.6.0';
-import { IOptionalDefinition, IWithDefinition } from '../model-gen/org.accordproject.templatemark@0.4.0';
+import { ProcessingFunction } from '../TemplateMarkToTypeScriptCompiler';
+import { IOptionalDefinition } from '../model-gen/org.accordproject.templatemark@0.4.0';
 import { AbstractComplexCompiler, getTypeScriptType, makeCiceroMark, writeCloseDataScope, writeCloseGenerateScope, writeCloseNodeScope, writeDebug, writeOpenDataScope, writeOpenGenerateScope, writeOpenNodeScope } from './Common';
 
 
@@ -26,7 +25,7 @@ export class Optional extends AbstractComplexCompiler {
         super(false);
     }
 
-    enter(fw:FileWriter, level:number,templateMarkNode:IWithDefinition) {
+    enter(fw:FileWriter, level:number,templateMarkNode:IOptionalDefinition) {
         writeDebug(fw, level, templateMarkNode);
         writeOpenNodeScope(fw,level);
         writeOpenDataScope(fw,level,templateMarkNode.name);

@@ -15,7 +15,7 @@ import { INode } from '../model-gen/org.accordproject.commonmark@0.5.0';
 import { CommonMarkModel,TemplateMarkModel,CiceroMarkModel } from '@accordproject/markdown-common';
 import { FileWriter } from '@accordproject/concerto-util';
 import { ClassDeclaration, ModelUtil } from '@accordproject/concerto-core';
-import { ProcessingFunction } from '../Compiler';
+import { ProcessingFunction } from '../TemplateMarkToTypeScriptCompiler';
 
 export function writeDebug(fw:FileWriter, level:number, concept:any) {
     fw.writeLine(level, `// ${ModelUtil.getShortName(concept.$class)} ${concept.name ? `(${concept.name})` : ''}`);
@@ -29,7 +29,7 @@ export function writeImports(fw:FileWriter, level:number, templateClass:ClassDec
     fw.writeLine(level, `import * as TemplateModel from './${templateClass.getNamespace()}';`);
     fw.writeLine(level, 'import * as UserCode from \'./usercode\';');
     fw.writeLine(level, `import { draftingMap as $draftingMap } from './${RUNTIME_DIR}/drafting';`);
-    fw.writeLine(level, `import * as Runtime from './${RUNTIME_DIR}/Runtime';`);
+    fw.writeLine(level, `import * as Runtime from './${RUNTIME_DIR}/TypeScriptRuntime';`);
 }
 export function writeProlog(fw:FileWriter, level:number, templateClass:ClassDeclaration) {
     fw.writeLine(level, `export function generator(data:TemplateModel.I${templateClass.getName()}, library:any) : CommonMark.IDocument {`);

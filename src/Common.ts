@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 
+import { ClassDeclaration, Introspector, ModelManager } from '@accordproject/concerto-core';
 import { TemplateMarkModel } from '@accordproject/markdown-common';
 
 // use to create agreementmark from templatemark
@@ -41,3 +42,17 @@ export const NAVIGATION_NODES = [
     `${TemplateMarkModel.NAMESPACE}.OptionalDefinition`,
     `${TemplateMarkModel.NAMESPACE}.ClauseDefinition`
 ];
+
+export function getTemplateClassDeclaration(modelManager: ModelManager) : ClassDeclaration {
+    const introspector = new Introspector(modelManager);
+    const templateModels = introspector.getClassDeclarations().filter((item) => {
+        return !item.isAbstract() && item.getDecorator('template');
+    });
+    if (templateModels.length > 1) {
+        throw new Error('Found multiple concepts with @template decorator. The model for the template must contain a single concept with the @template decorator.');
+    } else if (templateModels.length === 0) {
+        throw new Error('Failed to find a concept with the @template decorator. The model for the template must contain a single concept with the @template decoratpr.');
+    } else {
+        return templateModels[0];
+    }
+}

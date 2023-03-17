@@ -4,13 +4,13 @@ import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { readFileSync, readdirSync } from 'fs';
 import { ensureDirSync, writeFileSync } from 'fs-extra';
 import * as path from 'path';
-import { Compiler } from '../src/Compiler';
+import { TemplateMarkToTypeScriptCompiler } from '../src/TemplateMarkToTypeScriptCompiler';
 
 const templateMarkTransformer = new TemplateMarkTransformer();
 
-describe('compiler', () => {
+describe('templatemark to typescript compiler', () => {
 
-    let compiler:Compiler|null = null;
+    let compiler:TemplateMarkToTypeScriptCompiler|null = null;
     let serializer:Serializer|null = null;
     let modelManager:ModelManager|null = null;
     const templates:Array<{name:string,content:string}> = readdirSync('./test/templates').map(file => {
@@ -24,7 +24,7 @@ describe('compiler', () => {
         const model = readFileSync('./test/model.cto', 'utf-8');
         modelManager = new ModelManager({ strict: true });
         modelManager.addCTOModel(model);
-        compiler = new Compiler(modelManager);
+        compiler = new TemplateMarkToTypeScriptCompiler(modelManager);
         const factory = new Factory(compiler.getTemplateMarkModelManager());
         serializer = new Serializer(factory,compiler.getTemplateMarkModelManager());
     });

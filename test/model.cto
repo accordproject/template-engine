@@ -15,17 +15,8 @@ concept LoyaltyStatus {
     o String level
 }
 
-enum Color {
-    o RED
-    o GREEN
-    o BLUE
-    o PINK
-    o BLACK
-    o WHITE
-}
-
 concept Preferences {
-    o Color[] favoriteColors optional
+    o String[] favoriteColors optional
 }
 
 @template
