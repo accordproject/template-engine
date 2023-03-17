@@ -19,6 +19,7 @@
         "lint": "eslint .",
         "licchk": "license-check-and-add",
         "test": "jest",
+        "coverage" : "jest --coverage",
         "compile-template": "jest ./test/Compiler.test.ts",
         "compile-js": "jest ./test/TypeScriptCompiler.test.ts",
         "run-template": "jest ./test/Runner.test.ts",

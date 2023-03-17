@@ -1,0 +1,732 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`templatemark interpreter should create agreementmark from a template and data 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "1",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Welcome!",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Hello ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "firstName",
+              "value": "Dan",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": " ",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Tenzin-Isaac-Mia",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": " ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.Conditional",
+              "isTrue": true,
+              "name": "lastName",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Mister",
+                },
+              ],
+              "whenFalse": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Dude",
+                },
+              ],
+              "whenTrue": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Mister",
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "!",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Middle Names",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "delimiter": "period",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "this",
+                      "value": "Tenzin",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "this",
+                      "value": "Isaac",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "this",
+                      "value": "Mia",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "start": "1",
+          "tight": "true",
+          "type": "ordered",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Address",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.ciceromark@0.6.0.Clause",
+          "elementType": "test@1.0.0.Address",
+          "name": "address",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.List",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Item",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                      "nodes": Array [
+                        Object {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "Street: ",
+                        },
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "String",
+                          "name": "street",
+                          "value": "1 Main Street",
+                        },
+                      ],
+                    },
+                  ],
+                },
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Item",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                      "nodes": Array [
+                        Object {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "City: ",
+                        },
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "String",
+                          "name": "city",
+                          "value": "Boston",
+                        },
+                      ],
+                    },
+                  ],
+                },
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Item",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                      "nodes": Array [
+                        Object {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "ZIP: ",
+                        },
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "String",
+                          "name": "zip",
+                          "value": "12345",
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+              "tight": "true",
+              "type": "bullet",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Your city is: ",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Emph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Strong",
+                      "nodes": Array [
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "String",
+                          "name": "city",
+                          "value": "Boston",
+                        },
+                      ],
+                    },
+                  ],
+                },
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": ".",
+                },
+              ],
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Account Status",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.Conditional",
+              "isTrue": false,
+              "name": "active",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Your account has been deactivated.",
+                },
+              ],
+              "whenFalse": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Your account has been deactivated.",
+                },
+              ],
+              "whenTrue": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Your account is active.",
+                },
+              ],
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.BlockQuote",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Thank you for visiting us ",
+                },
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Strong",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                      "dependencies": Array [
+                        "now",
+                        "lastVisit",
+                      ],
+                      "name": "formula_53113a901ca88208df47bc83374866e8d497d84099c0f88123c918ff1960b17e",
+                      "value": "66",
+                    },
+                  ],
+                },
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": " days ago.",
+                },
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Linebreak",
+                },
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Your last visit was: ",
+                },
+                Object {
+                  "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                  "elementType": "DateTime",
+                  "format": "MM/DD/YYYY",
+                  "name": "lastVisit",
+                  "value": "01/10/2023",
+                },
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": ".",
+                },
+              ],
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Orders",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "delimiter": "period",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Strong",
+                      "nodes": Array [
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "String",
+                          "name": "sku",
+                          "value": "WIDGET-2000",
+                        },
+                      ],
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " : ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Emph",
+                      "nodes": Array [
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "Integer",
+                          "name": "amount",
+                          "value": "10",
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Strong",
+                      "nodes": Array [
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "String",
+                          "name": "sku",
+                          "value": "DOODAH-X",
+                        },
+                      ],
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " : ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Emph",
+                      "nodes": Array [
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "Integer",
+                          "name": "amount",
+                          "value": "3",
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "start": "1",
+          "tight": "true",
+          "type": "ordered",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+              "elementType": "test@1.0.0.LoyaltyStatus",
+              "hasSome": false,
+              "name": "loyaltyStatus",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "You do not have a loyalty status.",
+                },
+              ],
+              "whenNone": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "You do not have a loyalty status.",
+                },
+              ],
+              "whenSome": Array [],
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.ciceromark@0.6.0.Clause",
+          "elementType": "test@1.0.0.Preferences",
+          "name": "preferences",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Heading",
+              "level": "2",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Favorite Colors",
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Your favorite colors are: ",
+                },
+                Object {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": Array [
+                    "preferences",
+                    "undefined",
+                    "preferences",
+                  ],
+                  "name": "formula_4b8f7e95470eda90057c4648aac4e4c7abb3f93559ed348246b6a15ec1fea473",
+                  "value": "RED and PINK",
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Image",
+                  "destination": "https://www.litmus.com/wp-content/uploads/2021/02/motion-tween-example.gif",
+                  "nodes": Array [],
+                  "title": "",
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.List",
+              "delimiter": "period",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Item",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                      "nodes": Array [
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "String",
+                          "name": "this",
+                          "value": "RED",
+                        },
+                      ],
+                    },
+                  ],
+                },
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Item",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                      "nodes": Array [
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "String",
+                          "name": "this",
+                          "value": "PINK",
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+              "start": "1",
+              "tight": "true",
+              "type": "ordered",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Conditional",
+                  "isTrue": true,
+                  "name": "favoriteColors",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "You like pink!",
+                    },
+                  ],
+                  "whenFalse": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Why don't you like PINK!",
+                    },
+                  ],
+                  "whenTrue": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "You like pink!",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Dynamic Query of Clauses",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "3",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Onboarding Clauses",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.BlockQuote",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": Array [
+                    "jp",
+                    "library",
+                  ],
+                  "name": "formula_a8a1d7714d95baa82f730e0105d2f2d0a9fc25ee9b6055058cc09667c01c01ab",
+                  "value": "[{\\"category\\":\\"onboarding\\",\\"author\\":\\"Peter\\",\\"body\\":\\"Legal stuff\\",\\"risk\\":2.95}]",
+                },
+              ],
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "3",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Authored by ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "firstName",
+              "value": "Dan",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.BlockQuote",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": Array [
+                    "jp",
+                    "library",
+                    "firstName",
+                  ],
+                  "name": "formula_daca9cb2f5bc16b65f544e6f408c1e3121d50a3251ec4fbe2f27132818acc3d2",
+                  "value": "[{\\"category\\":\\"reference\\",\\"author\\":\\"Dan\\",\\"body\\":\\"Dad jokes\\",\\"risk\\":8.95},{\\"category\\":\\"reference\\",\\"author\\":\\"Dan\\",\\"body\\":\\"Programming for fun and profit\\",\\"risk\\":1.95}]",
+                },
+              ],
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "3",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "High Risk",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.BlockQuote",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": Array [
+                    "jp",
+                    "library",
+                  ],
+                  "name": "formula_4c874b2977b5eef204e4987efc0a5594c7cce66403e54c17daa1e1c721d755a0",
+                  "value": "[{\\"category\\":\\"reference\\",\\"author\\":\\"Dan\\",\\"body\\":\\"Dad jokes\\",\\"risk\\":8.95},{\\"category\\":\\"offboarding\\",\\"author\\":\\"Matt\\",\\"body\\":\\"All goodness\\",\\"risk\\":4.95}]",
+                },
+              ],
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "3",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Low Risk and authored by ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "firstName",
+              "value": "Dan",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.BlockQuote",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": Array [
+                    "jp",
+                    "library",
+                    "firstName",
+                  ],
+                  "name": "formula_646a6cadec2125e4fd9e4b756aac72bc618b528967f04d325b28a817774441dd",
+                  "value": "[{\\"category\\":\\"reference\\",\\"author\\":\\"Dan\\",\\"body\\":\\"Programming for fun and profit\\",\\"risk\\":1.95}]",
+                },
+              ],
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Done.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
