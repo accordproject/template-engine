@@ -106,7 +106,7 @@ Most template engines are fundamentally **text based** — i.e. they treat templ
 
 The Accord Projecte template engine breaks this coupling and moves data format conversion outside of the core template engine. Templates at the engine level are TemplateMark JSON documents and the output from the template engine is an AgreementMark JSON document. Separate libraries are used to convert source templates into TemplateMark JSON, or to render AgreementMark JSON to an output format.
 
-This flexibility allows a markdown template to be created that is used to create HTML, PDF or DOCX. In can even imagine using DOCX templates to create HTML or PDF files, or other scenarios.
+This flexibility allows a markdown template to be created that is used to create HTML, PDF or DOCX. One can even imagine using DOCX templates to create HTML or PDF files, or other scenarios.
 
 ### 2. TemplateMark as a Defined Format
 
