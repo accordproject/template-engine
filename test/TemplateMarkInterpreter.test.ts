@@ -3,6 +3,7 @@ import { CommonMarkModel } from '@accordproject/markdown-common';
 import { readFileSync } from 'fs-extra';
 import { TemplateMarkInterpreter } from '../src';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
+import dayjs from 'dayjs';
 
 const CLAUSE_LIBRARY = {
     'clauses': [
@@ -41,12 +42,12 @@ describe('templatemark interpreter', () => {
          * the @template decorator. The types of properties allow the template to be
          * type-checked.
         */
-        const model = readFileSync('./test/model.cto', 'utf-8');
+        const model = readFileSync('./test/templates/full/model.cto', 'utf-8');
 
         /**
          * Load the template, rich-text with variables, conditional sections etc
          */
-        const template = readFileSync('./test/templates/full.md', 'utf-8');
+        const template = readFileSync('./test/templates/full/template.md', 'utf-8');
 
         /**
          * Define the data we will merge with the template - an instance of the template model
@@ -94,7 +95,8 @@ describe('templatemark interpreter', () => {
         const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate({ content: template }, modelManager, 'contract', { verbose: false });
         // console.log(JSON.stringify(templateMarkDom, null, 2));
 
-        const ciceroMark = await engine.generate(templateMarkDom, data);
+        const now = dayjs('2023-03-17T00:00:00.000Z');
+        const ciceroMark = await engine.generate(templateMarkDom, data, now);
         expect(ciceroMark.getFullyQualifiedType()).toBe(`${CommonMarkModel.NAMESPACE}.Document`);
         expect(ciceroMark.toJSON()).toMatchSnapshot();
     });

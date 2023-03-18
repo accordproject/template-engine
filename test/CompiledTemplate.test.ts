@@ -69,7 +69,8 @@ describe('compiled template', () => {
             }
         };
 
-        let ciceroMark = generator(data, CLAUSE_LIBRARY, dayjs());
+        const now = dayjs('2023-03-17T00:00:00.000Z');
+        let ciceroMark = generator(data, CLAUSE_LIBRARY, now);
         expect(ciceroMark).toMatchSnapshot();
 
         data.loyaltyStatus = {
@@ -77,7 +78,7 @@ describe('compiled template', () => {
             level: 'Gold'
         };
 
-        ciceroMark = generator(data, CLAUSE_LIBRARY, dayjs());
+        ciceroMark = generator(data, CLAUSE_LIBRARY, now);
         expect(ciceroMark).toMatchSnapshot();
     });
 });

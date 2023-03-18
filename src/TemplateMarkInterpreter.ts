@@ -39,7 +39,6 @@ import {
     getTemplateClassDeclaration
 } from './Common';
 import { TemplateMarkToJavaScriptCompiler } from './TemplateMarkToJavaScriptCompiler';
-import { TemplateMarkToTypeScriptCompiler } from './TemplateMarkToTypeScriptCompiler';
 
 /**
  * Evaluates a JS expression
@@ -135,11 +134,11 @@ function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
  * @param {*} clauseLibrary - the clause library
  * @param {*} templateMark - the TemplateMark JSON document
  * @param {*} data - the template data JSON
+ * @param {[dayjs.Dayjs]} now - date/time to use for the now variable
  * @returns {*} the AgreementMark JSON
  */
-function generateAgreement(modelManager:ModelManager, clauseLibrary:object, templateMark: object, data: TemplateData): any {
+function generateAgreement(modelManager:ModelManager, clauseLibrary:object, templateMark: object, data: TemplateData, now?:dayjs.Dayjs): any {
     const introspector = new Introspector(modelManager);
-    const tsCompiler = new TemplateMarkToTypeScriptCompiler(modelManager);
     return traverse(templateMark).map(function (context: any) {
         let stopHere = false;
         if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
@@ -171,7 +170,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
             // with the result of evaluating the JS code
             else if (FORMULA_DEFINITION_RE.test(nodeClass)) {
                 if (context.code) {
-                    const result = evaluateJavaScript(clauseLibrary, data, context.code.contents);
+                    const result = evaluateJavaScript(clauseLibrary, data, context.code.contents, now);
                     if(result === null) {
                         context.value = '<null>';
                     }
@@ -278,7 +277,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
             // with the result of evaluating the JS code or a boolean property
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
-                    context.isTrue = !!evaluateJavaScript(clauseLibrary, data, context.condition.contents) as unknown as boolean;
+                    context.isTrue = !!evaluateJavaScript(clauseLibrary, data, context.condition.contents, now) as unknown as boolean;
                 }
                 else {
                     const path = getJsonPath(templateMark, context, this.path);
@@ -304,7 +303,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
             // only include the children of a clause if its condition is true
             else if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
-                    const result = !!evaluateJavaScript(clauseLibrary, data, context.condition.contents) as unknown as boolean;
+                    const result = !!evaluateJavaScript(clauseLibrary, data, context.condition.contents, now) as unknown as boolean;
                     if(!result) {
                         delete context.nodes;
                         stopHere = true;
@@ -406,7 +405,7 @@ export class TemplateMarkInterpreter {
         }
     }
 
-    async generate(templateMark: object, data: TemplateData): Promise<any> {
+    async generate(templateMark: object, data: TemplateData, now?:dayjs.Dayjs): Promise<any> {
         const factory = new Factory(this.modelManager);
         const serializer = new Serializer(factory, this.modelManager);
         const templateData = serializer.fromJSON(data);
@@ -415,7 +414,7 @@ export class TemplateMarkInterpreter {
         }
         const typedTemplateMark = this.checkTypes(templateMark);
         const jsTemplateMark = this.compileTypeScriptToJavaScript(typedTemplateMark);
-        const ciceroMark = generateAgreement(this.modelManager, this.clauseLibrary, jsTemplateMark, data);
+        const ciceroMark = generateAgreement(this.modelManager, this.clauseLibrary, jsTemplateMark, data, now);
         return this.validateCiceroMark(ciceroMark);
     }
 }

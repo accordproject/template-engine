@@ -10,28 +10,24 @@ const templateMarkTransformer = new TemplateMarkTransformer();
 
 describe('templatemark to typescript compiler', () => {
 
-    let compiler:TemplateMarkToTypeScriptCompiler|null = null;
-    let serializer:Serializer|null = null;
-    let modelManager:ModelManager|null = null;
-    const templates:Array<{name:string,content:string}> = readdirSync('./test/templates').map(file => {
+    const templates:Array<{name:string,content:string}> = readdirSync('./test/templates').map(dir => {
         return {
-            name: file,
-            content: readFileSync(path.join('./test/templates', file), 'utf-8')
+            name: dir,
+            content: readFileSync(path.join('./test/templates', dir, 'template.md'), 'utf-8')
         };
-    });
-
-    beforeAll(() => {
-        const model = readFileSync('./test/model.cto', 'utf-8');
-        modelManager = new ModelManager({ strict: true });
-        modelManager.addCTOModel(model);
-        compiler = new TemplateMarkToTypeScriptCompiler(modelManager);
-        const factory = new Factory(compiler.getTemplateMarkModelManager());
-        serializer = new Serializer(factory,compiler.getTemplateMarkModelManager());
     });
 
     templates.forEach(function(template){
         test(`should compile ${template.name}`, async () => {
             const templatenName = path.parse(template.name).name;
+
+            const model = readFileSync(`./test/templates/${templatenName}/model.cto`, 'utf-8');
+            const modelManager = new ModelManager({ strict: true });
+            modelManager.addCTOModel(model);
+            const compiler = new TemplateMarkToTypeScriptCompiler(modelManager);
+            const factory = new Factory(compiler.getTemplateMarkModelManager());
+            const serializer = new Serializer(factory,compiler.getTemplateMarkModelManager());
+
             const templateMarkJson = templateMarkTransformer.fromMarkdownTemplate({ content: template.content }, modelManager, 'contract', { verbose: false });
             rmSync(`./output/${templatenName}`, { recursive: true, force: true });
             ensureDirSync(`./output/${templatenName}`);

@@ -13,6 +13,81 @@ and calculations.
 
 At a high-level the template engine converts a TemplateMark DOM to an AgreementMark DOM, evaluating TypeScript expressions for conditional sections and formulae, and replaces variable references with variable values from the supplied agreement data.
 
+## Hello World Template
+
+Let's create the simplest template imaginable, the infamous "hello world"!
+
+### Template Data Model
+
+First create a template data model in Concerto syntax. The data model defines the structure of the data to be merged with the template. In this case the template model contains a single property `message` of type `String`. The property is required (it is not `optional`).
+
+```javascript
+namespace helloworld@1.0.0
+
+@template
+concept TemplateData {
+    o String message
+}
+```
+
+### TemplateMark (extended markdown)
+
+Next define the TemplateMark for the template. In this case it is the plain-text world `"Hello"` followed by a space, then the variable `message` followed by `"."`.
+
+```markdown
+Hello {{message}}.
+```
+
+### Generate AgreementMark from Data (JSON)
+
+Define an **instance** of the `helloworld@1.0.0.TemplateData` data model. In this case setting the value of the `message` property to the string "World".
+
+```json
+const data = {
+    $class: 'helloworld@1.0.0.TemplateData',
+    message: 'World',
+};
+```
+
+### Output AgreementMark (JSON)
+
+When the TemplateMark and the data JSON is passed to the Template Engine is merges the two, in this case by simply replacing the reference to the `message` variable with its value from the data JSON and to produce an AgreementMark JSON document.
+
+This AgreementMark JSON document can then be passed to the `@accordproject/markdown-transform` modules for conversion to markdown, PDF, HTML or DOCX.
+
+```json
+{
+    "$class": "org.accordproject.commonmark@0.5.0.Document",
+    "xmlns": "http://commonmark.org/xml/1.0",
+    "nodes": [
+        {
+        "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+        "nodes": [
+            {
+            "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+            "nodes": [
+                {
+                "$class": "org.accordproject.commonmark@0.5.0.Text",
+                "text": "Hello "
+                },
+                {
+                "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                "value": "World",
+                "name": "message",
+                "elementType": "String"
+                },
+                {
+                "$class": "org.accordproject.commonmark@0.5.0.Text",
+                "text": "."
+                }
+            ]
+            }
+        ]
+        }
+    ]
+}
+```
+
 ## Why create a new template engine?
 
 There are many great Open Source template engines available, such as [Mustache](https://mustache.github.io), [Handlebars](https://handlebarsjs.com) or [EJS](https://ejs.co), so why create yet another?

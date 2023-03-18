@@ -1,0 +1,6 @@
+namespace helloworld@1.0.0
+
+@template
+concept TemplateData {
+    o String message
+}

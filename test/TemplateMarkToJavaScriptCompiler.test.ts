@@ -7,10 +7,10 @@ describe('templatemark to javascript compiler', () => {
     test('should compile templatemark containing typescript to javascript', async () => {
 
         const modelManager = new ModelManager();
-        modelManager.addCTOModel( readFileSync('./test/model.cto', 'utf-8'), 'model.cto');
+        modelManager.addCTOModel( readFileSync('./test/templates/full/model.cto', 'utf-8'), 'model.cto');
         const compiler = new TemplateMarkToJavaScriptCompiler(modelManager);
 
-        const templateMd = readFileSync('./test/templates/full.md', 'utf-8');
+        const templateMd = readFileSync('./test/templates/full/template.md', 'utf-8');
         const templateMarkTransformer = new TemplateMarkTransformer();
         const templateMarkJson = templateMarkTransformer.fromMarkdownTemplate({ content: templateMd }, modelManager, 'contract', { verbose: false });
 
