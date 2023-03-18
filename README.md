@@ -108,7 +108,7 @@ Unlike some templating systems which prohibit, or minmize, logic in templates, A
 
 Given the ability for templates to contain logic there's an imperative to ensure that the templates are **safe** - i.e. when a template is merged with well-structured data it is guaranteed to produce well-structured output.
 
-Too many templating engines fail in unpredicatble ways at runtime, or silently generate invalid output, when presented with data — unacceptable for enterprise usage.
+Too many templating engines fail in unpredictable ways at runtime, or silently generate invalid output, when presented with data — unacceptable for enterprise usage.
 
 Accord Project templates are therefore **strongly-typed**. The logic in templates is expressed in [TypeScript](https://www.typescriptlang.org). TypeScript is a strongly-typed, general purpose programming language, supported by a vibrant Open Source and enterprise community. TypeScript compiles to JavaScript for easy execution on most platforms.
 
