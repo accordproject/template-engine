@@ -128,7 +128,7 @@ Accord Project templates are therefore **strongly-typed**. The logic in template
 
 ### 5. Data Model
 
-The rich-text with variables of a template is associated with a [Concerto data model](https://concerto.accordproject.org). The Concerto data model defines the structure of the data required for the template, and is used to statically compiled the template and verify type-safety, and is also used at runtime to ensure that incoming data is well structured.
+The rich-text with variables of a template is associated with a [Concerto data model](https://concerto.accordproject.org). The Concerto data model defines the structure of the data required for the template, and is used to statically compile the template and verify type-safety, and is also used at runtime to ensure that incoming data is well structured.
 
 ### 6. Compilation
 
