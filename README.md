@@ -6,10 +6,10 @@ The core template engine is a JSON to JSON transformation that converts Template
 
 > Note: Use the `@accordproject/markdown-transform` project to convert markdown templates to TemplateMark JSON and to convert AgreementMark JSON to output formats (HTML, PDF, DOCX etc.). For command-line usage please use `@accordproject/template-cli`.
 
-The format of both TemplateMark and AgreementMark is specified using the [Concerto](https://concerto.accordproject.org) data modeling language.
-
 TemplateMark is a document object model that describes a rich-text template, with embedded variables, conditional sections, formulae etc. TemplateMark uses embedded JavaScript expressions for conditionals
 and calculations.
+
+> The format of both TemplateMark and AgreementMark is specified using the [Concerto](https://concerto.accordproject.org) data modeling language.
 
 At a high-level the template engine converts a TemplateMark DOM to an AgreementMark DOM, evaluating TypeScript expressions for conditional sections and formulae, and replaces variable references with variable values from the supplied agreement data.
 
