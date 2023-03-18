@@ -35,7 +35,7 @@ The rich-text with variables of a template is associated with a [Concerto data m
 
 ### 4. Compilation
 
-Templates may be statically compiled to TypeScript programs, enforcing type-safety, ensuring that no unsafe "eval" is required at runtime, and easing integration into applications.
+Templates may be statically compiled to TypeScript programs, enforcing type-safety, ensuring that no unsafe code evaluation ("eval") is required at runtime, and easing integration into applications.
 
 > Note that templates may also be executed using an interpreter for more dynamic scenarios.
 
