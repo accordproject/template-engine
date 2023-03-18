@@ -106,9 +106,9 @@ There are many great Open Source template engines available, such as [Mustache](
 
 ### 1. Input and Output Format Agnostic
 
-Most template engines are fundamentally **text based** — i.e. they treat templates as text strings and are glorified "find and replace" machines. This approach creates a coupling between the input format of the template, say, a DOCX file, and the output of the template engine, which in the case of a DOCX template, has to be a DOCX file. 
+Most template engines are fundamentally **text based** — i.e. they treat templates as text strings and are glorified "find and replace" machines. This approach creates a coupling between the input format of the template, say, a DOCX file, and the output of the template engine, which in the case of a DOCX template, has to be a DOCX file. This makes supporting multiple input and output formats difficult.
 
-The Accord Projecte template engine breaks this coupling and moves data format conversion outside of the core template engine. Templates at the engine level are TemplateMark JSON documents and the output from the template engine is an AgreementMark JSON document. Separate libraries are used to convert source templates into TemplateMark JSON, or to render AgreementMark JSON to an output format.
+The Accord Project template engine breaks the coupling between the template input format and the engine output format, and moves data format conversion outside of the core template engine. Templates at the engine level are TemplateMark JSON documents and the output from the template engine is an AgreementMark JSON document. Separate libraries are used to convert source templates into TemplateMark JSON, or to render AgreementMark JSON to an output format.
 
 This flexibility allows a markdown template to be created that is used to create HTML, PDF or DOCX. One can even imagine using DOCX templates to create HTML or PDF files, or other scenarios.
 
