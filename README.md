@@ -100,11 +100,25 @@ Refer to the [full](https://github.com/accordproject/template-engine/tree/main/t
 
 There are many great Open Source template engines available, such as [Mustache](https://mustache.github.io), [Handlebars](https://handlebarsjs.com) or [EJS](https://ejs.co), so why create yet another?
 
-### 1. Logic FULL
+### 1. Input and Output Format Agnostic
+
+Most template engines are fundamentally **text based** — i.e. they treat templates as text strings and are glorified "find and replace" machines. This approach creates a coupling between the input format of the template, say, a DOCX file, and the output of the template engine, which in the case of a DOCX template, has to be a DOCX file. 
+
+The Accord Projecte template engine breaks this coupling and moves data format conversion outside of the core template engine. Templates at the engine level are TemplateMark JSON documents and the output from the template engine is an AgreementMark JSON document. Separate libraries are used to convert source templates into TemplateMark JSON, or to render AgreementMark JSON to an output format.
+
+This flexibility allows a markdown template to be created that is used to create HTML, PDF or DOCX. In can even imagine using DOCX templates to create HTML or PDF files, or other scenarios.
+
+### 2. TemplateMark as a Defined Format
+
+TemplateMark JSON is a well-defined file format, meaning that powerful template editors can be created to define it: including widgets and user-experience for defining conditional sections, and formulae, and offering template preview and integrated testing. Template editing is closer to programming in our opinion than word-processing.
+
+We encourage community and commercial innovation in this area!
+
+### 3. Logic FULL
 
 Unlike some templating systems which prohibit, or minmize, logic in templates, Accord Project templates fully embrace templates that may contain sophisticated logic: conditional logic to determine what text to include, or even calculations, for example to calculate the monthly payments for a mortgage based on the term of the mortgage, the amount and the interest rate.
 
-### 2. Type-safety
+### 4. Type-safety
 
 Given the ability for templates to contain logic there's an imperative to ensure that the templates are **safe** - i.e. when a template is merged with well-structured data it is guaranteed to produce well-structured output.
 
@@ -112,11 +126,11 @@ Too many templating engines fail in unpredictable ways at runtime, or silently g
 
 Accord Project templates are therefore **strongly-typed**. The logic in templates is expressed in [TypeScript](https://www.typescriptlang.org). TypeScript is a strongly-typed, general purpose programming language, supported by a vibrant Open Source and enterprise community. TypeScript compiles to JavaScript for easy execution on most platforms.
 
-### 3. Data Model
+### 5. Data Model
 
 The rich-text with variables of a template is associated with a [Concerto data model](https://concerto.accordproject.org). The Concerto data model defines the structure of the data required for the template, and is used to statically compiled the template and verify type-safety, and is also used at runtime to ensure that incoming data is well structured.
 
-### 4. Compilation
+### 6. Compilation
 
 Templates may be statically compiled to TypeScript programs, enforcing type-safety, ensuring that no unsafe code evaluation ("eval") is required at runtime, and easing integration into applications.
 
