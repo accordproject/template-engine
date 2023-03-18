@@ -12,6 +12,8 @@ TemplateMark is a document object model that describes a rich-text template, wit
 
 At a high-level the template engine converts a TemplateMark DOM to an AgreementMark DOM, evaluating TypeScript expressions for conditional sections and formulae, and replaces variable references with variable values from the supplied agreement data.
 
+![Template Interpreter](./assets/template-interpreter.png)
+
 ## Hello World Template
 
 Let's create the simplest template imaginable, the infamous "hello world"!
@@ -135,6 +137,8 @@ The rich-text with variables of a template is associated with a [Concerto data m
 ### 6. Compilation
 
 Templates may be statically compiled to TypeScript programs, enforcing type-safety, ensuring that no unsafe code evaluation ("eval") is required at runtime, and easing integration into applications.
+
+![Template Compiler](./assets/template-compilation.png)
 
 > Note that templates may also be executed using an interpreter for more dynamic scenarios.
 
