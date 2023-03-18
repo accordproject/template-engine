@@ -44,7 +44,7 @@ Hello {{message}}.
 
 Define an **instance** of the `helloworld@1.0.0.TemplateData` data model. In this case setting the value of the `message` property to the string "World".
 
-```json
+```typescript
 const data = {
     $class: 'helloworld@1.0.0.TemplateData',
     message: 'World',
