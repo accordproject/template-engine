@@ -17,6 +17,8 @@ At a high-level the template engine converts a TemplateMark DOM to an AgreementM
 
 Let's create the simplest template imaginable, the infamous "hello world"!
 
+> The code for this test is available at: https://github.com/accordproject/template-engine/blob/main/test/HelloWorld.test.ts
+
 ### Template Data Model
 
 First create a template data model in Concerto syntax. The data model defines the structure of the data to be merged with the template. In this case the template model contains a single property `message` of type `String`. The property is required (it is not `optional`).
