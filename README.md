@@ -39,6 +39,8 @@ Next define the TemplateMark for the template. In this case it is the plain-text
 Hello {{message}}.
 ```
 
+> Note that in this case the template is defined using an extended markdown syntax (rich-text with embedded variables etc.). The `@accordproject/markdown-transform` packages are used to convert the markdown to TemplateMark JSON, for use by the template engine.
+
 ### Generate AgreementMark from Data (JSON)
 
 Define an **instance** of the `helloworld@1.0.0.TemplateData` data model. In this case setting the value of the `message` property to the string "World".
