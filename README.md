@@ -4,7 +4,7 @@ This is the [Accord Project](https://accordproject.org) template engine. Rich-te
 
 The core template engine is a JSON to JSON transformation that converts TemplateMark JSON + agreement data (JSON) to AgreementMark JSON.
 
-> Note: Use the @accordproject/markdown-transform project to convert markdown templates to TemplateMark JSON and to convert AgreementMark JSON to output formats (HTML, PDF, DOCX etc.)
+> Note: Use the `@accordproject/markdown-transform` project to convert markdown templates to TemplateMark JSON and to convert AgreementMark JSON to output formats (HTML, PDF, DOCX etc.). For command-line usage please use `@accordproject/template-cli`.
 
 Both TemplateMark and AgreementMark are specified using the [Concerto](https://concerto.accordproject.org) data modeling language.
 
