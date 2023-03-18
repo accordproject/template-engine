@@ -51,6 +51,14 @@ const data = {
 };
 ```
 
+## Next Steps
+
+The Hello World example just scratches the surface of what can be accomplished! TemplateMark can define optional sections, conditional sections, TypeScript formulae/calculations and even reference external data.
+
+Refer to the [full](https://github.com/accordproject/template-engine/tree/main/test/templates/full) example for details. 
+
+> More detailed syntax documentation is to come!
+
 ### Output AgreementMark (JSON)
 
 When the TemplateMark and the data JSON is passed to the Template Engine is merges the two, in this case by simply replacing the reference to the `message` variable with its value from the data JSON and to produce an AgreementMark JSON document.
