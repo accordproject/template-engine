@@ -1,0 +1,28 @@
+{
+    "clauses": [
+        {
+            "category": "reference",
+            "author": "Dan",
+            "body": "Dad jokes",
+            "risk": 8.95
+        },
+        {
+            "category": "reference",
+            "author": "Dan",
+            "body": "Programming for fun and profit",
+            "risk": 1.95
+        },
+        {
+            "category": "onboarding",
+            "author": "Peter",
+            "body": "Legal stuff",
+            "risk": 2.95
+        },
+        {
+            "category": "offboarding",
+            "author": "Matt",
+            "body": "All goodness",
+            "risk": 4.95
+        }
+    ]
+}

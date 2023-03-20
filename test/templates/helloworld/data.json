@@ -1,0 +1,4 @@
+{
+    "$class" : "helloworld@1.0.0.TemplateData",
+    "message": "World"
+}
