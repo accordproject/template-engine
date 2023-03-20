@@ -1,6 +1,6 @@
 {
     "name": "@accordproject/template-engine",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "Generation of AgreementMark from TemplateMark + JSON Data",
     "homepage": "https://github.com/accordproject",
     "engines": {
@@ -10,7 +10,7 @@
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "files": [
-        "/dist"
+        "dist"
     ],
     "scripts": {
         "clean": "rimraf dist",
@@ -48,10 +48,10 @@
         "dayjs": "1.11.7",
         "fs-extra": "^11.1.0",
         "jsonpath": "^1.1.1",
-        "terser": "^5.16.6",
         "traverse": "^0.6.7"
     },
     "devDependencies": {
+        "terser": "^5.16.6",
         "@accordproject/markdown-html": "^0.16.6-20230317163634",
         "@accordproject/markdown-template": "^0.16.6-20230317163634",
         "@types/fs-extra": "^11.0.1",
