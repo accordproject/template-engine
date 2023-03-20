@@ -17,7 +17,6 @@ jobs:
           node-version: 16
       - run: npm ci
       - run: npm test
-      - run: npm run build
 
   publish-npm:
     needs: build
@@ -31,6 +30,7 @@ jobs:
       - name: build and publish
         run: |
           npm ci
+          npm run build
           npm config set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
           npm version --no-git-tag-version --yes --exact ${{ steps.timestamp.outputs.stamp }}
           npm publish --access public ${{ steps.tag.outputs.tag }} 2>&1
