@@ -13,3 +13,4 @@
  */
 
 export { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
+export { TemplateMarkToTypeScriptCompiler } from './TemplateMarkToTypeScriptCompiler';

@@ -1,6 +1,6 @@
 {
     "name": "@accordproject/template-engine",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "description": "Generation of AgreementMark from TemplateMark + JSON Data",
     "homepage": "https://github.com/accordproject",
     "engines": {
@@ -8,7 +8,10 @@
         "npm": ">=6"
     },
     "main": "dist/index.js",
-    "typings": "dist/index.d.ts",
+    "types": "dist/index.d.ts",
+    "files": [
+        "/dist"
+    ],
     "scripts": {
         "clean": "rimraf dist",
         "prebuild": "npm-run-all clean",
