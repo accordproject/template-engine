@@ -22,7 +22,6 @@ import { FileWriter } from '@accordproject/concerto-util';
 import { getCompiler } from './compilers/NodeCompilers';
 import { RUNTIME_DIR, writeEpilog, writeImports, writeProlog } from './compilers/Common';
 import { getTemplateClassDeclaration } from './Common';
-import dayjs from 'dayjs';
 
 export type ProcessingFunction = (fw:FileWriter, level:number, resource:any) => void;
 

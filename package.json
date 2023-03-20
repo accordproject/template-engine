@@ -1,6 +1,6 @@
 {
     "name": "@accordproject/template-engine",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "description": "Generation of AgreementMark from TemplateMark + JSON Data",
     "homepage": "https://github.com/accordproject",
     "engines": {
@@ -27,6 +27,7 @@
         "compile-js": "jest ./test/TypeScriptCompiler.test.ts",
         "run-template": "jest ./test/Runner.test.ts",
         "test:watch": "jest --watchAll",
+        "updateRuntimeDependencies" : "node ./scripts/updateRuntimeDependencies",
         "updateCompiledTemplates" : "rm -rf ./test/compiled-templates/ && mkdir ./test/compiled-templates/ && cp -r ./output/full ./test/compiled-templates/ "
     },
     "repository": {
