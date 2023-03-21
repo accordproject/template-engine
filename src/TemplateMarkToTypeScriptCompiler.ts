@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 import traverse from 'traverse';
-import { copySync, createReadStream, ensureDirSync } from 'fs-extra';
+import { writeFileSync, ensureDirSync } from 'fs-extra';
 import * as tar from 'tar';
 import { Readable } from 'stream';
 
@@ -155,6 +155,20 @@ export class TemplateMarkToTypeScriptCompiler {
     compileGenerator(templateMark: any, outputDir: string): void {
         const fw = new FileWriter(outputDir);
 
+        fw.openFile('index.ts');
+        fw.writeLine(0, '// generated code');
+        fw.writeLine(0, 'import { readFileSync } from \'fs\';');
+        fw.writeLine(0, 'import dayjs from \'dayjs\';');
+        fw.writeLine(0, 'import { generator } from \'./generator\';');
+        fw.writeLine(0, 'if(process.argv.length === 3) {');
+        fw.writeLine(1, 'const result = generator( JSON.parse(readFileSync(process.argv[2], \'utf-8\')), {}, dayjs());');
+        fw.writeLine(1, 'console.log(JSON.stringify(result, null, 2));');
+        fw.writeLine(0, '}');
+        fw.writeLine(0, 'else {');
+        fw.writeLine(1, 'console.log(\'First argument is path to JSON data file\');');
+        fw.writeLine(0, '}');
+        fw.closeFile();
+
         fw.openFile('generator.ts');
         fw.writeLine(0, '// generated code, do not modify');
         fw.writeLine(0, '');
@@ -177,7 +191,7 @@ export class TemplateMarkToTypeScriptCompiler {
      * @param {string} outputDir the output directory to copy the runtime to
      */
     copyRuntime(outputDir: string) {
-        ensureDirSync( `${outputDir}/${RUNTIME_DIR}`);
+        ensureDirSync(`${outputDir}/${RUNTIME_DIR}`);
         const runtimeBuffer = Buffer.from(RUNTIME_TGZ_BASE64, 'base64');
         const s = new Readable();
         s.push(runtimeBuffer);
@@ -188,6 +202,40 @@ export class TemplateMarkToTypeScriptCompiler {
                 C: `${outputDir}/${RUNTIME_DIR}`
             })
         );
+    }
+
+    /**
+     * Create package.json for the generated code
+     * @param {string} outputDir the output directory to copy the runtime to
+     */
+    createPackage(outputDir: string) {
+        const packageJson = {
+            'name': 'generated',
+            'version': '1.0.0',
+            'description': 'TypeScript code generated from TemplateMark',
+            'engines': {
+                'node': '>=14',
+                'npm': '>=6'
+            },
+            'keywords': [
+                'accord project',
+                'template',
+                'templatemark'
+            ],
+            'dependencies': {
+                'dayjs': '1.11.7',
+                'jsonpath': '^1.1.1',
+            },
+            'devDependencies': {
+                'ts-node': '^10.9.1',
+                'typescript': '^5.0.2'
+            },
+            'scripts' : {
+                'start' : 'ts-node index.ts'
+            }
+        };
+
+        writeFileSync(`${outputDir}/package.json`,JSON.stringify(packageJson, null, 2));
     }
 
     compile(templateMark: Resource | any, outputDir: string, options?: CompilationOptions) {
@@ -202,13 +250,14 @@ export class TemplateMarkToTypeScriptCompiler {
         // compile the user code
         this.compileUserCode(namedTemplateMark, outputDir);
 
-        // compile the generator
+        // copy the runtime
         if (!options?.skipCopyRuntime) {
             this.copyRuntime(outputDir);
         }
 
         // compile the generator
         if (!options?.skipGenerator) {
+            this.createPackage(outputDir);
             this.compileGenerator(namedTemplateMark, outputDir);
         }
     }
