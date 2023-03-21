@@ -57,7 +57,7 @@ const data = {
 
 When the TemplateMark and the data JSON is passed to the Template Engine it merges the two, in this case by simply replacing the reference to the `message` variable with its value from the data JSON and to produce an AgreementMark JSON document.
 
-This AgreementMark JSON document can then be passed to the `@accordproject/markdown-transform` modules for conversion to markdown, PDF, HTML or DOCX.
+This AgreementMark JSON document can then be passed to the `@accordproject/markdown-transform` modules for conversion to markdown, PDF, HTML.
 
 ```json
 {
