@@ -228,7 +228,8 @@ export class TemplateMarkToTypeScriptCompiler {
             },
             'devDependencies': {
                 'ts-node': '^10.9.1',
-                'typescript': '^5.0.2'
+                'typescript': '^5.0.2',
+                '@types/jsonpath': '^0.2.0'
             },
             'scripts' : {
                 'start' : 'ts-node index.ts'
