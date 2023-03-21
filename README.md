@@ -99,6 +99,7 @@ The Hello World example just scratches the surface of what can be accomplished! 
 Refer to the [full](https://github.com/accordproject/template-engine/tree/main/test/templates/full) example for details. 
 
 > More detailed syntax documentation is to come!
+Read the existing documentation at: https://docs.accordproject.org/docs/markup-templatemark.html
 
 ## Why create a new template engine?
 
