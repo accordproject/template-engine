@@ -16,7 +16,7 @@ import { createDefaultMapFromNodeModules } from '@typescript/vfs';
 import { twoslasher, TwoSlashOptions, TwoSlashReturn } from '@typescript/twoslash';
 import { ModelManager } from '@accordproject/concerto-core';
 import { TypeScriptCompilationContext } from './TypeScriptCompilationContext';
-import {dayjs,jsonpath} from './runtime-dependencies/declarations';
+import { DAYJS_BASE64, JSONPATH_BASE64 } from './runtime/declarations';
 
 /**
  * Compiles user Typescript code to JavaScript, This uses the '@typescript/twoslash'
@@ -37,8 +37,8 @@ export class TypeScriptToJavaScriptCompiler {
             target: ts.ScriptTarget.ES2020,
         });
 
-        fsMap.set('/node_modules/@types/dayjs/index.d.ts', dayjs);
-        fsMap.set('/node_modules/@types/jsonpath/index.d.ts', jsonpath);
+        fsMap.set('/node_modules/@types/dayjs/index.d.ts', Buffer.from(DAYJS_BASE64, 'base64').toString());
+        fsMap.set('/node_modules/@types/jsonpath/index.d.ts', Buffer.from(JSONPATH_BASE64, 'base64').toString());
 
         const twoSlashCode =`
 ${this.context}

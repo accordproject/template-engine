@@ -12,7 +12,9 @@
  * limitations under the License.
  */
 import traverse from 'traverse';
-import { copySync } from 'fs-extra';
+import { copySync, createReadStream, ensureDirSync } from 'fs-extra';
+import * as tar from 'tar';
+import { Readable } from 'stream';
 
 import { TemplateMarkModel, CiceroMarkModel, CommonMarkModel, ConcertoMetaModel } from '@accordproject/markdown-common';
 
@@ -22,8 +24,9 @@ import { FileWriter } from '@accordproject/concerto-util';
 import { getCompiler } from './compilers/NodeCompilers';
 import { RUNTIME_DIR, writeEpilog, writeImports, writeProlog } from './compilers/Common';
 import { getTemplateClassDeclaration } from './Common';
+import { RUNTIME_TGZ_BASE64 } from './runtime/runtime';
 
-export type ProcessingFunction = (fw:FileWriter, level:number, resource:any) => void;
+export type ProcessingFunction = (fw: FileWriter, level: number, resource: any) => void;
 
 export type CompilationOptions = {
     skipGenerator?: boolean;
@@ -43,7 +46,7 @@ export class TemplateMarkToTypeScriptCompiler {
         this.templateClass = getTemplateClassDeclaration(this.modelManager);
     }
 
-    writeFunctionToString(functionName: string, returnType:string, code: string) : string {
+    writeFunctionToString(functionName: string, returnType: string, code: string): string {
         let result = '';
         result += '/// ---cut---\n';
         result += `export function ${functionName}(data:TemplateModel.I${this.templateClass.getName()}, library:any, now:dayjs.Dayjs) : ${returnType} {\n`;
@@ -57,7 +60,7 @@ export class TemplateMarkToTypeScriptCompiler {
         return result;
     }
 
-    writeFunction(fw: FileWriter, functionName: string, returnType:string, code: string) {
+    writeFunction(fw: FileWriter, functionName: string, returnType: string, code: string) {
         fw.writeLine(0, this.writeFunctionToString(functionName, returnType, code));
     }
 
@@ -106,21 +109,21 @@ export class TemplateMarkToTypeScriptCompiler {
      * @param {number} level the indentation level
      * @param {object} templateMark the templatemark node to iterate over
      */
-    static doIt(fw:FileWriter, level:number, templateMark: any) {
+    static doIt(fw: FileWriter, level: number, templateMark: any) {
         fw.writeLine(level, `// start processing ${ModelUtil.getShortName(templateMark.$class)}`);
         traverse(templateMark).forEach(function (context: any) {
             if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
                 const nodeClass = context.$class as string;
 
                 const compiler = getCompiler(nodeClass);
-                const sourceLevel = level+1;
+                const sourceLevel = level + 1;
 
-                this.before( () => {
+                this.before(() => {
                     compiler.enter(fw, sourceLevel, context);
                     compiler.generate(fw, sourceLevel, context, TemplateMarkToTypeScriptCompiler.doIt);
                 });
 
-                this.after( () => {
+                this.after(() => {
                     compiler.exit(fw, sourceLevel, context);
                 });
             }
@@ -149,7 +152,7 @@ export class TemplateMarkToTypeScriptCompiler {
      * @param {IDocument} templateMark the TemplateMark Concerto resource
      * @param {string} outputDir the output directory for code
      */
-    compileGenerator(templateMark: Resource, outputDir: string) : void {
+    compileGenerator(templateMark: any, outputDir: string): void {
         const fw = new FileWriter(outputDir);
 
         fw.openFile('generator.ts');
@@ -165,34 +168,47 @@ export class TemplateMarkToTypeScriptCompiler {
 
         TemplateMarkToTypeScriptCompiler.doIt(fw, 1, templateMark);
 
-        writeEpilog(fw,0);
+        writeEpilog(fw, 0);
         fw.closeFile();
     }
 
+    /**
+     * Decompresses the base64 zipped runtime into an output folder.
+     * @param {string} outputDir the output directory to copy the runtime to
+     */
     copyRuntime(outputDir: string) {
-        copySync('./src/drafting', `${outputDir}/${RUNTIME_DIR}/drafting`);
-        copySync('./src/TypeScriptRuntime.ts', `${outputDir}/${RUNTIME_DIR}/TypeScriptRuntime.ts`);
+        ensureDirSync( `${outputDir}/${RUNTIME_DIR}`);
+        const runtimeBuffer = Buffer.from(RUNTIME_TGZ_BASE64, 'base64');
+        const s = new Readable();
+        s.push(runtimeBuffer);
+        s.push(null);
+        s.pipe(
+            tar.x({
+                strip: 2,
+                C: `${outputDir}/${RUNTIME_DIR}`
+            })
+        );
     }
 
-    compile(templateMark: Resource, outputDir: string, options?:CompilationOptions) {
+    compile(templateMark: Resource | any, outputDir: string, options?: CompilationOptions) {
         // generate the model
         this.generateTypeScript(this.modelManager, `${outputDir}`);
         this.generateTypeScript(this.getTemplateMarkModelManager(), `${outputDir}`);
         this.generateTypeScript(this.getCiceroMarkModelManager(), `${outputDir}`);
 
         // generate names for all the nodes containing user code
-        const namedTemplateMark = TemplateMarkToTypeScriptCompiler.nameUserCode(templateMark.toJSON());
+        const namedTemplateMark = TemplateMarkToTypeScriptCompiler.nameUserCode(templateMark.toJSON ? templateMark.toJSON() : templateMark);
 
         // compile the user code
         this.compileUserCode(namedTemplateMark, outputDir);
 
         // compile the generator
-        if(!options?.skipCopyRuntime) {
+        if (!options?.skipCopyRuntime) {
             this.copyRuntime(outputDir);
         }
 
         // compile the generator
-        if(!options?.skipGenerator) {
+        if (!options?.skipGenerator) {
             this.compileGenerator(namedTemplateMark, outputDir);
         }
     }
@@ -207,7 +223,7 @@ export class TemplateMarkToTypeScriptCompiler {
         });
     }
 
-    compileUserCode(templateMark: Resource, outputDir: string) {
+    compileUserCode(templateMark: any, outputDir: string) {
         const fw = new FileWriter(outputDir);
 
         fw.openFile('usercode.ts');

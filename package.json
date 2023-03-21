@@ -1,6 +1,6 @@
 {
     "name": "@accordproject/template-engine",
-    "version": "1.0.8",
+    "version": "1.0.9",
     "description": "Generation of AgreementMark from TemplateMark + JSON Data",
     "homepage": "https://github.com/accordproject",
     "engines": {
@@ -14,7 +14,7 @@
     ],
     "scripts": {
         "clean": "rimraf dist",
-        "prebuild": "npm-run-all clean",
+        "prebuild": "npm-run-all clean && npm run updateRuntimeDependencies",
         "build": "tsc -p tsconfig.build.json",
         "tsc-template": "tsc --strict --esModuleInterop ./output/full/usercode.ts",
         "minify": "terser ./output/full/usercode.js --compress ecma=2020 --output ./output/full/usercode-min.js",
@@ -22,13 +22,13 @@
         "lint": "eslint .",
         "licchk": "license-check-and-add",
         "test": "jest",
-        "coverage" : "jest --coverage",
+        "coverage": "jest --coverage",
         "compile-template": "jest ./test/Compiler.test.ts",
         "compile-js": "jest ./test/TypeScriptCompiler.test.ts",
         "run-template": "jest ./test/Runner.test.ts",
         "test:watch": "jest --watchAll",
-        "updateRuntimeDependencies" : "node ./scripts/updateRuntimeDependencies",
-        "updateCompiledTemplates" : "rm -rf ./test/compiled-templates/ && mkdir ./test/compiled-templates/ && cp -r ./output/full ./test/compiled-templates/ "
+        "updateRuntimeDependencies": "node ./scripts/updateRuntimeDependencies",
+        "updateCompiledTemplates": "rm -rf ./test/compiled-templates/ && mkdir ./test/compiled-templates/ && cp -r ./output/full ./test/compiled-templates/ "
     },
     "repository": {
         "type": "git",
@@ -46,20 +46,21 @@
         "@accordproject/concerto-tools": "^3.6.0",
         "@accordproject/concerto-util": "^3.6.0",
         "@accordproject/markdown-common": "0.16.6-20230317163634",
+        "@typescript/twoslash": "^3.2.1",
         "dayjs": "1.11.7",
         "fs-extra": "^11.1.0",
         "jsonpath": "^1.1.1",
-        "traverse": "^0.6.7",
-        "@typescript/twoslash": "^3.2.1"
+        "tar": "^6.1.13",
+        "traverse": "^0.6.7"
     },
     "devDependencies": {
-        "terser": "^5.16.6",
         "@accordproject/markdown-html": "^0.16.6-20230317163634",
         "@accordproject/markdown-template": "^0.16.6-20230317163634",
         "@types/fs-extra": "^11.0.1",
         "@types/jest": "^28.1.1",
         "@types/jsonpath": "^0.2.0",
         "@types/semver": "7.3.10",
+        "@types/tar": "^6.1.4",
         "@types/traverse": "^0.6.32",
         "@typescript-eslint/eslint-plugin": "5.27.1",
         "@typescript-eslint/parser": "5.27.1",
@@ -69,6 +70,7 @@
         "node-fetch": "^3.3.1",
         "npm-run-all": "4.1.5",
         "rimraf": "3.0.2",
+        "terser": "^5.16.6",
         "ts-jest": "^28.0.4",
         "typescript": "^4.6.3"
     },
