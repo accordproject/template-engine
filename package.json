@@ -1,6 +1,6 @@
 {
     "name": "@accordproject/template-engine",
-    "version": "1.0.11",
+    "version": "1.0.12",
     "description": "Generation of AgreementMark from TemplateMark + JSON Data",
     "homepage": "https://github.com/accordproject",
     "engines": {
@@ -51,7 +51,8 @@
         "fs-extra": "^11.1.0",
         "jsonpath": "^1.1.1",
         "tar": "^6.1.13",
-        "traverse": "^0.6.7"
+        "traverse": "^0.6.7",
+        "typescript": "^4.6.3"
     },
     "devDependencies": {
         "@accordproject/markdown-html": "^0.16.6-20230317163634",
@@ -71,8 +72,7 @@
         "npm-run-all": "4.1.5",
         "rimraf": "3.0.2",
         "terser": "^5.16.6",
-        "ts-jest": "^28.0.4",
-        "typescript": "^4.6.3"
+        "ts-jest": "^28.0.4"
     },
     "license-check-and-add-config": {
         "folder": "./src",
