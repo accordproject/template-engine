@@ -98,10 +98,14 @@ describe('templatemark interpreter', () => {
             const modelManager = new ModelManager({ strict: true });
             modelManager.addCTOModel(model);
             const engine = new TemplateMarkInterpreter(modelManager, CLAUSE_LIBRARY);
-            const templateMarkTransformer = new TemplateMarkTransformer();
-            const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate({ content: templateMarkup }, modelManager, 'contract', { verbose: false });
-            const now = dayjs('2023-03-17T00:00:00.000Z');
-            await expect(engine.generate(templateMarkDom, data, now)).rejects.toMatchSnapshot();
+
+            const f = async () => {
+                const templateMarkTransformer = new TemplateMarkTransformer();
+                const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate({ content: templateMarkup }, modelManager, 'contract', { verbose: false });
+                const now = dayjs('2023-03-17T00:00:00.000Z');
+                return engine.generate(templateMarkDom, data, now);
+            };
+            await expect(f()).rejects.toMatchSnapshot();
         });
     });
 });

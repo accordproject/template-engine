@@ -40,6 +40,6 @@ describe('hello world template', () => {
         const ciceroMark = await engine.generate(templateMarkDom, data, now);
         expect(ciceroMark.getFullyQualifiedType()).toBe(`${CommonMarkModel.NAMESPACE}.Document`);
         expect(ciceroMark.toJSON()).toMatchSnapshot();
-        console.log(JSON.stringify(ciceroMark.toJSON(), null, 2));
+        // console.log(JSON.stringify(ciceroMark.toJSON(), null, 2));
     });
 });

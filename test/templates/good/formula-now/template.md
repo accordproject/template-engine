@@ -1,0 +1,1 @@
+Hello {{message}}! Today is **{{% return now.format() %}}**.

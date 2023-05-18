@@ -1,6 +1,88 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`templatemark interpreter should fail to generate helloformula 1`] = `
+exports[`templatemark interpreter should fail to generate formula-invalid 1`] = `
+Array [
+  Object {
+    "code": " THIS IS GARBAGE ",
+    "errors": Array [
+      Object {
+        "category": 1,
+        "character": 3,
+        "code": 2304,
+        "id": "err-2304-321-4",
+        "length": 4,
+        "line": 6,
+        "renderedMessage": "Cannot find name 'THIS'.",
+        "start": 1304,
+      },
+      Object {
+        "category": 1,
+        "character": 8,
+        "code": 2304,
+        "id": "err-2304-326-2",
+        "length": 2,
+        "line": 6,
+        "renderedMessage": "Cannot find name 'IS'.",
+        "start": 1309,
+      },
+      Object {
+        "category": 1,
+        "character": 11,
+        "code": 2304,
+        "id": "err-2304-329-7",
+        "length": 7,
+        "line": 6,
+        "renderedMessage": "Cannot find name 'GARBAGE'.",
+        "start": 1312,
+      },
+      Object {
+        "category": 1,
+        "character": 3,
+        "code": 1435,
+        "id": "err-1435-321-4",
+        "length": 4,
+        "line": 6,
+        "renderedMessage": "Unknown keyword or identifier. Did you mean 'this'?",
+        "start": 1304,
+      },
+      Object {
+        "category": 1,
+        "character": 8,
+        "code": 1434,
+        "id": "err-1434-326-2",
+        "length": 2,
+        "line": 6,
+        "renderedMessage": "Unexpected keyword or identifier.",
+        "start": 1309,
+      },
+    ],
+    "nodeId": "formula_adef0feb9fc1b6e7513409c93d86aa4d9999d35608e1aaeecc07dca99bc591c8",
+  },
+]
+`;
+
+exports[`templatemark interpreter should fail to generate formula-no-method 1`] = `
+Array [
+  Object {
+    "code": " return message.missing() ",
+    "errors": Array [
+      Object {
+        "category": 1,
+        "character": 18,
+        "code": 2339,
+        "id": "err-2339-336-7",
+        "length": 7,
+        "line": 6,
+        "renderedMessage": "Property 'missing' does not exist on type 'string'.",
+        "start": 1319,
+      },
+    ],
+    "nodeId": "formula_4ef52e3adc6e5334e0925838eed0e51a372091d9b3a4499537ccf82fce5b1b25",
+  },
+]
+`;
+
+exports[`templatemark interpreter should fail to generate formula-optional-noguard 1`] = `
 Array [
   Object {
     "code": " return message.length ",
@@ -8,11 +90,11 @@ Array [
       Object {
         "category": 1,
         "character": 10,
-        "code": 2532,
-        "id": "err-2532-328-7",
+        "code": 18048,
+        "id": "err-18048-328-7",
         "length": 7,
         "line": 6,
-        "renderedMessage": "Object is possibly 'undefined'.",
+        "renderedMessage": "'message' is possibly 'undefined'.",
         "start": 1312,
       },
     ],
@@ -20,6 +102,8 @@ Array [
   },
 ]
 `;
+
+exports[`templatemark interpreter should fail to generate template-missing-field 1`] = `[TemplateException: Unknown property: missing File text/grammar.tem.md line -1 column -1]`;
 
 exports[`templatemark interpreter should generate clause 1`] = `
 Object {
@@ -57,6 +141,54 @@ Object {
                   "value": "1 Main Street",
                 },
               ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate formula-now 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Hello ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "message",
+              "value": "World",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "! Today is ",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Strong",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": Array [],
+                  "name": "formula_fe7f767df236089b3868206fca7b9066534bc1d6a0f8768ea593177e3399a985",
+                  "value": "2023-03-17T00:00:00+00:00",
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": ".",
             },
           ],
         },

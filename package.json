@@ -45,7 +45,7 @@
         "@accordproject/concerto-core": "^3.7.0",
         "@accordproject/concerto-tools": "^3.7.0",
         "@accordproject/concerto-util": "^3.7.0",
-        "@accordproject/markdown-common": "0.16.6-20230516075233",
+        "@accordproject/markdown-common": "0.16.6-20230518154320",
         "@typescript/twoslash": "^3.2.1",
         "dayjs": "1.11.7",
         "fs-extra": "^11.1.0",
@@ -55,8 +55,8 @@
         "typescript": "^4.6.3"
     },
     "devDependencies": {
-        "@accordproject/markdown-html": "^0.16.6-20230516075233",
-        "@accordproject/markdown-template": "^0.16.6-20230516075233",
+        "@accordproject/markdown-html": "^0.16.6-20230518154320",
+        "@accordproject/markdown-template": "^0.16.6-20230518154320",
         "@types/fs-extra": "^11.0.1",
         "@types/jest": "^28.1.1",
         "@types/jsonpath": "^0.2.0",
