@@ -18,7 +18,7 @@ import { Readable } from 'stream';
 
 import { TemplateMarkModel, CiceroMarkModel, CommonMarkModel, ConcertoMetaModel } from '@accordproject/markdown-common';
 
-import { ClassDeclaration, ModelManager, ModelUtil, Property, Resource } from '@accordproject/concerto-core';
+import { ClassDeclaration, Factory, ModelManager, ModelUtil, Property, Resource } from '@accordproject/concerto-core';
 import { CodeGen } from '@accordproject/concerto-tools';
 import { FileWriter } from '@accordproject/concerto-util';
 import { getCompiler } from './compilers/NodeCompilers';
@@ -97,6 +97,14 @@ export class TemplateMarkToTypeScriptCompiler {
             fileWriter: new FileWriter(outputDir)
         };
         modelManager.accept(tsVisitor, parameters);
+    }
+
+    generateSampleData(modelManager: ModelManager, outputDir: string) {
+        const factory = new Factory(modelManager);
+        const instance = factory.newResource(this.templateClass.getNamespace(),
+            this.templateClass.getName(), this.templateClass.isIdentified() ? 'sample' : undefined,
+            {generate: 'sample', includeOptionalFields: true});
+        writeFileSync(`${outputDir}/sample.json`,JSON.stringify(instance, null, 2));
     }
 
     /**
@@ -227,12 +235,13 @@ export class TemplateMarkToTypeScriptCompiler {
                 'jsonpath': '^1.1.1',
             },
             'devDependencies': {
+                '@types/node': '^20.2.0',
                 'ts-node': '^10.9.1',
                 'typescript': '^5.0.2',
                 '@types/jsonpath': '^0.2.0'
             },
             'scripts' : {
-                'start' : 'ts-node index.ts'
+                'start' : 'ts-node index.ts sample.json'
             }
         };
 
@@ -240,6 +249,8 @@ export class TemplateMarkToTypeScriptCompiler {
     }
 
     compile(templateMark: Resource | any, outputDir: string, options?: CompilationOptions) {
+        // generate sample data
+        this.generateSampleData(this.modelManager, `${outputDir}`);
         // generate the model
         this.generateTypeScript(this.modelManager, `${outputDir}`);
         this.generateTypeScript(this.getTemplateMarkModelManager(), `${outputDir}`);
