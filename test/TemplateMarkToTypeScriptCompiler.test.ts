@@ -7,13 +7,14 @@ import * as path from 'path';
 import { TemplateMarkToTypeScriptCompiler } from '../src/TemplateMarkToTypeScriptCompiler';
 
 const templateMarkTransformer = new TemplateMarkTransformer();
+const GOOD_TEMPLATES_ROOT = './test/templates/good';
 
 describe('templatemark to typescript compiler', () => {
 
-    const templates:Array<{name:string,content:string}> = readdirSync('./test/templates').map(dir => {
+    const templates:Array<{name:string,content:string}> = readdirSync(GOOD_TEMPLATES_ROOT).map(dir => {
         return {
             name: dir,
-            content: readFileSync(path.join('./test/templates', dir, 'template.md'), 'utf-8')
+            content: readFileSync(path.join(GOOD_TEMPLATES_ROOT, dir, 'template.md'), 'utf-8')
         };
     });
 
@@ -21,7 +22,7 @@ describe('templatemark to typescript compiler', () => {
         test(`should compile ${template.name}`, async () => {
             const templatenName = path.parse(template.name).name;
 
-            const model = readFileSync(`./test/templates/${templatenName}/model.cto`, 'utf-8');
+            const model = readFileSync(`${GOOD_TEMPLATES_ROOT}/${templatenName}/model.cto`, 'utf-8');
             const modelManager = new ModelManager({ strict: true });
             modelManager.addCTOModel(model);
             const compiler = new TemplateMarkToTypeScriptCompiler(modelManager);

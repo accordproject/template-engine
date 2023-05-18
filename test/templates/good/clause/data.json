@@ -1,0 +1,9 @@
+{
+    "$class" : "test@1.0.0.TemplateData",
+    "address": {
+        "$class": "test@1.0.0.Address",
+        "street": "1 Main Street",
+        "city": "Boston",
+        "zip": "12345"
+    }
+}

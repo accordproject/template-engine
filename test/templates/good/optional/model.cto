@@ -1,0 +1,10 @@
+namespace test@1.0.0
+
+concept LoyaltyStatus {
+    o String level
+}
+
+@template
+concept TemplateData {
+    o LoyaltyStatus loyaltyStatus optional
+}

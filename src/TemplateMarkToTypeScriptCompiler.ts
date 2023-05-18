@@ -249,12 +249,16 @@ export class TemplateMarkToTypeScriptCompiler {
     }
 
     compile(templateMark: Resource | any, outputDir: string, options?: CompilationOptions) {
+        // create output dir
+        ensureDirSync(outputDir);
+
         // generate sample data
-        this.generateSampleData(this.modelManager, `${outputDir}`);
-        // generate the model
-        this.generateTypeScript(this.modelManager, `${outputDir}`);
-        this.generateTypeScript(this.getTemplateMarkModelManager(), `${outputDir}`);
-        this.generateTypeScript(this.getCiceroMarkModelManager(), `${outputDir}`);
+        this.generateSampleData(this.modelManager, outputDir);
+
+        // generate the models
+        this.generateTypeScript(this.modelManager, outputDir);
+        this.generateTypeScript(this.getTemplateMarkModelManager(), outputDir);
+        this.generateTypeScript(this.getCiceroMarkModelManager(), outputDir);
 
         // generate names for all the nodes containing user code
         const namedTemplateMark = TemplateMarkToTypeScriptCompiler.nameUserCode(templateMark.toJSON ? templateMark.toJSON() : templateMark);

@@ -1,6 +1,73 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`templatemark interpreter should create agreementmark from a template and data 1`] = `
+exports[`templatemark interpreter should fail to generate helloformula 1`] = `
+Array [
+  Object {
+    "code": " return message.length ",
+    "errors": Array [
+      Object {
+        "category": 1,
+        "character": 10,
+        "code": 2532,
+        "id": "err-2532-328-7",
+        "length": 7,
+        "line": 6,
+        "renderedMessage": "Object is possibly 'undefined'.",
+        "start": 1312,
+      },
+    ],
+    "nodeId": "formula_a3e0e90a2ad3601e1b208a0581e1ce6dfc5aab302d20cb2a0488d78e236096f7",
+  },
+]
+`;
+
+exports[`templatemark interpreter should generate clause 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Address",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.ciceromark@0.6.0.Clause",
+          "elementType": "test@1.0.0.Address",
+          "name": "address",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Street: ",
+                },
+                Object {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "String",
+                  "name": "street",
+                  "value": "1 Main Street",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate full 1`] = `
 Object {
   "$class": "org.accordproject.commonmark@0.5.0.Document",
   "nodes": Array [
@@ -711,6 +778,312 @@ Object {
             Object {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "Done.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate headings 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "1",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Heading One",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Heading Two",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "3",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Heading Three",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "4",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Heading Four",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "5",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Heading Five",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "6",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Heading Six",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate helloformula 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Hello ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "message",
+              "value": "World",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "! Your name is ",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Strong",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": Array [],
+                  "name": "formula_a3e0e90a2ad3601e1b208a0581e1ce6dfc5aab302d20cb2a0488d78e236096f7",
+                  "value": "5",
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": " characters long.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate helloworld 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Hello ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "message",
+              "value": "World",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": ".",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate list 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Middle Names",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "delimiter": "period",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "this",
+                      "value": "Tenzin",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "this",
+                      "value": "Isaac",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "this",
+                      "value": "Mia",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "start": "1",
+          "tight": "true",
+          "type": "ordered",
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate optional 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+              "elementType": "test@1.0.0.LoyaltyStatus",
+              "hasSome": false,
+              "name": "loyaltyStatus",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "You do not have a loyalty status.",
+                },
+              ],
+              "whenNone": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "You do not have a loyalty status.",
+                },
+              ],
+              "whenSome": Array [],
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Done.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate paragraph 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "This is some text.",
             },
           ],
         },
