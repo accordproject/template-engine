@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 import { ClassDeclaration, ModelManager } from '@accordproject/concerto-core';
-import { CodeGen } from '@accordproject/concerto-tools';
+import { CodeGen } from '@accordproject/concerto-codegen';
 import { InMemoryWriter } from '@accordproject/concerto-util';
 import { getTemplateClassDeclaration } from './Common';
 
@@ -28,9 +28,9 @@ export class TypeScriptCompilationContext {
     modelManager:ModelManager;
     templateClass:ClassDeclaration;
 
-    constructor(modelManager:ModelManager) {
+    constructor(modelManager:ModelManager,templateConceptFqn?: string) {
         this.modelManager = modelManager;
-        this.templateClass = getTemplateClassDeclaration(this.modelManager);
+        this.templateClass = getTemplateClassDeclaration(this.modelManager, templateConceptFqn);
     }
 
     getTypeScriptFiles() : Record<string,string> {

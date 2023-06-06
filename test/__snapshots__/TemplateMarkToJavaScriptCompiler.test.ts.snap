@@ -59,6 +59,7 @@ Object {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
+    const gender = data.gender;
     const active = data.active;
     const lastVisit = data.lastVisit;
     const address = data.address;
@@ -302,6 +303,7 @@ Object {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
+    const gender = data.gender;
     const active = data.active;
     const lastVisit = data.lastVisit;
     const address = data.address;
@@ -354,6 +356,7 @@ Object {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
+    const gender = data.gender;
     const active = data.active;
     const lastVisit = data.lastVisit;
     const address = data.address;
@@ -477,6 +480,7 @@ Object {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
+    const gender = data.gender;
     const active = data.active;
     const lastVisit = data.lastVisit;
     const address = data.address;
@@ -517,6 +521,7 @@ Object {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
+    const gender = data.gender;
     const active = data.active;
     const lastVisit = data.lastVisit;
     const address = data.address;
@@ -587,6 +592,7 @@ Object {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
+    const gender = data.gender;
     const active = data.active;
     const lastVisit = data.lastVisit;
     const address = data.address;
@@ -652,6 +658,7 @@ Object {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
+    const gender = data.gender;
     const active = data.active;
     const lastVisit = data.lastVisit;
     const address = data.address;
@@ -699,6 +706,7 @@ Object {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
+    const gender = data.gender;
     const active = data.active;
     const lastVisit = data.lastVisit;
     const address = data.address;
@@ -741,6 +749,7 @@ Object {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
+    const gender = data.gender;
     const active = data.active;
     const lastVisit = data.lastVisit;
     const address = data.address;
@@ -788,6 +797,7 @@ Object {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
+    const gender = data.gender;
     const active = data.active;
     const lastVisit = data.lastVisit;
     const address = data.address;

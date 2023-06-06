@@ -1,0 +1,12 @@
+namespace helloworld@1.0.0
+
+enum Gender {
+    o MALE
+    o FEMALE
+    o NOT_DISCLOSED
+}
+
+concept TemplateData {
+    o String message
+    o Gender gender
+}

@@ -3,7 +3,7 @@ import { readFileSync } from 'fs-extra';
 import { TypeScriptToJavaScriptCompiler } from '../src/TypeScriptToJavaScriptCompiler';
 
 describe('typescript compiler', () => {
-    test('should compile typescript to javascript', async () => {
+    test.only('should compile typescript to javascript', async () => {
 
         const code = `
 export function condition_nodes_0_nodes_13_nodes_4_nodes_0(data:TemplateModel.ITemplateData, library:any) : boolean {

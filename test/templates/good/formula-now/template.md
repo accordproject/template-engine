@@ -1,1 +1,1 @@
-Hello {{message}}! Today is **{{% return now.format() %}}**.
+Hello {{message}}! Today is **{{% return now.toISOString() %}}**.

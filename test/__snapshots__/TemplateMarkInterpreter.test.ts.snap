@@ -181,8 +181,8 @@ Object {
                 Object {
                   "$class": "org.accordproject.ciceromark@0.6.0.Formula",
                   "dependencies": Array [],
-                  "name": "formula_fe7f767df236089b3868206fca7b9066534bc1d6a0f8768ea593177e3399a985",
-                  "value": "2023-03-17T00:00:00+00:00",
+                  "name": "formula_f0bf5a79ebf5383c600fde8b5741509daa86e1c85d4f4572d5564ec65a1b8e3a",
+                  "value": "2023-03-17T00:00:00.000Z",
                 },
               ],
             },

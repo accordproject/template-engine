@@ -41,15 +41,15 @@ export class TemplateMarkToJavaScriptCompiler {
     compiler: TypeScriptToJavaScriptCompiler;
     templateClass: ClassDeclaration;
 
-    constructor(modelManager: ModelManager) {
+    constructor(modelManager: ModelManager, templateConceptFqn?: string) {
         this.modelManager = modelManager;
-        this.compiler = new TypeScriptToJavaScriptCompiler(modelManager);
-        this.templateClass = getTemplateClassDeclaration(modelManager);
+        this.compiler = new TypeScriptToJavaScriptCompiler(modelManager,templateConceptFqn);
+        this.templateClass = getTemplateClassDeclaration(modelManager,templateConceptFqn);
     }
 
     compile(templateJson: any) : any {
         const namedTemplateMark = TemplateMarkToTypeScriptCompiler.nameUserCode(templateJson);
-        const functionCompiler = new TemplateMarkToTypeScriptCompiler(this.modelManager);
+        const functionCompiler = new TemplateMarkToTypeScriptCompiler(this.modelManager, this.templateClass.getFullyQualifiedName());
 
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const that = this;

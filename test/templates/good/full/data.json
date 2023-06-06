@@ -4,7 +4,7 @@
     "lastName": "Selman",
     "middleNames": ["Tenzin", "Isaac", "Mia"],
     "active": false,
-    "lastVisit": "2023-01-10",
+    "lastVisit": "2023-01-10T00:00:00.000Z",
     "address": {
         "$class": "test@1.0.0.Address",
         "street": "1 Main Street",

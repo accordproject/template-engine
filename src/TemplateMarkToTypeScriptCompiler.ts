@@ -19,7 +19,7 @@ import { Readable } from 'stream';
 import { TemplateMarkModel, CiceroMarkModel, CommonMarkModel, ConcertoMetaModel } from '@accordproject/markdown-common';
 
 import { ClassDeclaration, Factory, ModelManager, ModelUtil, Property, Resource } from '@accordproject/concerto-core';
-import { CodeGen } from '@accordproject/concerto-tools';
+import { CodeGen } from '@accordproject/concerto-codegen';
 import { FileWriter } from '@accordproject/concerto-util';
 import { getCompiler } from './compilers/NodeCompilers';
 import { RUNTIME_DIR, writeEpilog, writeImports, writeProlog } from './compilers/Common';
@@ -41,9 +41,9 @@ export class TemplateMarkToTypeScriptCompiler {
     modelManager: ModelManager;
     templateClass: ClassDeclaration;
 
-    constructor(modelManager: ModelManager) {
+    constructor(modelManager: ModelManager,templateConceptFqn?: string) {
         this.modelManager = modelManager;
-        this.templateClass = getTemplateClassDeclaration(this.modelManager);
+        this.templateClass = getTemplateClassDeclaration(this.modelManager,templateConceptFqn);
     }
 
     writeFunctionToString(functionName: string, returnType: string, code: string): string {

@@ -346,10 +346,10 @@ export class TemplateMarkInterpreter {
     templateClass: ClassDeclaration;
     clauseLibrary: object;
 
-    constructor(modelManager: ModelManager, clauseLibrary:object) {
+    constructor(modelManager: ModelManager, clauseLibrary:object, templateConceptFqn?: string) {
         this.modelManager = modelManager;
         this.clauseLibrary = clauseLibrary;
-        this.templateClass = getTemplateClassDeclaration(this.modelManager);
+        this.templateClass = getTemplateClassDeclaration(this.modelManager,templateConceptFqn);
     }
 
     /**
@@ -385,8 +385,12 @@ export class TemplateMarkInterpreter {
      * @returns {*} TemplateMark JSON with JS nodes
      * @throws {Error} if the templateMark document is invalid
      */
-    compileTypeScriptToJavaScript(templateMark: object): object {
-        const compiler = new TemplateMarkToJavaScriptCompiler(this.modelManager);
+    compileTypeScriptToJavaScript(templateMark: object) : object {
+        const templateConcept = (templateMark as any).nodes[0].elementType;
+        if(!templateConcept) {
+            throw new Error('TemplateMark is not typed');
+        }
+        const compiler = new TemplateMarkToJavaScriptCompiler(this.modelManager, templateConcept);
         return compiler.compile(templateMark);
     }
 

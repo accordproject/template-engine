@@ -1,0 +1,49 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`template with custom template model should create agreementmark from a template and data 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Hello ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "message",
+              "value": "World",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": ". Your gender is ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.EnumVariable",
+              "elementType": "helloworld@1.0.0.Gender",
+              "enumValues": Array [
+                "MALE",
+                "FEMALE",
+                "NOT_DISCLOSED",
+              ],
+              "name": "gender",
+              "value": "\\"MALE\\"",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": ".",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;

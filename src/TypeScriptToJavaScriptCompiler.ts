@@ -28,8 +28,8 @@ import { DAYJS_BASE64, JSONPATH_BASE64 } from './runtime/declarations';
 export class TypeScriptToJavaScriptCompiler {
     context: string;
 
-    constructor(modelManager: ModelManager) {
-        this.context = new TypeScriptCompilationContext(modelManager).getCompilationContext();
+    constructor(modelManager: ModelManager, templateConceptFqn?: string) {
+        this.context = new TypeScriptCompilationContext(modelManager, templateConceptFqn).getCompilationContext();
     }
 
     compile(typescript: string): TwoSlashReturn {

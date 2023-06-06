@@ -12,3 +12,4 @@
  * limitations under the License.
  */
 declare module '@accordproject/markdown-common'
+declare module '@accordproject/markdown-template'

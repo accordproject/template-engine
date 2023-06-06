@@ -19,11 +19,18 @@ concept Preferences {
     o String[] favoriteColors optional
 }
 
+enum Gender {
+    o MALE
+    o FEMALE
+    o NOT_DISCLOSED
+}
+
 @template
 concept TemplateData {
     o String firstName
     o String lastName
     o String[] middleNames
+    o Gender gender optional
     o Boolean active
     o DateTime lastVisit
     o Address address
