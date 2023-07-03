@@ -13,7 +13,7 @@
     "benefitLimits": [
       {
         "$class": "com.acme.insurance.auto@1.0.0.BenefitLimit",
-        "benefitType": "REPARIING",
+        "benefitType": "REPAIRING",
         "limit": {
           "$class": "org.accordproject.money@0.3.0.MonetaryAmount",
           "doubleValue": 1500,

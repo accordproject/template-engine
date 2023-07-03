@@ -24,7 +24,7 @@ enum IncidentType {
  * Types of insurance benefit
  */
 enum BenefitType {
-    o REPARIING
+    o REPAIRING
     o REPLACING
 }
 
