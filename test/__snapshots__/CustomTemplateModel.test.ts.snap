@@ -33,7 +33,7 @@ Object {
                 "NOT_DISCLOSED",
               ],
               "name": "gender",
-              "value": "\\"MALE\\"",
+              "value": "MALE",
             },
             Object {
               "$class": "org.accordproject.commonmark@0.5.0.Text",

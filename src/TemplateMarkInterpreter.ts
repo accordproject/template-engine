@@ -259,7 +259,9 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
                     else {
                         // convert the value to a string, optionally using the formatter
                         const variableValue = variableValues[0];
-                        const drafter = getDrafter(context.elementType);
+                        const type = (ModelUtil as any).isPrimitiveType(context.elementType) ? null : introspector.getClassDeclaration(context.elementType);
+                        // we want to draft Enums as strings, not objects
+                        const drafter = getDrafter(type && type.isEnum() ? 'String' : context.elementType);
                         context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
                     }
                 }

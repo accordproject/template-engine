@@ -1,6 +1,6 @@
 {
     "name": "@accordproject/template-engine",
-    "version": "1.0.18",
+    "version": "1.0.19",
     "description": "Generation of AgreementMark from TemplateMark + JSON Data",
     "homepage": "https://github.com/accordproject",
     "engines": {

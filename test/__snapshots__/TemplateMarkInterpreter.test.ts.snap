@@ -1139,7 +1139,7 @@ Object {
                         "REPLACING",
                       ],
                       "name": "benefitType",
-                      "value": "\\"REPARIING\\"",
+                      "value": "REPARIING",
                     },
                     Object {
                       "$class": "org.accordproject.commonmark@0.5.0.Text",
@@ -1178,7 +1178,7 @@ Object {
                         "REPLACING",
                       ],
                       "name": "benefitType",
-                      "value": "\\"REPLACING\\"",
+                      "value": "REPLACING",
                     },
                     Object {
                       "$class": "org.accordproject.commonmark@0.5.0.Text",
