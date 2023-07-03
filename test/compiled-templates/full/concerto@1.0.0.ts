@@ -12,9 +12,12 @@ import type {
 	IDecorator,
 	IIdentified,
 	IDeclaration,
+	IMapKeyType,
+	IAggregateValueType,
 	IEnumProperty,
 	IProperty,
 	IStringRegexValidator,
+	IStringLengthValidator,
 	IDoubleDomainValidator,
 	IIntegerDomainValidator,
 	ILongDomainValidator,
@@ -40,9 +43,12 @@ IDecoratorLiteral |
 IDecorator | 
 IIdentified | 
 IDeclaration | 
+IMapKeyType | 
+IAggregateValueType | 
 IEnumProperty | 
 IProperty | 
 IStringRegexValidator | 
+IStringLengthValidator | 
 IDoubleDomainValidator | 
 IIntegerDomainValidator | 
 ILongDomainValidator | 

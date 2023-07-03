@@ -67,7 +67,8 @@ describe('templatemark interpreter', () => {
             const data = JSON.parse(readFileSync(`${GOOD_TEMPLATES_ROOT}/${templatenName}/data.json`, 'utf-8'));
 
             const modelManager = new ModelManager({ strict: true });
-            modelManager.addCTOModel(model);
+            modelManager.addCTOModel(model, undefined, true);
+            await modelManager.updateExternalModels();
             const engine = new TemplateMarkInterpreter(modelManager, CLAUSE_LIBRARY);
 
             const templateMarkTransformer = new TemplateMarkTransformer();

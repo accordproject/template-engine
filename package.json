@@ -23,9 +23,7 @@
         "licchk": "license-check-and-add",
         "test": "jest",
         "coverage": "jest --coverage",
-        "compile-template": "jest ./test/Compiler.test.ts",
         "compile-js": "jest ./test/TypeScriptCompiler.test.ts",
-        "run-template": "jest ./test/Runner.test.ts",
         "test:watch": "jest --watchAll",
         "updateRuntimeDependencies": "node ./scripts/updateRuntimeDependencies",
         "updateCompiledTemplates": "rm -rf ./test/compiled-templates/ && mkdir ./test/compiled-templates/ && cp -r ./output/full ./test/compiled-templates/ "

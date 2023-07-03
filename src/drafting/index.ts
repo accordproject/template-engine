@@ -20,12 +20,15 @@ import longDrafter from './Long';
 import monetaryAmountDrafter from './MonetaryAmount';
 import stringDrafter from './String';
 
-export const draftingMap = new Map<string, (value: any, format: string) => string>([
-    ['Boolean', booleanDrafter],
-    ['DateTime', dateTimeDrafter],
-    ['Double', doubleDrafter],
-    ['Integer', integerDrafter],
-    ['Long', longDrafter],
-    ['MonetaryAmount', monetaryAmountDrafter],
-    ['String', stringDrafter],
-]);
+export function getDrafter(typeName: string) : ((value:any, format:string) => string)|null  {
+    switch(typeName) {
+    case 'Boolean': return booleanDrafter;
+    case 'DateTime': return dateTimeDrafter;
+    case 'Double': return doubleDrafter;
+    case 'Integer': return integerDrafter;
+    case 'Long': return longDrafter;
+    case 'org.accordproject.money@0.3.0.MonetaryAmount': return monetaryAmountDrafter;
+    case 'String': return stringDrafter;
+    default: return null;
+    }
+}

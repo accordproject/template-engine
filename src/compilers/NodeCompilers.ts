@@ -25,6 +25,7 @@ import { ListBlock } from './ListBlock';
 import { Optional } from './Optional';
 import { Variable } from './Variable';
 import { With } from './With';
+import { EnumVariable } from './EnumVariable';
 
 /**
  * Registry of node compilers
@@ -35,6 +36,7 @@ const NODE_COMPILERS:Record<string,INodeCompiler> = {
 // templatemark
 NODE_COMPILERS[ContractDefinition.TYPE] = new ContractDefinition();
 NODE_COMPILERS[Variable.TYPE] = new Variable();
+NODE_COMPILERS[EnumVariable.TYPE] = new EnumVariable();
 NODE_COMPILERS[FormattedVariable.TYPE] = new FormattedVariable();
 NODE_COMPILERS[Formula.TYPE] = new Formula();
 NODE_COMPILERS[Conditional.TYPE] = new Conditional();

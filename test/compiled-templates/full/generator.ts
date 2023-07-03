@@ -6,7 +6,7 @@ import * as CiceroMark from './org.accordproject.ciceromark@0.6.0';
 import * as TemplateModel from './test@1.0.0';
 import dayjs from 'dayjs';
 import * as UserCode from './usercode';
-import { draftingMap as $draftingMap } from './runtime/drafting';
+import { getDrafter as $getDrafter } from './runtime/drafting';
 import * as Runtime from './runtime/TypeScriptRuntime';
 
 // GENERATOR
@@ -439,7 +439,7 @@ Runtime.push($data, data);
       Runtime.push($nodes, $result);
       $result = (() => {
       Runtime.push($data, Runtime.peekProperty($data, 'lastVisit', false));
-      const drafter = $draftingMap.get('DateTime');
+      const drafter = $getDrafter('DateTime');
       const text = drafter ? drafter(Runtime.peek($data), 'MM/DD/YYYY') : JSON.stringify(Runtime.peek($data)) as string;
       Runtime.pop($data);
       const variable:any = {"$class":"org.accordproject.ciceromark@0.6.0.FormattedVariable","format":"MM/DD/YYYY","name":"lastVisit"};

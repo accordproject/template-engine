@@ -24,10 +24,17 @@ export interface IPreferences extends IConcept {
    favoriteColors?: string[];
 }
 
+export enum Gender {
+   MALE = 'MALE',
+   FEMALE = 'FEMALE',
+   NOT_DISCLOSED = 'NOT_DISCLOSED',
+}
+
 export interface ITemplateData extends IConcept {
    firstName: string;
    lastName: string;
    middleNames: string[];
+   gender?: Gender;
    active: boolean;
    lastVisit: Date;
    address: IAddress;

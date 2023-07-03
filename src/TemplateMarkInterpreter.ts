@@ -17,7 +17,7 @@ import jp from 'jsonpath';
 import traverse from 'traverse';
 
 import { ClassDeclaration, Factory, Introspector, ModelManager, Serializer } from '@accordproject/concerto-core';
-import { draftingMap } from './drafting';
+import { getDrafter } from './drafting';
 import { TemplateMarkModel, CommonMarkModel, CiceroMarkModel, ConcertoMetaModel } from '@accordproject/markdown-common';
 import { ModelUtil } from '@accordproject/concerto-core';
 
@@ -232,7 +232,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
                     }
                     else {
                         context.$class = `${CommonMarkModel.NAMESPACE}.Text`;
-                        const drafter = draftingMap.get(context.elementType);
+                        const drafter = getDrafter(context.elementType);
                         context.text = arrayData.map( arrayItem => {
                             return drafter ? drafter(arrayItem, context.format) : arrayItem as string;
                         }).join(context.separator);
@@ -259,7 +259,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
                     else {
                         // convert the value to a string, optionally using the formatter
                         const variableValue = variableValues[0];
-                        const drafter = draftingMap.get(context.elementType);
+                        const drafter = getDrafter(context.elementType);
                         context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
                     }
                 }
@@ -268,7 +268,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
                     const variableValue = data;
                     const type = (ModelUtil as any).isPrimitiveType(context.elementType) ? null : introspector.getClassDeclaration(context.elementType);
                     // we want to draft Enums as strings, not objects
-                    const drafter = draftingMap.get(type && type.isEnum() ? 'String' : context.elementType);
+                    const drafter = getDrafter(type && type.isEnum() ? 'String' : context.elementType);
                     context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
                 }
             }

@@ -1075,6 +1075,91 @@ Object {
 }
 `;
 
+exports[`templatemark interpreter should generate insurance 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "If your ",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "CAR",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": " are ",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "DAMAGED",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": ", we will:",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Pay up to ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+                      "format": "0,0.00 K",
+                      "name": "limit",
+                      "value": "1,500.00 €",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " towards the cost of ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.EnumVariable",
+                      "elementType": "com.acme.insurance.auto@1.0.0.BenefitType",
+                      "enumValues": Array [
+                        "REPARIING",
+                        "REPLACING",
+                      ],
+                      "name": "benefitType",
+                      "value": "\\"REPARIING\\"",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " the damages",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
 exports[`templatemark interpreter should generate list 1`] = `
 Object {
   "$class": "org.accordproject.commonmark@0.5.0.Document",

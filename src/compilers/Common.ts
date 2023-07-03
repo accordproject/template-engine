@@ -29,7 +29,7 @@ export function writeImports(fw:FileWriter, level:number, templateClass:ClassDec
     fw.writeLine(level, `import * as TemplateModel from './${templateClass.getNamespace()}';`);
     fw.writeLine(level, 'import dayjs from \'dayjs\';');
     fw.writeLine(level, 'import * as UserCode from \'./usercode\';');
-    fw.writeLine(level, `import { draftingMap as $draftingMap } from './${RUNTIME_DIR}/drafting';`);
+    fw.writeLine(level, `import { getDrafter as $getDrafter } from './${RUNTIME_DIR}/drafting';`);
     fw.writeLine(level, `import * as Runtime from './${RUNTIME_DIR}/TypeScriptRuntime';`);
 }
 export function writeProlog(fw:FileWriter, level:number, templateClass:ClassDeclaration) {

@@ -1,0 +1,20 @@
+{
+    "$class": "com.acme.insurance.auto@1.0.0.ClauseData",
+    "items": [
+      "CAR"
+    ],
+    "incidents": [
+      "DAMAGED"
+    ],
+    "benefitLimits": [
+      {
+        "$class": "com.acme.insurance.auto@1.0.0.BenefitLimit",
+        "benefitType": "REPARIING",
+        "limit": {
+          "$class": "org.accordproject.money@0.3.0.MonetaryAmount",
+          "doubleValue": 1500,
+          "currencyCode": "EUR"
+        }
+      }
+    ]
+  }

@@ -1,0 +1,27 @@
+{
+  "name": "generated",
+  "version": "1.0.0",
+  "description": "TypeScript code generated from TemplateMark",
+  "engines": {
+    "node": ">=14",
+    "npm": ">=6"
+  },
+  "keywords": [
+    "accord project",
+    "template",
+    "templatemark"
+  ],
+  "dependencies": {
+    "dayjs": "1.11.7",
+    "jsonpath": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.2.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.2",
+    "@types/jsonpath": "^0.2.0"
+  },
+  "scripts": {
+    "start": "ts-node index.ts sample.json"
+  }
+}
