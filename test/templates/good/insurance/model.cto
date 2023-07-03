@@ -2,40 +2,46 @@ namespace com.acme.insurance.auto@1.0.0
 
 import org.accordproject.money@0.3.0.{MonetaryAmount} from https://models.accordproject.org/money@0.3.0.cto
 
-// dimensions are enumerations
-
-// input variables
-// NOT dimensions. i.e. dates, string, numbers (not used in a calculation), booleans
-// they are only known at claim time
-
-// units
-// used in numeric calculations (numbers)
-// they are input variables
-
+/**
+ * Types of insurance items that can be insured
+ */
 enum ItemType {
     o ACCESSORIES
     o SPARE_PARTS
     o CAR
 }
 
+/**
+ * Insurance incident types
+ */
 enum IncidentType {
     o LOST
     o STOLEN
     o DAMAGED
 }
 
+/**
+ * Types of insurance benefit
+ */
 enum BenefitType {
     o REPARIING
     o REPLACING
 }
 
+/**
+ * A monetary limit imposed on a benefit type
+ */
 concept BenefitLimit {
     o BenefitType benefitType
     o MonetaryAmount limit
 }
 
+/**
+ * An insurance template that insures a set of items against
+ * a set of incidents, up to a monetary amount
+ */
 @template
-concept ClauseData {
+concept Insurance {
     o ItemType[] items
     o IncidentType[] incidents
     o BenefitLimit[] benefitLimits
