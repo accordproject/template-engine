@@ -1,10 +1,14 @@
 {
     "$class": "com.acme.insurance.auto@1.0.0.ClauseData",
     "items": [
-      "CAR"
+      "CAR",
+      "ACCESSORIES",
+      "SPARE_PARTS"
     ],
     "incidents": [
-      "DAMAGED"
+      "DAMAGED",
+      "LOST",
+      "STOLEN"
     ],
     "benefitLimits": [
       {
@@ -13,6 +17,15 @@
         "limit": {
           "$class": "org.accordproject.money@0.3.0.MonetaryAmount",
           "doubleValue": 1500,
+          "currencyCode": "EUR"
+        }
+      },
+      {
+        "$class": "com.acme.insurance.auto@1.0.0.BenefitLimit",
+        "benefitType": "REPLACING",
+        "limit": {
+          "$class": "org.accordproject.money@0.3.0.MonetaryAmount",
+          "doubleValue": 500,
           "currencyCode": "EUR"
         }
       }

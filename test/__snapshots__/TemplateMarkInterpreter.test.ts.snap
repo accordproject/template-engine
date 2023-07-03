@@ -1091,7 +1091,7 @@ Object {
             },
             Object {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
-              "text": "CAR",
+              "text": "CAR, ACCESSORIES, SPARE_PARTS",
             },
             Object {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
@@ -1099,7 +1099,7 @@ Object {
             },
             Object {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
-              "text": "DAMAGED",
+              "text": "DAMAGED, LOST, STOLEN",
             },
             Object {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
@@ -1140,6 +1140,45 @@ Object {
                       ],
                       "name": "benefitType",
                       "value": "\\"REPARIING\\"",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " the damages",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Pay up to ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+                      "format": "0,0.00 K",
+                      "name": "limit",
+                      "value": "500.00 €",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " towards the cost of ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.EnumVariable",
+                      "elementType": "com.acme.insurance.auto@1.0.0.BenefitType",
+                      "enumValues": Array [
+                        "REPARIING",
+                        "REPLACING",
+                      ],
+                      "name": "benefitType",
+                      "value": "\\"REPLACING\\"",
                     },
                     Object {
                       "$class": "org.accordproject.commonmark@0.5.0.Text",
