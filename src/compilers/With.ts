@@ -13,7 +13,7 @@
  */
 import { FileWriter } from '@accordproject/concerto-util';
 import { TemplateMarkModel } from '@accordproject/markdown-common';
-import { IWithDefinition } from '../model-gen/org.accordproject.templatemark@0.4.0';
+import { IWithDefinition } from '../model-gen/org.accordproject.templatemark@0.5.0';
 import { AbstractComplexCompiler, writeCloseDataScope, writeDebug, writeOpenDataScope } from './Common';
 
 export class With extends AbstractComplexCompiler {

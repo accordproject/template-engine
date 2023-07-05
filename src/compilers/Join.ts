@@ -13,7 +13,7 @@
  */
 import { FileWriter } from '@accordproject/concerto-util';
 import { TemplateMarkModel,CommonMarkModel } from '@accordproject/markdown-common';
-import { IJoinDefinition } from '../model-gen/org.accordproject.templatemark@0.4.0';
+import { IJoinDefinition } from '../model-gen/org.accordproject.templatemark@0.5.0';
 import { AbstractComplexCompiler, getTypeScriptType, writeCloseDataScope, writeCloseGenerateScope, writeOpenDataScope, writeOpenGenerateScope } from './Common';
 
 export class Join extends AbstractComplexCompiler {
@@ -24,7 +24,8 @@ export class Join extends AbstractComplexCompiler {
     generate(fw:FileWriter, level:number, templateMarkNode:IJoinDefinition) {
         writeOpenGenerateScope(fw,level);
         writeOpenDataScope(fw,level,templateMarkNode.name);
-        fw.writeLine(level, `const text = Runtime.peek($data).join('${templateMarkNode.separator}');`);
+        fw.writeLine(level, `const joinDef = ${JSON.stringify(templateMarkNode)};`);
+        fw.writeLine(level, 'const text = Runtime.joinList(Runtime.peek($data), joinDef);');
         writeCloseDataScope(fw,level);
         fw.writeLine(level, `return { $class: '${CommonMarkModel.NAMESPACE}.Text', text: text } as ${getTypeScriptType(CommonMarkModel.NAMESPACE + '.Text')};`);
         writeCloseGenerateScope(fw,level);

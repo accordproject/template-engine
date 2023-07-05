@@ -5,6 +5,15 @@
 
 // Warning: Beware of circular dependencies when modifying these imports
 import type {
+	CodeType,
+	ICode
+} from './org.accordproject.templatemark@0.5.0';
+import type {
+	INode,
+	IAttribute,
+	ITagInfo
+} from './org.accordproject.commonmark@0.5.0';
+import type {
 	IPosition,
 	IRange,
 	ITypeIdentifier,
@@ -12,9 +21,12 @@ import type {
 	IDecorator,
 	IIdentified,
 	IDeclaration,
+	IMapKeyType,
+	IAggregateValueType,
 	IEnumProperty,
 	IProperty,
 	IStringRegexValidator,
+	IStringLengthValidator,
 	IDoubleDomainValidator,
 	IIntegerDomainValidator,
 	ILongDomainValidator,
@@ -22,36 +34,35 @@ import type {
 	IModel,
 	IModels
 } from './concerto.metamodel@1.0.0';
-import type {
-	INode,
-	IAttribute,
-	ITagInfo
-} from './org.accordproject.commonmark@0.5.0';
 
 // interfaces
 export interface IConcept {
    $class: string;
 }
 
-export type ConceptUnion = IPosition | 
+export type ConceptUnion = ICode | 
+INode | 
+IAttribute | 
+ITagInfo | 
+IPosition | 
 IRange | 
 ITypeIdentifier | 
 IDecoratorLiteral | 
 IDecorator | 
 IIdentified | 
 IDeclaration | 
+IMapKeyType | 
+IAggregateValueType | 
 IEnumProperty | 
 IProperty | 
 IStringRegexValidator | 
+IStringLengthValidator | 
 IDoubleDomainValidator | 
 IIntegerDomainValidator | 
 ILongDomainValidator | 
 IImport | 
 IModel | 
-IModels | 
-INode | 
-IAttribute | 
-ITagInfo;
+IModels;
 
 export interface IAsset extends IConcept {
    $identifier: string;

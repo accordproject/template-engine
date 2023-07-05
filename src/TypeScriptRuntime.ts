@@ -13,6 +13,21 @@
  */
 const DEBUG = false;
 
+export function joinList(data:Array<string>, joinDef:any) : string {
+    if(joinDef.separator) {
+        return data.join(joinDef.separator);
+    }
+    else {
+        const formatter = new Intl.ListFormat( joinDef.locale,
+            {
+                style: (joinDef.style as Intl.ListFormatStyle),
+                type: (joinDef.type as Intl.ListFormatType)
+            }
+        );
+        return formatter.format(data);
+    }
+}
+
 /**
  * These utility functions are used by the typescript code that
  * is generated from TemplateMark. They manage a stack to improve

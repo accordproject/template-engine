@@ -15,7 +15,7 @@ import { FileWriter } from '@accordproject/concerto-util';
 import { TemplateMarkModel,CommonMarkModel } from '@accordproject/markdown-common';
 import { IClause } from '../model-gen/org.accordproject.ciceromark@0.6.0';
 import { IParagraph } from '../model-gen/org.accordproject.commonmark@0.5.0';
-import { IClauseDefinition, IWithDefinition } from '../model-gen/org.accordproject.templatemark@0.4.0';
+import { IClauseDefinition, IWithDefinition } from '../model-gen/org.accordproject.templatemark@0.5.0';
 import { AbstractComplexCompiler, getTypeScriptType, makeCiceroMark, writeCloseDataScope, writeCloseGenerateScope, writeCloseNodeScope, writeDebug, writeOpenDataScope, writeOpenGenerateScope, writeOpenNodeScope } from './Common';
 
 interface INamedClauseDefinition extends IClauseDefinition {

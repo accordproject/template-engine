@@ -14,7 +14,7 @@
 import { FileWriter } from '@accordproject/concerto-util';
 import { TemplateMarkModel } from '@accordproject/markdown-common';
 import { IConditional } from '../model-gen/org.accordproject.ciceromark@0.6.0';
-import { IConditionalDefinition } from '../model-gen/org.accordproject.templatemark@0.4.0';
+import { IConditionalDefinition } from '../model-gen/org.accordproject.templatemark@0.5.0';
 import { AbstractComplexCompiler, getTypeScriptType, makeCiceroMark, writeCloseDataScope, writeCloseGenerateScope, writeOpenDataScope, writeOpenGenerateScope } from './Common';
 
 interface INamedConditionalDefinition extends IConditionalDefinition {

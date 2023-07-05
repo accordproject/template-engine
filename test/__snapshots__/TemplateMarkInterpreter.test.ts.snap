@@ -338,6 +338,19 @@ Object {
           "type": "ordered",
         },
         Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Middle names: ",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Tenzin, Isaac, and Mia",
+            },
+          ],
+        },
+        Object {
           "$class": "org.accordproject.commonmark@0.5.0.Heading",
           "level": "2",
           "nodes": Array [
@@ -1091,7 +1104,7 @@ Object {
             },
             Object {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
-              "text": "CAR, ACCESSORIES, SPARE_PARTS",
+              "text": "CAR, ACCESSORIES, and SPARE_PARTS",
             },
             Object {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
@@ -1099,7 +1112,7 @@ Object {
             },
             Object {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
-              "text": "DAMAGED, LOST, STOLEN",
+              "text": "DAMAGED, LOST or STOLEN",
             },
             Object {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
@@ -1183,6 +1196,496 @@ Object {
                     Object {
                       "$class": "org.accordproject.commonmark@0.5.0.Text",
                       "text": " the damages",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate join 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "1",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Default Locale",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Default: ",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "CAR, ACCESSORIES and SPARE_PARTS",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "en Locale",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Style",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Narrow: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES, SPARE_PARTS",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Long: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES, and SPARE_PARTS",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Short: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES, & SPARE_PARTS",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Disjunction",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Long: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES, or SPARE_PARTS",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Unit",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Long: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES, SPARE_PARTS",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "en-GB Locale",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Style",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Narrow: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES, SPARE_PARTS",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Long: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES and SPARE_PARTS",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Short: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES and SPARE_PARTS",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Disjunction",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Long: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES or SPARE_PARTS",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Unit",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Long: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES, SPARE_PARTS",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "fr Locale",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Style",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Narrow: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES, SPARE_PARTS",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Long: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES et SPARE_PARTS",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Short: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES et SPARE_PARTS",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Disjunction",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Long: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES ou SPARE_PARTS",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Unit",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Long: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "CAR, ACCESSORIES et SPARE_PARTS",
                     },
                   ],
                 },

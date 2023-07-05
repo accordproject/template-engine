@@ -5,7 +5,7 @@ Object {
   "$class": "org.accordproject.commonmark@0.5.0.Document",
   "nodes": Array [
     Object {
-      "$class": "org.accordproject.templatemark@0.4.0.ContractDefinition",
+      "$class": "org.accordproject.templatemark@0.5.0.ContractDefinition",
       "elementType": "test@1.0.0.TemplateData",
       "name": "top",
       "nodes": Array [
@@ -27,7 +27,7 @@ Object {
               "text": "Hello ",
             },
             Object {
-              "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
               "elementType": "String",
               "name": "firstName",
             },
@@ -36,11 +36,11 @@ Object {
               "text": " ",
             },
             Object {
-              "$class": "org.accordproject.templatemark@0.4.0.JoinDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.JoinDefinition",
               "name": "middleNames",
               "nodes": Array [
                 Object {
-                  "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                   "elementType": "String",
                   "name": "this",
                 },
@@ -52,9 +52,9 @@ Object {
               "text": " ",
             },
             Object {
-              "$class": "org.accordproject.templatemark@0.4.0.ConditionalDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.ConditionalDefinition",
               "condition": Object {
-                "$class": "org.accordproject.templatemark@0.4.0.Code",
+                "$class": "org.accordproject.templatemark@0.5.0.Code",
                 "contents": "export function condition_nodes_0_nodes_1_nodes_5(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
@@ -104,7 +104,7 @@ Object {
           ],
         },
         Object {
-          "$class": "org.accordproject.templatemark@0.4.0.ListBlockDefinition",
+          "$class": "org.accordproject.templatemark@0.5.0.ListBlockDefinition",
           "delimiter": "period",
           "name": "middleNames",
           "nodes": Array [
@@ -118,7 +118,7 @@ Object {
                       "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
                       "nodes": Array [
                         Object {
-                          "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                          "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "elementType": "String",
                           "name": "this",
                         },
@@ -136,6 +136,21 @@ Object {
           "type": "ordered",
         },
         Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Middle names: ",
+            },
+            Object {
+              "$class": "org.accordproject.templatemark@0.5.0.JoinDefinition",
+              "locale": "en",
+              "name": "middleNames",
+              "nodes": Array [],
+            },
+          ],
+        },
+        Object {
           "$class": "org.accordproject.commonmark@0.5.0.Heading",
           "level": "2",
           "nodes": Array [
@@ -146,7 +161,7 @@ Object {
           ],
         },
         Object {
-          "$class": "org.accordproject.templatemark@0.4.0.ClauseDefinition",
+          "$class": "org.accordproject.templatemark@0.5.0.ClauseDefinition",
           "elementType": "test@1.0.0.Address",
           "name": "address",
           "nodes": Array [
@@ -164,7 +179,7 @@ Object {
                           "text": "Street: ",
                         },
                         Object {
-                          "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                          "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "elementType": "String",
                           "name": "street",
                         },
@@ -183,7 +198,7 @@ Object {
                           "text": "City: ",
                         },
                         Object {
-                          "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                          "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "elementType": "String",
                           "name": "city",
                         },
@@ -202,7 +217,7 @@ Object {
                           "text": "ZIP: ",
                         },
                         Object {
-                          "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                          "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "elementType": "String",
                           "name": "zip",
                         },
@@ -224,7 +239,7 @@ Object {
               "text": "Your city is: ",
             },
             Object {
-              "$class": "org.accordproject.templatemark@0.4.0.WithDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.WithDefinition",
               "elementType": "test@1.0.0.Address",
               "name": "address",
               "nodes": Array [
@@ -235,7 +250,7 @@ Object {
                       "$class": "org.accordproject.commonmark@0.5.0.Strong",
                       "nodes": Array [
                         Object {
-                          "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                          "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "elementType": "String",
                           "name": "city",
                         },
@@ -265,7 +280,7 @@ Object {
           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
           "nodes": Array [
             Object {
-              "$class": "org.accordproject.templatemark@0.4.0.ConditionalDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.ConditionalDefinition",
               "name": "active",
               "whenFalse": Array [
                 Object {
@@ -296,9 +311,9 @@ Object {
                   "$class": "org.accordproject.commonmark@0.5.0.Strong",
                   "nodes": Array [
                     Object {
-                      "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+                      "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                       "code": Object {
-                        "$class": "org.accordproject.templatemark@0.4.0.Code",
+                        "$class": "org.accordproject.templatemark@0.5.0.Code",
                         "contents": "export function formula_53113a901ca88208df47bc83374866e8d497d84099c0f88123c918ff1960b17e(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
@@ -332,7 +347,7 @@ Object {
                   "text": "Your last visit was: ",
                 },
                 Object {
-                  "$class": "org.accordproject.templatemark@0.4.0.FormattedVariableDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.FormattedVariableDefinition",
                   "elementType": "DateTime",
                   "format": "MM/DD/YYYY",
                   "name": "lastVisit",
@@ -349,9 +364,9 @@ Object {
           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
           "nodes": Array [
             Object {
-              "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
               "code": Object {
-                "$class": "org.accordproject.templatemark@0.4.0.Code",
+                "$class": "org.accordproject.templatemark@0.5.0.Code",
                 "contents": "export function formula_7841bd178366af21ea233d10968eaf538d12fb7a50cbaf9cbe1b51a00cb0f6a8(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
@@ -394,7 +409,7 @@ Object {
           ],
         },
         Object {
-          "$class": "org.accordproject.templatemark@0.4.0.ListBlockDefinition",
+          "$class": "org.accordproject.templatemark@0.5.0.ListBlockDefinition",
           "delimiter": "period",
           "elementType": "test@1.0.0.Order",
           "name": "orders",
@@ -412,7 +427,7 @@ Object {
                           "$class": "org.accordproject.commonmark@0.5.0.Strong",
                           "nodes": Array [
                             Object {
-                              "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                              "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                               "elementType": "String",
                               "name": "sku",
                             },
@@ -426,7 +441,7 @@ Object {
                           "$class": "org.accordproject.commonmark@0.5.0.Emph",
                           "nodes": Array [
                             Object {
-                              "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                              "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                               "elementType": "Integer",
                               "name": "amount",
                             },
@@ -449,7 +464,7 @@ Object {
           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
           "nodes": Array [
             Object {
-              "$class": "org.accordproject.templatemark@0.4.0.OptionalDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.OptionalDefinition",
               "elementType": "test@1.0.0.LoyaltyStatus",
               "name": "loyaltyStatus",
               "whenNone": Array [
@@ -464,7 +479,7 @@ Object {
                   "text": "Your loyalty status: ",
                 },
                 Object {
-                  "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                   "elementType": "String",
                   "name": "level",
                 },
@@ -473,10 +488,10 @@ Object {
           ],
         },
         Object {
-          "$class": "org.accordproject.templatemark@0.4.0.ClauseDefinition",
+          "$class": "org.accordproject.templatemark@0.5.0.ClauseDefinition",
           "condition": Object {
-            "$class": "org.accordproject.templatemark@0.4.0.Code",
-            "contents": "export function condition_nodes_0_nodes_14(data, library, now) {
+            "$class": "org.accordproject.templatemark@0.5.0.Code",
+            "contents": "export function condition_nodes_0_nodes_15(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -493,7 +508,7 @@ Object {
             "type": "ES_2020",
           },
           "elementType": "test@1.0.0.Preferences",
-          "functionName": "condition_nodes_0_nodes_14",
+          "functionName": "condition_nodes_0_nodes_15",
           "name": "preferences",
           "nodes": Array [
             Object {
@@ -514,9 +529,9 @@ Object {
                   "text": "Your favorite colors are: ",
                 },
                 Object {
-                  "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "code": Object {
-                    "$class": "org.accordproject.templatemark@0.4.0.Code",
+                    "$class": "org.accordproject.templatemark@0.5.0.Code",
                     "contents": "export function formula_4b8f7e95470eda90057c4648aac4e4c7abb3f93559ed348246b6a15ec1fea473(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
@@ -550,7 +565,7 @@ Object {
               ],
             },
             Object {
-              "$class": "org.accordproject.templatemark@0.4.0.ListBlockDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.ListBlockDefinition",
               "delimiter": "period",
               "name": "favoriteColors",
               "nodes": Array [
@@ -564,7 +579,7 @@ Object {
                           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
                           "nodes": Array [
                             Object {
-                              "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                              "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                               "elementType": "String",
                               "name": "this",
                             },
@@ -585,10 +600,10 @@ Object {
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
               "nodes": Array [
                 Object {
-                  "$class": "org.accordproject.templatemark@0.4.0.ConditionalDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.ConditionalDefinition",
                   "condition": Object {
-                    "$class": "org.accordproject.templatemark@0.4.0.Code",
-                    "contents": "export function condition_nodes_0_nodes_14_nodes_4_nodes_0(data, library, now) {
+                    "$class": "org.accordproject.templatemark@0.5.0.Code",
+                    "contents": "export function condition_nodes_0_nodes_15_nodes_4_nodes_0(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -605,7 +620,7 @@ Object {
                     "type": "ES_2020",
                   },
                   "dependencies": Array [],
-                  "functionName": "condition_nodes_0_nodes_14_nodes_4_nodes_0",
+                  "functionName": "condition_nodes_0_nodes_15_nodes_4_nodes_0",
                   "name": "favoriteColors",
                   "whenFalse": Array [
                     Object {
@@ -651,9 +666,9 @@ Object {
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
               "nodes": Array [
                 Object {
-                  "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "code": Object {
-                    "$class": "org.accordproject.templatemark@0.4.0.Code",
+                    "$class": "org.accordproject.templatemark@0.5.0.Code",
                     "contents": "export function formula_a8a1d7714d95baa82f730e0105d2f2d0a9fc25ee9b6055058cc09667c01c01ab(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
@@ -686,7 +701,7 @@ Object {
               "text": "Authored by ",
             },
             Object {
-              "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
               "elementType": "String",
               "name": "firstName",
             },
@@ -699,9 +714,9 @@ Object {
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
               "nodes": Array [
                 Object {
-                  "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "code": Object {
-                    "$class": "org.accordproject.templatemark@0.4.0.Code",
+                    "$class": "org.accordproject.templatemark@0.5.0.Code",
                     "contents": "export function formula_daca9cb2f5bc16b65f544e6f408c1e3121d50a3251ec4fbe2f27132818acc3d2(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
@@ -742,9 +757,9 @@ Object {
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
               "nodes": Array [
                 Object {
-                  "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "code": Object {
-                    "$class": "org.accordproject.templatemark@0.4.0.Code",
+                    "$class": "org.accordproject.templatemark@0.5.0.Code",
                     "contents": "export function formula_4c874b2977b5eef204e4987efc0a5594c7cce66403e54c17daa1e1c721d755a0(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;
@@ -777,7 +792,7 @@ Object {
               "text": "Low Risk and authored by ",
             },
             Object {
-              "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
               "elementType": "String",
               "name": "firstName",
             },
@@ -790,9 +805,9 @@ Object {
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
               "nodes": Array [
                 Object {
-                  "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "code": Object {
-                    "$class": "org.accordproject.templatemark@0.4.0.Code",
+                    "$class": "org.accordproject.templatemark@0.5.0.Code",
                     "contents": "export function formula_646a6cadec2125e4fd9e4b756aac72bc618b528967f04d325b28a817774441dd(data, library, now) {
     const firstName = data.firstName;
     const lastName = data.lastName;

@@ -39,6 +39,14 @@ import {
     getTemplateClassDeclaration
 } from './Common';
 import { TemplateMarkToJavaScriptCompiler } from './TemplateMarkToJavaScriptCompiler';
+import { CodeType, ICode } from './model-gen/org.accordproject.templatemark@0.5.0';
+import { joinList } from './TypeScriptRuntime';
+
+function checkCode(code:ICode) {
+    if(code.type !== CodeType.ES_2020) {
+        throw new Error(`Cannot run ${code.contents} as it is not ES_2020 JavaScript.`);
+    }
+}
 
 /**
  * Evaluates a JS expression
@@ -170,6 +178,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
             // with the result of evaluating the JS code
             else if (FORMULA_DEFINITION_RE.test(nodeClass)) {
                 if (context.code) {
+                    checkCode(context.code);
                     const result = evaluateJavaScript(clauseLibrary, data, context.code.contents, now);
                     if(result === null) {
                         context.value = '<null>';
@@ -233,12 +242,15 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
                     else {
                         context.$class = `${CommonMarkModel.NAMESPACE}.Text`;
                         const drafter = getDrafter(context.elementType);
-                        context.text = arrayData.map( arrayItem => {
+                        context.text = joinList(arrayData.map( arrayItem => {
                             return drafter ? drafter(arrayItem, context.format) : arrayItem as string;
-                        }).join(context.separator);
+                        }), context);
                         delete context.elementType;
                         delete context.name;
                         delete context.separator;
+                        delete context.locale;
+                        delete context.type;
+                        delete context.style;
                         delete context.nodes;
                         stopHere = true; // do not process child nodes, we've already done it above...
                     }
@@ -279,6 +291,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
             // with the result of evaluating the JS code or a boolean property
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
+                    checkCode(context.condition);
                     context.isTrue = !!evaluateJavaScript(clauseLibrary, data, context.condition.contents, now) as unknown as boolean;
                 }
                 else {
@@ -305,6 +318,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
             // only include the children of a clause if its condition is true
             else if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
+                    checkCode(context.condition);
                     const result = !!evaluateJavaScript(clauseLibrary, data, context.condition.contents, now) as unknown as boolean;
                     if(!result) {
                         delete context.nodes;

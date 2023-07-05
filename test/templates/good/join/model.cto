@@ -1,0 +1,16 @@
+namespace com.acme.insurance.auto@1.0.0
+
+/**
+ * Types of insurance items that can be insured
+ */
+enum ItemType {
+    o ACCESSORIES
+    o SPARE_PARTS
+    o CAR
+}
+/**
+ */
+@template
+concept Insurance {
+    o ItemType[] items
+}

@@ -15,7 +15,7 @@ import { FileWriter } from '@accordproject/concerto-util';
 import { CommonMarkModel,TemplateMarkModel } from '@accordproject/markdown-common';
 
 import { ProcessingFunction } from '../TemplateMarkToTypeScriptCompiler';
-import { IOptionalDefinition } from '../model-gen/org.accordproject.templatemark@0.4.0';
+import { IOptionalDefinition } from '../model-gen/org.accordproject.templatemark@0.5.0';
 import { AbstractComplexCompiler, getTypeScriptType, makeCiceroMark, writeCloseDataScope, writeCloseGenerateScope, writeCloseNodeScope, writeDebug, writeOpenDataScope, writeOpenGenerateScope, writeOpenNodeScope } from './Common';
 
 

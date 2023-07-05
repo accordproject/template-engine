@@ -7,6 +7,8 @@ Hello {{firstName}} {{#join middleNames separator="-"}}{{this}}{{/join}} {{#if l
 - {{this}}
 {{/olist}}
 
+Middle names: {{#join middleNames locale="en"}}
+
 ## Address
 {{#clause address}}
 - Street: {{street}}

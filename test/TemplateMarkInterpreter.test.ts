@@ -48,23 +48,24 @@ describe('templatemark interpreter', () => {
 
     goodTemplates.forEach(function (template) {
         test(`should generate ${template.name}`, async () => {
-            const templatenName = path.parse(template.name).name;
+            const templateName = path.parse(template.name).name;
+
             /**
              * Define the data model for the template. The model must have a concept with
              * the @template decorator. The types of properties allow the template to be
              * type-checked.
             */
-            const model = readFileSync(`${GOOD_TEMPLATES_ROOT}/${templatenName}/model.cto`, 'utf-8');
+            const model = readFileSync(`${GOOD_TEMPLATES_ROOT}/${templateName}/model.cto`, 'utf-8');
 
             /**
              * Load the template, rich-text with variables, conditional sections etc
              */
-            const templateMarkup = readFileSync(`${GOOD_TEMPLATES_ROOT}/${templatenName}/template.md`, 'utf-8');
+            const templateMarkup = readFileSync(`${GOOD_TEMPLATES_ROOT}/${templateName}/template.md`, 'utf-8');
 
             /**
              * Define the data we will merge with the template - an instance of the template model
              */
-            const data = JSON.parse(readFileSync(`${GOOD_TEMPLATES_ROOT}/${templatenName}/data.json`, 'utf-8'));
+            const data = JSON.parse(readFileSync(`${GOOD_TEMPLATES_ROOT}/${templateName}/data.json`, 'utf-8'));
 
             const modelManager = new ModelManager({ strict: true });
             modelManager.addCTOModel(model, undefined, true);

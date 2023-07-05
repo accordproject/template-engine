@@ -19,6 +19,7 @@ import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler
 import { TwoSlashReturn } from '@typescript/twoslash';
 import { getTemplateClassDeclaration } from './Common';
 import { TemplateMarkToTypeScriptCompiler } from './TemplateMarkToTypeScriptCompiler';
+import { CodeType, ICode } from './model-gen/org.accordproject.templatemark@0.5.0';
 
 const CODE_NODES = [
     `${TemplateMarkModel.NAMESPACE}.FormulaDefinition`,
@@ -31,6 +32,12 @@ export type CompilerError = {
     code: string;
     errors:TwoSlashReturn['errors'];
 };
+
+function checkCode(code:ICode) {
+    if(code.type !== CodeType.TYPESCRIPT) {
+        throw new Error(`Cannot compile ${code.contents} as it is not Typescript.`);
+    }
+}
 
 /**
  * Compiles all the Typescript nodes in a TemplateMark JSON
@@ -57,10 +64,11 @@ export class TemplateMarkToJavaScriptCompiler {
         const compiled = traverse(namedTemplateMark).map(function (x) {
             if (x && CODE_NODES.includes(x.$class)) {
                 if (x.code) {  // formula
+                    checkCode(x.code);
                     const result = that.compiler.compile(functionCompiler.writeFunctionToString(x.name, 'any', x.code.contents));
                     if(result.errors.length === 0) {
                         x.code.contents = result.code;
-                        x.code.type = 'ES_2020';
+                        x.code.type = CodeType.ES_2020;
                         this.update(x);
                     }
                     else {
@@ -72,10 +80,11 @@ export class TemplateMarkToJavaScriptCompiler {
                     }
                 }
                 else if (x.condition) {  // condition or clause (boolean condition)
+                    checkCode(x.condition);
                     const result = that.compiler.compile(functionCompiler.writeFunctionToString(x.functionName, 'boolean', x.condition.contents));
                     if(result.errors.length === 0) {
                         x.condition.contents = result.code;
-                        x.condition.type = 'ES_2020';
+                        x.condition.type = CodeType.ES_2020;
                         this.update(x);
                     }
                     else {

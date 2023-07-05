@@ -13,7 +13,7 @@
  */
 import { TemplateMarkModel,CiceroMarkModel } from '@accordproject/markdown-common';
 import { IContract } from '../model-gen/org.accordproject.ciceromark@0.6.0';
-import { IContractDefinition } from '../model-gen/org.accordproject.templatemark@0.4.0';
+import { IContractDefinition } from '../model-gen/org.accordproject.templatemark@0.5.0';
 import { AbstractSimpleCompiler } from './Common';
 
 export class ContractDefinition extends AbstractSimpleCompiler {

@@ -1,0 +1,8 @@
+{
+    "$class": "com.acme.insurance.auto@1.0.0.Insurance",
+    "items": [
+      "CAR",
+      "ACCESSORIES",
+      "SPARE_PARTS"
+    ]
+  }

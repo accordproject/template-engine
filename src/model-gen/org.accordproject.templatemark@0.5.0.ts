@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-interface */
-// Generated code for namespace: org.accordproject.templatemark@0.4.0
+// Generated code for namespace: org.accordproject.templatemark@0.5.0
 
 // imports
 
@@ -14,6 +14,7 @@ import {IConcept} from './concerto@1.0.0';
 
 // interfaces
 export enum CodeType {
+   TYPESCRIPT = 'TYPESCRIPT',
    ES_2020 = 'ES_2020',
 }
 
@@ -90,7 +91,10 @@ export interface IOptionalDefinition extends IBlockDefinition {
 }
 
 export interface IJoinDefinition extends IBlockDefinition {
-   separator: string;
+   separator?: string;
+   locale?: string;
+   type?: string;
+   style?: string;
 }
 
 export interface IListBlockDefinition extends IBlockDefinition {

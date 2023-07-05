@@ -16,6 +16,8 @@
 // Warning: Beware of circular dependencies when modifying these imports
 
 // Warning: Beware of circular dependencies when modifying these imports
+
+// Warning: Beware of circular dependencies when modifying these imports
 import {IConcept} from './concerto@1.0.0';
 
 // interfaces
@@ -83,9 +85,32 @@ export interface IDeclaration extends IConcept {
    location?: IRange;
 }
 
-export type DeclarationUnion = IEnumDeclaration | 
+export type DeclarationUnion = IMapDeclaration | 
+IEnumDeclaration | 
 IConceptDeclaration | 
 IScalarDeclaration;
+
+export interface IMapDeclaration extends IDeclaration {
+   key: IMapKeyType;
+   value: IAggregateValueType;
+}
+
+export interface IMapKeyType extends IConcept {
+   type: ITypeIdentifier;
+   decorators?: IDecorator[];
+   location?: IRange;
+}
+
+export interface IAggregateValueType extends IConcept {
+   type: ITypeIdentifier;
+   decorators?: IDecorator[];
+   location?: IRange;
+}
+
+export type AggregateValueTypeUnion = IAggregateRelationshipValueType;
+
+export interface IAggregateRelationshipValueType extends IAggregateValueType {
+}
 
 export interface IEnumDeclaration extends IDeclaration {
    properties: IEnumProperty[];
@@ -157,11 +182,17 @@ export interface IDateTimeProperty extends IProperty {
 export interface IStringProperty extends IProperty {
    defaultValue?: string;
    validator?: IStringRegexValidator;
+   lengthValidator?: IStringLengthValidator;
 }
 
 export interface IStringRegexValidator extends IConcept {
    pattern: string;
    flags: string;
+}
+
+export interface IStringLengthValidator extends IConcept {
+   minLength?: number;
+   maxLength?: number;
 }
 
 export interface IDoubleProperty extends IProperty {
@@ -259,6 +290,7 @@ export interface IDoubleScalar extends IScalarDeclaration {
 export interface IStringScalar extends IScalarDeclaration {
    defaultValue?: string;
    validator?: IStringRegexValidator;
+   lengthValidator?: IStringLengthValidator;
 }
 
 export interface IDateTimeScalar extends IScalarDeclaration {

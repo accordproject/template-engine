@@ -14,7 +14,7 @@
 import { FileWriter } from '@accordproject/concerto-util';
 import { TemplateMarkModel } from '@accordproject/markdown-common';
 import { IFormula } from '../model-gen/org.accordproject.ciceromark@0.6.0';
-import { IFormulaDefinition } from '../model-gen/org.accordproject.templatemark@0.4.0';
+import { IFormulaDefinition } from '../model-gen/org.accordproject.templatemark@0.5.0';
 import { AbstractComplexCompiler, getTypeScriptType, makeCiceroMark, writeCloseGenerateScope, writeOpenGenerateScope } from './Common';
 
 export class Formula extends AbstractComplexCompiler {

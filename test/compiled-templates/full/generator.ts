@@ -73,7 +73,8 @@ Runtime.push($data, data);
       Runtime.push($nodes, $result);
       $result = (() => {
       Runtime.push($data, Runtime.peekProperty($data, 'middleNames', false));
-      const text = Runtime.peek($data).join('-');
+      const joinDef = {"$class":"org.accordproject.templatemark@0.5.0.JoinDefinition","separator":"-","name":"middleNames","nodes":[{"$class":"org.accordproject.templatemark@0.5.0.VariableDefinition","name":"this","elementType":"String"}]};
+      const text = Runtime.joinList(Runtime.peek($data), joinDef);
       Runtime.pop($data);
       return { $class: 'org.accordproject.commonmark@0.5.0.Text', text: text } as CommonMark.IText;
       })();
@@ -157,6 +158,31 @@ Runtime.push($data, data);
       })();
       Runtime.addChild($nodes, $result);
       Runtime.pop($data);
+      $result = Runtime.pop($nodes);
+      // Paragraph 
+      Runtime.push($nodes, $result);
+      $result = (() => {
+      return {"$class":"org.accordproject.commonmark@0.5.0.Paragraph"} as CommonMark.IParagraph;
+      })();
+      Runtime.addChild($nodes, $result);
+      // Text 
+      Runtime.push($nodes, $result);
+      $result = (() => {
+      return {"$class":"org.accordproject.commonmark@0.5.0.Text","text":"Middle names: ","nodes":[]} as CommonMark.IText;
+      })();
+      Runtime.addChild($nodes, $result);
+      $result = Runtime.pop($nodes);
+      // JoinDefinition (middleNames)
+      Runtime.push($nodes, $result);
+      $result = (() => {
+      Runtime.push($data, Runtime.peekProperty($data, 'middleNames', false));
+      const joinDef = {"$class":"org.accordproject.templatemark@0.5.0.JoinDefinition","locale":"en","name":"middleNames","nodes":[]};
+      const text = Runtime.joinList(Runtime.peek($data), joinDef);
+      Runtime.pop($data);
+      return { $class: 'org.accordproject.commonmark@0.5.0.Text', text: text } as CommonMark.IText;
+      })();
+      Runtime.addChild($nodes, $result);
+      $result = Runtime.pop($nodes);
       $result = Runtime.pop($nodes);
       // Heading 
       Runtime.push($nodes, $result);
@@ -406,7 +432,7 @@ Runtime.push($data, data);
       $result = (() => {
       const formulaResult = UserCode.formula_53113a901ca88208df47bc83374866e8d497d84099c0f88123c918ff1960b17e(data,library,now);
       const text = JSON.stringify(formulaResult);
-      const formula:any = {"$class":"org.accordproject.ciceromark@0.6.0.Formula","dependencies":[],"code":{"$class":"org.accordproject.templatemark@0.4.0.Code","type":"ES_2020","contents":" return now.diff(lastVisit,'day') "},"name":"formula_53113a901ca88208df47bc83374866e8d497d84099c0f88123c918ff1960b17e"};
+      const formula:any = {"$class":"org.accordproject.ciceromark@0.6.0.Formula","dependencies":[],"code":{"$class":"org.accordproject.templatemark@0.5.0.Code","type":"TYPESCRIPT","contents":" return now.diff(lastVisit,'day') "},"name":"formula_53113a901ca88208df47bc83374866e8d497d84099c0f88123c918ff1960b17e"};
       formula.value = text;
       formula.code = " return now.diff(lastVisit,'day') ";
       return formula as CiceroMark.IFormula;
@@ -468,7 +494,7 @@ Runtime.push($data, data);
       $result = (() => {
       const formulaResult = UserCode.formula_7841bd178366af21ea233d10968eaf538d12fb7a50cbaf9cbe1b51a00cb0f6a8(data,library,now);
       const text = JSON.stringify(formulaResult);
-      const formula:any = {"$class":"org.accordproject.ciceromark@0.6.0.Formula","dependencies":[],"code":{"$class":"org.accordproject.templatemark@0.4.0.Code","type":"ES_2020","contents":"\n// test we can use typescript!\nconst addressBook:Map<string,string> = new Map<string,string>();\naddressBook.set('123', 'Dan Selman');\naddressBook.set('234', 'Isaac Selman');\naddressBook.set('456', 'Tenzin Selman');\naddressBook.set('789', 'Mi-a Selman');\nlet result = '';\naddressBook.forEach((value, key) => {\n   result += `[${key} : ${value}]`;\n});\nreturn result;\n"},"name":"formula_7841bd178366af21ea233d10968eaf538d12fb7a50cbaf9cbe1b51a00cb0f6a8"};
+      const formula:any = {"$class":"org.accordproject.ciceromark@0.6.0.Formula","dependencies":[],"code":{"$class":"org.accordproject.templatemark@0.5.0.Code","type":"TYPESCRIPT","contents":"\n// test we can use typescript!\nconst addressBook:Map<string,string> = new Map<string,string>();\naddressBook.set('123', 'Dan Selman');\naddressBook.set('234', 'Isaac Selman');\naddressBook.set('456', 'Tenzin Selman');\naddressBook.set('789', 'Mi-a Selman');\nlet result = '';\naddressBook.forEach((value, key) => {\n   result += `[${key} : ${value}]`;\n});\nreturn result;\n"},"name":"formula_7841bd178366af21ea233d10968eaf538d12fb7a50cbaf9cbe1b51a00cb0f6a8"};
       formula.value = text;
       formula.code = "\n// test we can use typescript!\nconst addressBook:Map<string,string> = new Map<string,string>();\naddressBook.set('123', 'Dan Selman');\naddressBook.set('234', 'Isaac Selman');\naddressBook.set('456', 'Tenzin Selman');\naddressBook.set('789', 'Mi-a Selman');\nlet result = '';\naddressBook.forEach((value, key) => {\n   result += `[${key} : ${value}]`;\n});\nreturn result;\n";
       return formula as CiceroMark.IFormula;
@@ -641,7 +667,7 @@ Runtime.push($data, data);
       Runtime.push($nodes, $result);
       Runtime.push($data, Runtime.peekProperty($data, 'preferences', false));
       $result = (() => {
-      const isTrue:boolean = UserCode.condition_nodes_0_nodes_14(data,library,now)
+      const isTrue:boolean = UserCode.condition_nodes_0_nodes_15(data,library,now)
       if(isTrue) {
       return {"$class":"org.accordproject.ciceromark@0.6.0.Clause","name":"preferences"} as CiceroMark.IClause;
       }
@@ -682,7 +708,7 @@ Runtime.push($data, data);
       $result = (() => {
       const formulaResult = UserCode.formula_4b8f7e95470eda90057c4648aac4e4c7abb3f93559ed348246b6a15ec1fea473(data,library,now);
       const text = JSON.stringify(formulaResult);
-      const formula:any = {"$class":"org.accordproject.ciceromark@0.6.0.Formula","dependencies":[],"code":{"$class":"org.accordproject.templatemark@0.4.0.Code","type":"ES_2020","contents":" return preferences.favoriteColors !== undefined ? preferences.favoriteColors.join(' and ') : 'No favorite colors!' "},"name":"formula_4b8f7e95470eda90057c4648aac4e4c7abb3f93559ed348246b6a15ec1fea473"};
+      const formula:any = {"$class":"org.accordproject.ciceromark@0.6.0.Formula","dependencies":[],"code":{"$class":"org.accordproject.templatemark@0.5.0.Code","type":"TYPESCRIPT","contents":" return preferences.favoriteColors !== undefined ? preferences.favoriteColors.join(' and ') : 'No favorite colors!' "},"name":"formula_4b8f7e95470eda90057c4648aac4e4c7abb3f93559ed348246b6a15ec1fea473"};
       formula.value = text;
       formula.code = " return preferences.favoriteColors !== undefined ? preferences.favoriteColors.join(' and ') : 'No favorite colors!' ";
       return formula as CiceroMark.IFormula;
@@ -753,7 +779,7 @@ Runtime.push($data, data);
       // ConditionalDefinition (favoriteColors)
       Runtime.push($nodes, $result);
       $result = (() => {
-      const isTrue:boolean = UserCode.condition_nodes_0_nodes_14_nodes_4_nodes_0(data,library,now)
+      const isTrue:boolean = UserCode.condition_nodes_0_nodes_15_nodes_4_nodes_0(data,library,now)
       const curNode = {"$class":"org.accordproject.ciceromark@0.6.0.Conditional","whenTrue":[{"$class":"org.accordproject.commonmark@0.5.0.Text","text":"You like pink!"}],"whenFalse":[{"$class":"org.accordproject.commonmark@0.5.0.Text","text":"Why don't you like PINK!"}],"name":"favoriteColors","isTrue":true} as CiceroMark.IConditional;
       (curNode as CiceroMark.IConditional).isTrue = isTrue;
       return curNode;
@@ -808,7 +834,7 @@ Runtime.push($data, data);
       $result = (() => {
       const formulaResult = UserCode.formula_a8a1d7714d95baa82f730e0105d2f2d0a9fc25ee9b6055058cc09667c01c01ab(data,library,now);
       const text = JSON.stringify(formulaResult);
-      const formula:any = {"$class":"org.accordproject.ciceromark@0.6.0.Formula","dependencies":[],"code":{"$class":"org.accordproject.templatemark@0.4.0.Code","type":"ES_2020","contents":" \n    return jp.query(library, `$.clauses[?(@.category==\"onboarding\")]`);\n"},"name":"formula_a8a1d7714d95baa82f730e0105d2f2d0a9fc25ee9b6055058cc09667c01c01ab"};
+      const formula:any = {"$class":"org.accordproject.ciceromark@0.6.0.Formula","dependencies":[],"code":{"$class":"org.accordproject.templatemark@0.5.0.Code","type":"TYPESCRIPT","contents":" \n    return jp.query(library, `$.clauses[?(@.category==\"onboarding\")]`);\n"},"name":"formula_a8a1d7714d95baa82f730e0105d2f2d0a9fc25ee9b6055058cc09667c01c01ab"};
       formula.value = text;
       formula.code = " \n    return jp.query(library, `$.clauses[?(@.category==\"onboarding\")]`);\n";
       return formula as CiceroMark.IFormula;
@@ -860,7 +886,7 @@ Runtime.push($data, data);
       $result = (() => {
       const formulaResult = UserCode.formula_daca9cb2f5bc16b65f544e6f408c1e3121d50a3251ec4fbe2f27132818acc3d2(data,library,now);
       const text = JSON.stringify(formulaResult);
-      const formula:any = {"$class":"org.accordproject.ciceromark@0.6.0.Formula","dependencies":[],"code":{"$class":"org.accordproject.templatemark@0.4.0.Code","type":"ES_2020","contents":" \n    return jp.query(library, `$.clauses[?(@.author==\"${firstName}\")]`);\n"},"name":"formula_daca9cb2f5bc16b65f544e6f408c1e3121d50a3251ec4fbe2f27132818acc3d2"};
+      const formula:any = {"$class":"org.accordproject.ciceromark@0.6.0.Formula","dependencies":[],"code":{"$class":"org.accordproject.templatemark@0.5.0.Code","type":"TYPESCRIPT","contents":" \n    return jp.query(library, `$.clauses[?(@.author==\"${firstName}\")]`);\n"},"name":"formula_daca9cb2f5bc16b65f544e6f408c1e3121d50a3251ec4fbe2f27132818acc3d2"};
       formula.value = text;
       formula.code = " \n    return jp.query(library, `$.clauses[?(@.author==\"${firstName}\")]`);\n";
       return formula as CiceroMark.IFormula;
@@ -900,7 +926,7 @@ Runtime.push($data, data);
       $result = (() => {
       const formulaResult = UserCode.formula_4c874b2977b5eef204e4987efc0a5594c7cce66403e54c17daa1e1c721d755a0(data,library,now);
       const text = JSON.stringify(formulaResult);
-      const formula:any = {"$class":"org.accordproject.ciceromark@0.6.0.Formula","dependencies":[],"code":{"$class":"org.accordproject.templatemark@0.4.0.Code","type":"ES_2020","contents":" \n    return jp.query(library, `$.clauses[?(@.risk>4)]`);\n"},"name":"formula_4c874b2977b5eef204e4987efc0a5594c7cce66403e54c17daa1e1c721d755a0"};
+      const formula:any = {"$class":"org.accordproject.ciceromark@0.6.0.Formula","dependencies":[],"code":{"$class":"org.accordproject.templatemark@0.5.0.Code","type":"TYPESCRIPT","contents":" \n    return jp.query(library, `$.clauses[?(@.risk>4)]`);\n"},"name":"formula_4c874b2977b5eef204e4987efc0a5594c7cce66403e54c17daa1e1c721d755a0"};
       formula.value = text;
       formula.code = " \n    return jp.query(library, `$.clauses[?(@.risk>4)]`);\n";
       return formula as CiceroMark.IFormula;
@@ -952,7 +978,7 @@ Runtime.push($data, data);
       $result = (() => {
       const formulaResult = UserCode.formula_646a6cadec2125e4fd9e4b756aac72bc618b528967f04d325b28a817774441dd(data,library,now);
       const text = JSON.stringify(formulaResult);
-      const formula:any = {"$class":"org.accordproject.ciceromark@0.6.0.Formula","dependencies":[],"code":{"$class":"org.accordproject.templatemark@0.4.0.Code","type":"ES_2020","contents":" \n    return jp.query(library, `$.clauses[?(@.risk<3 && @.author==\"${firstName}\")]`);\n"},"name":"formula_646a6cadec2125e4fd9e4b756aac72bc618b528967f04d325b28a817774441dd"};
+      const formula:any = {"$class":"org.accordproject.ciceromark@0.6.0.Formula","dependencies":[],"code":{"$class":"org.accordproject.templatemark@0.5.0.Code","type":"TYPESCRIPT","contents":" \n    return jp.query(library, `$.clauses[?(@.risk<3 && @.author==\"${firstName}\")]`);\n"},"name":"formula_646a6cadec2125e4fd9e4b756aac72bc618b528967f04d325b28a817774441dd"};
       formula.value = text;
       formula.code = " \n    return jp.query(library, `$.clauses[?(@.risk<3 && @.author==\"${firstName}\")]`);\n";
       return formula as CiceroMark.IFormula;

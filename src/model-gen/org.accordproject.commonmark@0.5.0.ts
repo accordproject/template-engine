@@ -9,8 +9,8 @@
 
 // Warning: Beware of circular dependencies when modifying these imports
 import type {
-	IElement
-} from './org.accordproject.ciceromark@0.6.0';
+	IElementDefinition
+} from './org.accordproject.templatemark@0.5.0';
 import {IConcept} from './concerto@1.0.0';
 
 // interfaces
@@ -32,7 +32,8 @@ export type RootUnion = IDocument;
 export interface IChild extends INode {
 }
 
-export type ChildUnion = IText | 
+export type ChildUnion = IElementDefinition | 
+IText | 
 ICodeBlock | 
 ICode | 
 IHtmlInline | 
@@ -54,8 +55,7 @@ ITableHead |
 ITableBody | 
 ITableRow | 
 IHeaderCell | 
-ITableCell | 
-IElement;
+ITableCell;
 
 export interface IText extends IChild {
 }

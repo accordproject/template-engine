@@ -3,7 +3,7 @@
   "xmlns": "http://commonmark.org/xml/1.0",
   "nodes": [
     {
-      "$class": "org.accordproject.templatemark@0.4.0.ContractDefinition",
+      "$class": "org.accordproject.templatemark@0.5.0.ContractDefinition",
       "name": "top",
       "elementType": "test@1.0.0.TemplateData",
       "nodes": [
@@ -25,7 +25,7 @@
               "text": "Hello "
             },
             {
-              "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
               "name": "firstName",
               "elementType": "String"
             },
@@ -34,12 +34,12 @@
               "text": " "
             },
             {
-              "$class": "org.accordproject.templatemark@0.4.0.JoinDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.JoinDefinition",
               "separator": "-",
               "name": "middleNames",
               "nodes": [
                 {
-                  "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                   "name": "this",
                   "elementType": "String"
                 }
@@ -50,7 +50,7 @@
               "text": " "
             },
             {
-              "$class": "org.accordproject.templatemark@0.4.0.ConditionalDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.ConditionalDefinition",
               "whenTrue": [
                 {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
@@ -64,8 +64,8 @@
                 }
               ],
               "condition": {
-                "$class": "org.accordproject.templatemark@0.4.0.Code",
-                "type": "ES_2020",
+                "$class": "org.accordproject.templatemark@0.5.0.Code",
+                "type": "TYPESCRIPT",
                 "contents": "return lastName.startsWith('S')"
               },
               "dependencies": [],
@@ -88,7 +88,7 @@
           ]
         },
         {
-          "$class": "org.accordproject.templatemark@0.4.0.ListBlockDefinition",
+          "$class": "org.accordproject.templatemark@0.5.0.ListBlockDefinition",
           "type": "ordered",
           "tight": "true",
           "start": "1",
@@ -107,7 +107,7 @@
                       "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
                       "nodes": [
                         {
-                          "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                          "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "name": "this",
                           "elementType": "String"
                         }
@@ -116,6 +116,21 @@
                   ]
                 }
               ]
+            }
+          ]
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Middle names: "
+            },
+            {
+              "$class": "org.accordproject.templatemark@0.5.0.JoinDefinition",
+              "locale": "en",
+              "name": "middleNames",
+              "nodes": []
             }
           ]
         },
@@ -130,7 +145,7 @@
           ]
         },
         {
-          "$class": "org.accordproject.templatemark@0.4.0.ClauseDefinition",
+          "$class": "org.accordproject.templatemark@0.5.0.ClauseDefinition",
           "name": "address",
           "elementType": "test@1.0.0.Address",
           "nodes": [
@@ -150,7 +165,7 @@
                           "text": "Street: "
                         },
                         {
-                          "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                          "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "name": "street",
                           "elementType": "String"
                         }
@@ -169,7 +184,7 @@
                           "text": "City: "
                         },
                         {
-                          "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                          "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "name": "city",
                           "elementType": "String"
                         }
@@ -188,7 +203,7 @@
                           "text": "ZIP: "
                         },
                         {
-                          "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                          "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "name": "zip",
                           "elementType": "String"
                         }
@@ -208,7 +223,7 @@
               "text": "Your city is: "
             },
             {
-              "$class": "org.accordproject.templatemark@0.4.0.WithDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.WithDefinition",
               "name": "address",
               "elementType": "test@1.0.0.Address",
               "nodes": [
@@ -219,7 +234,7 @@
                       "$class": "org.accordproject.commonmark@0.5.0.Strong",
                       "nodes": [
                         {
-                          "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                          "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "name": "city",
                           "elementType": "String"
                         }
@@ -249,7 +264,7 @@
           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
           "nodes": [
             {
-              "$class": "org.accordproject.templatemark@0.4.0.ConditionalDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.ConditionalDefinition",
               "whenTrue": [
                 {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
@@ -280,11 +295,11 @@
                   "$class": "org.accordproject.commonmark@0.5.0.Strong",
                   "nodes": [
                     {
-                      "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+                      "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                       "dependencies": [],
                       "code": {
-                        "$class": "org.accordproject.templatemark@0.4.0.Code",
-                        "type": "ES_2020",
+                        "$class": "org.accordproject.templatemark@0.5.0.Code",
+                        "type": "TYPESCRIPT",
                         "contents": " return now.diff(lastVisit,'day') "
                       },
                       "name": "formula_53113a901ca88208df47bc83374866e8d497d84099c0f88123c918ff1960b17e"
@@ -303,7 +318,7 @@
                   "text": "Your last visit was: "
                 },
                 {
-                  "$class": "org.accordproject.templatemark@0.4.0.FormattedVariableDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.FormattedVariableDefinition",
                   "format": "MM/DD/YYYY",
                   "name": "lastVisit",
                   "elementType": "DateTime"
@@ -320,11 +335,11 @@
           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
           "nodes": [
             {
-              "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
               "dependencies": [],
               "code": {
-                "$class": "org.accordproject.templatemark@0.4.0.Code",
-                "type": "ES_2020",
+                "$class": "org.accordproject.templatemark@0.5.0.Code",
+                "type": "TYPESCRIPT",
                 "contents": "\n// test we can use typescript!\nconst addressBook:Map<string,string> = new Map<string,string>();\naddressBook.set('123', 'Dan Selman');\naddressBook.set('234', 'Isaac Selman');\naddressBook.set('456', 'Tenzin Selman');\naddressBook.set('789', 'Mi-a Selman');\nlet result = '';\naddressBook.forEach((value, key) => {\n   result += `[${key} : ${value}]`;\n});\nreturn result;\n"
               },
               "name": "formula_7841bd178366af21ea233d10968eaf538d12fb7a50cbaf9cbe1b51a00cb0f6a8"
@@ -342,7 +357,7 @@
           ]
         },
         {
-          "$class": "org.accordproject.templatemark@0.4.0.ListBlockDefinition",
+          "$class": "org.accordproject.templatemark@0.5.0.ListBlockDefinition",
           "type": "ordered",
           "tight": "true",
           "start": "1",
@@ -365,7 +380,7 @@
                           "$class": "org.accordproject.commonmark@0.5.0.Strong",
                           "nodes": [
                             {
-                              "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                              "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                               "name": "sku",
                               "elementType": "String"
                             }
@@ -379,7 +394,7 @@
                           "$class": "org.accordproject.commonmark@0.5.0.Emph",
                           "nodes": [
                             {
-                              "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                              "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                               "name": "amount",
                               "elementType": "Integer"
                             }
@@ -397,14 +412,14 @@
           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
           "nodes": [
             {
-              "$class": "org.accordproject.templatemark@0.4.0.OptionalDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.OptionalDefinition",
               "whenSome": [
                 {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
                   "text": "Your loyalty status: "
                 },
                 {
-                  "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                   "name": "level",
                   "elementType": "String"
                 }
@@ -421,10 +436,10 @@
           ]
         },
         {
-          "$class": "org.accordproject.templatemark@0.4.0.ClauseDefinition",
+          "$class": "org.accordproject.templatemark@0.5.0.ClauseDefinition",
           "condition": {
-            "$class": "org.accordproject.templatemark@0.4.0.Code",
-            "type": "ES_2020",
+            "$class": "org.accordproject.templatemark@0.5.0.Code",
+            "type": "TYPESCRIPT",
             "contents": "return preferences.favoriteColors !== undefined && preferences.favoriteColors.length > 0"
           },
           "name": "preferences",
@@ -448,11 +463,11 @@
                   "text": "Your favorite colors are: "
                 },
                 {
-                  "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "dependencies": [],
                   "code": {
-                    "$class": "org.accordproject.templatemark@0.4.0.Code",
-                    "type": "ES_2020",
+                    "$class": "org.accordproject.templatemark@0.5.0.Code",
+                    "type": "TYPESCRIPT",
                     "contents": " return preferences.favoriteColors !== undefined ? preferences.favoriteColors.join(' and ') : 'No favorite colors!' "
                   },
                   "name": "formula_4b8f7e95470eda90057c4648aac4e4c7abb3f93559ed348246b6a15ec1fea473"
@@ -471,7 +486,7 @@
               ]
             },
             {
-              "$class": "org.accordproject.templatemark@0.4.0.ListBlockDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.ListBlockDefinition",
               "type": "ordered",
               "tight": "true",
               "start": "1",
@@ -490,7 +505,7 @@
                           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
                           "nodes": [
                             {
-                              "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+                              "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                               "name": "this",
                               "elementType": "String"
                             }
@@ -506,7 +521,7 @@
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
               "nodes": [
                 {
-                  "$class": "org.accordproject.templatemark@0.4.0.ConditionalDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.ConditionalDefinition",
                   "whenTrue": [
                     {
                       "$class": "org.accordproject.commonmark@0.5.0.Text",
@@ -520,8 +535,8 @@
                     }
                   ],
                   "condition": {
-                    "$class": "org.accordproject.templatemark@0.4.0.Code",
-                    "type": "ES_2020",
+                    "$class": "org.accordproject.templatemark@0.5.0.Code",
+                    "type": "TYPESCRIPT",
                     "contents": "return preferences.favoriteColors !== undefined && preferences.favoriteColors.includes('PINK')"
                   },
                   "dependencies": [],
@@ -558,11 +573,11 @@
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
               "nodes": [
                 {
-                  "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "dependencies": [],
                   "code": {
-                    "$class": "org.accordproject.templatemark@0.4.0.Code",
-                    "type": "ES_2020",
+                    "$class": "org.accordproject.templatemark@0.5.0.Code",
+                    "type": "TYPESCRIPT",
                     "contents": " \n    return jp.query(library, `$.clauses[?(@.category==\"onboarding\")]`);\n"
                   },
                   "name": "formula_a8a1d7714d95baa82f730e0105d2f2d0a9fc25ee9b6055058cc09667c01c01ab"
@@ -580,7 +595,7 @@
               "text": "Authored by "
             },
             {
-              "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
               "name": "firstName",
               "elementType": "String"
             }
@@ -593,11 +608,11 @@
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
               "nodes": [
                 {
-                  "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "dependencies": [],
                   "code": {
-                    "$class": "org.accordproject.templatemark@0.4.0.Code",
-                    "type": "ES_2020",
+                    "$class": "org.accordproject.templatemark@0.5.0.Code",
+                    "type": "TYPESCRIPT",
                     "contents": " \n    return jp.query(library, `$.clauses[?(@.author==\"${firstName}\")]`);\n"
                   },
                   "name": "formula_daca9cb2f5bc16b65f544e6f408c1e3121d50a3251ec4fbe2f27132818acc3d2"
@@ -623,11 +638,11 @@
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
               "nodes": [
                 {
-                  "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "dependencies": [],
                   "code": {
-                    "$class": "org.accordproject.templatemark@0.4.0.Code",
-                    "type": "ES_2020",
+                    "$class": "org.accordproject.templatemark@0.5.0.Code",
+                    "type": "TYPESCRIPT",
                     "contents": " \n    return jp.query(library, `$.clauses[?(@.risk>4)]`);\n"
                   },
                   "name": "formula_4c874b2977b5eef204e4987efc0a5594c7cce66403e54c17daa1e1c721d755a0"
@@ -645,7 +660,7 @@
               "text": "Low Risk and authored by "
             },
             {
-              "$class": "org.accordproject.templatemark@0.4.0.VariableDefinition",
+              "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
               "name": "firstName",
               "elementType": "String"
             }
@@ -658,11 +673,11 @@
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
               "nodes": [
                 {
-                  "$class": "org.accordproject.templatemark@0.4.0.FormulaDefinition",
+                  "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "dependencies": [],
                   "code": {
-                    "$class": "org.accordproject.templatemark@0.4.0.Code",
-                    "type": "ES_2020",
+                    "$class": "org.accordproject.templatemark@0.5.0.Code",
+                    "type": "TYPESCRIPT",
                     "contents": " \n    return jp.query(library, `$.clauses[?(@.risk<3 && @.author==\"${firstName}\")]`);\n"
                   },
                   "name": "formula_646a6cadec2125e4fd9e4b756aac72bc618b528967f04d325b28a817774441dd"
