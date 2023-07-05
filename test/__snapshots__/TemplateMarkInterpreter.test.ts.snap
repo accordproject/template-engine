@@ -1221,29 +1221,6 @@ Object {
       "nodes": Array [
         Object {
           "$class": "org.accordproject.commonmark@0.5.0.Heading",
-          "level": "1",
-          "nodes": Array [
-            Object {
-              "$class": "org.accordproject.commonmark@0.5.0.Text",
-              "text": "Default Locale",
-            },
-          ],
-        },
-        Object {
-          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-          "nodes": Array [
-            Object {
-              "$class": "org.accordproject.commonmark@0.5.0.Text",
-              "text": "Default: ",
-            },
-            Object {
-              "$class": "org.accordproject.commonmark@0.5.0.Text",
-              "text": "CAR, ACCESSORIES and SPARE_PARTS",
-            },
-          ],
-        },
-        Object {
-          "$class": "org.accordproject.commonmark@0.5.0.Heading",
           "level": "2",
           "nodes": Array [
             Object {

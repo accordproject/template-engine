@@ -1,6 +1,3 @@
-# Default Locale
-Default: {{#join items}}{{/join}}
-
 ## en Locale
 
 ## Style
