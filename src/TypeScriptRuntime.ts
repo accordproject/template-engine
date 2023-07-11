@@ -13,12 +13,24 @@
  */
 const DEBUG = false;
 
-export function joinList(data:Array<string>, joinDef:any) : string {
+// BEWARE adding imports to this file
+// as it is used by the static code generator
+
+/**
+ * BEWARE - this type is duplicated in TypeScriptCompilationContext
+ * for use by code generation
+ */
+export type GenerationOptions = {
+    now?:string,
+    locale?:string
+}
+
+export function joinList(data:Array<string>, joinDef:any, options?:GenerationOptions) : string {
     if(joinDef.separator) {
         return data.join(joinDef.separator);
     }
     else {
-        const formatter = new Intl.ListFormat( joinDef.locale,
+        const formatter = new Intl.ListFormat( joinDef.locale ? joinDef.locale : options?.locale,
             {
                 style: (joinDef.style as Intl.ListFormatStyle),
                 type: (joinDef.type as Intl.ListFormatType)

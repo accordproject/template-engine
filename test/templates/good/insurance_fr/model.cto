@@ -1,0 +1,48 @@
+namespace com.acme.insurance.auto@1.0.0
+
+import org.accordproject.money@0.3.0.{MonetaryAmount} from https://models.accordproject.org/money@0.3.0.cto
+
+/**
+ * Types of insurance items that can be insured
+ */
+enum ItemType {
+    o ACCESSORIES
+    o SPARE_PARTS
+    o CAR
+}
+
+/**
+ * Insurance incident types
+ */
+enum IncidentType {
+    o LOST
+    o STOLEN
+    o DAMAGED
+}
+
+/**
+ * Types of insurance benefit
+ */
+enum BenefitType {
+    o REPAIRING
+    o REPLACING
+}
+
+/**
+ * A monetary limit imposed on a benefit type
+ */
+concept BenefitLimit {
+    o BenefitType benefitType
+    o MonetaryAmount limit
+}
+
+/**
+ * An insurance template that insures a set of items against
+ * a set of incidents, up to a monetary amount
+ */
+@template
+concept Insurance {
+    o ItemType[] items
+    o IncidentType[] incidents
+    o BenefitLimit[] benefitLimits
+}

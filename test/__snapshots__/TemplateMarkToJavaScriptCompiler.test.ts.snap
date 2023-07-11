@@ -55,7 +55,9 @@ Object {
               "$class": "org.accordproject.templatemark@0.5.0.ConditionalDefinition",
               "condition": Object {
                 "$class": "org.accordproject.templatemark@0.5.0.Code",
-                "contents": "export function condition_nodes_0_nodes_1_nodes_5(data, library, now) {
+                "contents": "export function condition_nodes_0_nodes_1_nodes_5(data, library, options) {
+    const now = dayjs(options === null || options === void 0 ? void 0 : options.now);
+    const locale = options === null || options === void 0 ? void 0 : options.locale;
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -314,7 +316,9 @@ Object {
                       "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                       "code": Object {
                         "$class": "org.accordproject.templatemark@0.5.0.Code",
-                        "contents": "export function formula_53113a901ca88208df47bc83374866e8d497d84099c0f88123c918ff1960b17e(data, library, now) {
+                        "contents": "export function formula_53113a901ca88208df47bc83374866e8d497d84099c0f88123c918ff1960b17e(data, library, options) {
+    const now = dayjs(options === null || options === void 0 ? void 0 : options.now);
+    const locale = options === null || options === void 0 ? void 0 : options.locale;
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -367,7 +371,9 @@ Object {
               "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
               "code": Object {
                 "$class": "org.accordproject.templatemark@0.5.0.Code",
-                "contents": "export function formula_7841bd178366af21ea233d10968eaf538d12fb7a50cbaf9cbe1b51a00cb0f6a8(data, library, now) {
+                "contents": "export function formula_7841bd178366af21ea233d10968eaf538d12fb7a50cbaf9cbe1b51a00cb0f6a8(data, library, options) {
+    const now = dayjs(options === null || options === void 0 ? void 0 : options.now);
+    const locale = options === null || options === void 0 ? void 0 : options.locale;
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -491,7 +497,9 @@ Object {
           "$class": "org.accordproject.templatemark@0.5.0.ClauseDefinition",
           "condition": Object {
             "$class": "org.accordproject.templatemark@0.5.0.Code",
-            "contents": "export function condition_nodes_0_nodes_15(data, library, now) {
+            "contents": "export function condition_nodes_0_nodes_15(data, library, options) {
+    const now = dayjs(options === null || options === void 0 ? void 0 : options.now);
+    const locale = options === null || options === void 0 ? void 0 : options.locale;
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -532,7 +540,9 @@ Object {
                   "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "code": Object {
                     "$class": "org.accordproject.templatemark@0.5.0.Code",
-                    "contents": "export function formula_4b8f7e95470eda90057c4648aac4e4c7abb3f93559ed348246b6a15ec1fea473(data, library, now) {
+                    "contents": "export function formula_4b8f7e95470eda90057c4648aac4e4c7abb3f93559ed348246b6a15ec1fea473(data, library, options) {
+    const now = dayjs(options === null || options === void 0 ? void 0 : options.now);
+    const locale = options === null || options === void 0 ? void 0 : options.locale;
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -603,7 +613,9 @@ Object {
                   "$class": "org.accordproject.templatemark@0.5.0.ConditionalDefinition",
                   "condition": Object {
                     "$class": "org.accordproject.templatemark@0.5.0.Code",
-                    "contents": "export function condition_nodes_0_nodes_15_nodes_4_nodes_0(data, library, now) {
+                    "contents": "export function condition_nodes_0_nodes_15_nodes_4_nodes_0(data, library, options) {
+    const now = dayjs(options === null || options === void 0 ? void 0 : options.now);
+    const locale = options === null || options === void 0 ? void 0 : options.locale;
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -669,7 +681,9 @@ Object {
                   "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "code": Object {
                     "$class": "org.accordproject.templatemark@0.5.0.Code",
-                    "contents": "export function formula_a8a1d7714d95baa82f730e0105d2f2d0a9fc25ee9b6055058cc09667c01c01ab(data, library, now) {
+                    "contents": "export function formula_a8a1d7714d95baa82f730e0105d2f2d0a9fc25ee9b6055058cc09667c01c01ab(data, library, options) {
+    const now = dayjs(options === null || options === void 0 ? void 0 : options.now);
+    const locale = options === null || options === void 0 ? void 0 : options.locale;
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -717,7 +731,9 @@ Object {
                   "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "code": Object {
                     "$class": "org.accordproject.templatemark@0.5.0.Code",
-                    "contents": "export function formula_daca9cb2f5bc16b65f544e6f408c1e3121d50a3251ec4fbe2f27132818acc3d2(data, library, now) {
+                    "contents": "export function formula_daca9cb2f5bc16b65f544e6f408c1e3121d50a3251ec4fbe2f27132818acc3d2(data, library, options) {
+    const now = dayjs(options === null || options === void 0 ? void 0 : options.now);
+    const locale = options === null || options === void 0 ? void 0 : options.locale;
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -760,7 +776,9 @@ Object {
                   "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "code": Object {
                     "$class": "org.accordproject.templatemark@0.5.0.Code",
-                    "contents": "export function formula_4c874b2977b5eef204e4987efc0a5594c7cce66403e54c17daa1e1c721d755a0(data, library, now) {
+                    "contents": "export function formula_4c874b2977b5eef204e4987efc0a5594c7cce66403e54c17daa1e1c721d755a0(data, library, options) {
+    const now = dayjs(options === null || options === void 0 ? void 0 : options.now);
+    const locale = options === null || options === void 0 ? void 0 : options.locale;
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;
@@ -808,7 +826,9 @@ Object {
                   "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
                   "code": Object {
                     "$class": "org.accordproject.templatemark@0.5.0.Code",
-                    "contents": "export function formula_646a6cadec2125e4fd9e4b756aac72bc618b528967f04d325b28a817774441dd(data, library, now) {
+                    "contents": "export function formula_646a6cadec2125e4fd9e4b756aac72bc618b528967f04d325b28a817774441dd(data, library, options) {
+    const now = dayjs(options === null || options === void 0 ? void 0 : options.now);
+    const locale = options === null || options === void 0 ? void 0 : options.locale;
     const firstName = data.firstName;
     const lastName = data.lastName;
     const middleNames = data.middleNames;

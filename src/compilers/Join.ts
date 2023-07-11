@@ -25,7 +25,7 @@ export class Join extends AbstractComplexCompiler {
         writeOpenGenerateScope(fw,level);
         writeOpenDataScope(fw,level,templateMarkNode.name);
         fw.writeLine(level, `const joinDef = ${JSON.stringify(templateMarkNode)};`);
-        fw.writeLine(level, 'const text = Runtime.joinList(Runtime.peek($data), joinDef);');
+        fw.writeLine(level, 'const text = Runtime.joinList(Runtime.peek($data), joinDef, options);');
         writeCloseDataScope(fw,level);
         fw.writeLine(level, `return { $class: '${CommonMarkModel.NAMESPACE}.Text', text: text } as ${getTypeScriptType(CommonMarkModel.NAMESPACE + '.Text')};`);
         writeCloseGenerateScope(fw,level);

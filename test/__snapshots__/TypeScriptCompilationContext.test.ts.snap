@@ -126,5 +126,10 @@ export interface ITemplateData extends IConcept {
 import * as TemplateModel from './test@1.0.0';
 import dayjs from 'dayjs';
 import jp from 'jsonpath';
+
+type GenerationOptions = {
+    now?:string,
+    locale?:string
+}
 "
 `;

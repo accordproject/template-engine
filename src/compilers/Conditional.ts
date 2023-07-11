@@ -34,7 +34,7 @@ export class Conditional extends AbstractComplexCompiler {
         clone.isTrue = true;
         writeOpenGenerateScope(fw,level);
         if(templateMarkNode.condition) {
-            fw.writeLine(level, `const isTrue:boolean = UserCode.${templateMarkNode.functionName}(data,library,now)`);
+            fw.writeLine(level, `const isTrue:boolean = UserCode.${templateMarkNode.functionName}(data,library,options)`);
         }
         else {
             writeOpenDataScope(fw,level,templateMarkNode.name);

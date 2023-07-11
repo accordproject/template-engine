@@ -41,7 +41,7 @@ export class Clause extends AbstractComplexCompiler {
         const para = {$class: `${CommonMarkModel.NAMESPACE}.Paragraph`} as IParagraph;
         writeOpenGenerateScope(fw, level);
         if(templateMarkNode.condition) {
-            fw.writeLine(level, `const isTrue:boolean = UserCode.${templateMarkNode.functionName}(data,library,now)`);
+            fw.writeLine(level, `const isTrue:boolean = UserCode.${templateMarkNode.functionName}(data,library,options)`);
         }
         else {
             fw.writeLine(level, 'const isTrue:boolean = true;');

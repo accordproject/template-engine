@@ -25,7 +25,7 @@ export class Formula extends AbstractComplexCompiler {
     generate(fw:FileWriter, level:number, templateMarkNode:IFormulaDefinition) {
         const clone = makeCiceroMark(templateMarkNode) as IFormula;
         writeOpenGenerateScope(fw,level);
-        fw.writeLine(level, `const formulaResult = UserCode.${templateMarkNode.name}(data,library,now);`);
+        fw.writeLine(level, `const formulaResult = UserCode.${templateMarkNode.name}(data,library,options);`);
         fw.writeLine(level, 'const text = JSON.stringify(formulaResult);');
         fw.writeLine(level, `const formula:any = ${JSON.stringify(clone)};`);
         fw.writeLine(level, 'formula.value = text;');

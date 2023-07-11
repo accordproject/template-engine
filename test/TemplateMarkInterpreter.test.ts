@@ -2,7 +2,6 @@ import { ModelManager } from '@accordproject/concerto-core';
 import { CommonMarkModel } from '@accordproject/markdown-common';
 import { TemplateMarkInterpreter } from '../src';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
-import dayjs from 'dayjs';
 import { readFileSync, readdirSync } from 'fs';
 import * as path from 'path';
 
@@ -77,8 +76,8 @@ describe('templatemark interpreter', () => {
             const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate({ content: templateMarkup }, modelManager, 'contract', { verbose: false });
             // console.log(JSON.stringify(templateMarkDom, null, 2));
 
-            const now = dayjs('2023-03-17T00:00:00.000Z');
-            const ciceroMark = await engine.generate(templateMarkDom, data, now);
+            const now = '2023-03-17T00:00:00.000Z';
+            const ciceroMark = await engine.generate(templateMarkDom, data, {now, locale: 'en'});
             expect(ciceroMark.getFullyQualifiedType()).toBe(`${CommonMarkModel.NAMESPACE}.Document`);
             expect(ciceroMark.toJSON()).toMatchSnapshot();
         });
@@ -104,8 +103,8 @@ describe('templatemark interpreter', () => {
             const f = async () => {
                 const templateMarkTransformer = new TemplateMarkTransformer();
                 const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate({ content: templateMarkup }, modelManager, 'contract', { verbose: false });
-                const now = dayjs('2023-03-17T00:00:00.000Z');
-                return engine.generate(templateMarkDom, data, now);
+                const now = '2023-03-17T00:00:00.000Z';
+                return engine.generate(templateMarkDom, data, {now});
             };
             await expect(f()).rejects.toMatchSnapshot();
         });

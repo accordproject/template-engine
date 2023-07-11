@@ -12,7 +12,6 @@
  * limitations under the License.
  */
 
-import dayjs from 'dayjs';
 import jp from 'jsonpath';
 import traverse from 'traverse';
 
@@ -40,7 +39,8 @@ import {
 } from './Common';
 import { TemplateMarkToJavaScriptCompiler } from './TemplateMarkToJavaScriptCompiler';
 import { CodeType, ICode } from './model-gen/org.accordproject.templatemark@0.5.0';
-import { joinList } from './TypeScriptRuntime';
+import { GenerationOptions, joinList } from './TypeScriptRuntime';
+import dayjs from 'dayjs';
 
 function checkCode(code:ICode) {
     if(code.type !== CodeType.ES_2020) {
@@ -53,25 +53,26 @@ function checkCode(code:ICode) {
  * @param {*} clauseLibrary the clause library
  * @param {*} data the contract data
  * @param {string} fn the JS function (including header)
- * @param {Date} now the current value for now
+ * @param {GenerationOptions} options the generation options
  * @returns {object} the result of evaluating the expression against the data
  */
-function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: string, now?: dayjs.Dayjs): object {
+function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: string, options?: GenerationOptions): object {
     if (!data || !fn) {
         throw new Error(`Cannot evaluate JS ${fn} against ${data}`);
     }
-    const runtimeNow = now ? now : dayjs();
     const functionArgNames = new Array<string>();
     functionArgNames.push('data');
     functionArgNames.push('library');
-    functionArgNames.push('now');
+    functionArgNames.push('options');
+    functionArgNames.push('dayjs');
     functionArgNames.push('jp');
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const functionArgValues = new Array<any>();
     functionArgValues.push(data);
     functionArgValues.push(clauseLibrary);
-    functionArgValues.push(runtimeNow);
+    functionArgValues.push(options);
+    functionArgValues.push(dayjs);
     functionArgValues.push(jp);
 
     // chop the function header and closing
@@ -142,10 +143,10 @@ function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
  * @param {*} clauseLibrary - the clause library
  * @param {*} templateMark - the TemplateMark JSON document
  * @param {*} data - the template data JSON
- * @param {[dayjs.Dayjs]} now - date/time to use for the now variable
+ * @param {[GenerationOptions]} options - the generation options
  * @returns {*} the AgreementMark JSON
  */
-function generateAgreement(modelManager:ModelManager, clauseLibrary:object, templateMark: object, data: TemplateData, now?:dayjs.Dayjs): any {
+function generateAgreement(modelManager:ModelManager, clauseLibrary:object, templateMark: object, data: TemplateData, options?:GenerationOptions): any {
     const introspector = new Introspector(modelManager);
     return traverse(templateMark).map(function (context: any) {
         let stopHere = false;
@@ -179,7 +180,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
             else if (FORMULA_DEFINITION_RE.test(nodeClass)) {
                 if (context.code) {
                     checkCode(context.code);
-                    const result = evaluateJavaScript(clauseLibrary, data, context.code.contents, now);
+                    const result = evaluateJavaScript(clauseLibrary, data, context.code.contents, options);
                     if(result === null) {
                         context.value = '<null>';
                     }
@@ -244,7 +245,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
                         const drafter = getDrafter(context.elementType);
                         context.text = joinList(arrayData.map( arrayItem => {
                             return drafter ? drafter(arrayItem, context.format) : arrayItem as string;
-                        }), context);
+                        }), context, options);
                         delete context.elementType;
                         delete context.name;
                         delete context.separator;
@@ -292,7 +293,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
                     checkCode(context.condition);
-                    context.isTrue = !!evaluateJavaScript(clauseLibrary, data, context.condition.contents, now) as unknown as boolean;
+                    context.isTrue = !!evaluateJavaScript(clauseLibrary, data, context.condition.contents, options) as unknown as boolean;
                 }
                 else {
                     const path = getJsonPath(templateMark, context, this.path);
@@ -319,7 +320,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
             else if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
                     checkCode(context.condition);
-                    const result = !!evaluateJavaScript(clauseLibrary, data, context.condition.contents, now) as unknown as boolean;
+                    const result = !!evaluateJavaScript(clauseLibrary, data, context.condition.contents, options) as unknown as boolean;
                     if(!result) {
                         delete context.nodes;
                         stopHere = true;
@@ -425,7 +426,7 @@ export class TemplateMarkInterpreter {
         }
     }
 
-    async generate(templateMark: object, data: TemplateData, now?:dayjs.Dayjs): Promise<any> {
+    async generate(templateMark: object, data: TemplateData, options?:GenerationOptions): Promise<any> {
         const factory = new Factory(this.modelManager);
         const serializer = new Serializer(factory, this.modelManager);
         const templateData = serializer.fromJSON(data);
@@ -434,7 +435,7 @@ export class TemplateMarkInterpreter {
         }
         const typedTemplateMark = this.checkTypes(templateMark);
         const jsTemplateMark = this.compileTypeScriptToJavaScript(typedTemplateMark);
-        const ciceroMark = generateAgreement(this.modelManager, this.clauseLibrary, jsTemplateMark, data, now);
+        const ciceroMark = generateAgreement(this.modelManager, this.clauseLibrary, jsTemplateMark, data, options);
         return this.validateCiceroMark(ciceroMark);
     }
 }

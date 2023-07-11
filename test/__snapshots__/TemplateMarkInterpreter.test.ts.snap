@@ -9,51 +9,51 @@ Array [
         "category": 1,
         "character": 3,
         "code": 2304,
-        "id": "err-2304-321-4",
+        "id": "err-2304-468-4",
         "length": 4,
-        "line": 6,
+        "line": 12,
         "renderedMessage": "Cannot find name 'THIS'.",
-        "start": 1304,
+        "start": 1424,
       },
       Object {
         "category": 1,
         "character": 8,
         "code": 2304,
-        "id": "err-2304-326-2",
+        "id": "err-2304-473-2",
         "length": 2,
-        "line": 6,
+        "line": 12,
         "renderedMessage": "Cannot find name 'IS'.",
-        "start": 1309,
+        "start": 1429,
       },
       Object {
         "category": 1,
         "character": 11,
         "code": 2304,
-        "id": "err-2304-329-7",
+        "id": "err-2304-476-7",
         "length": 7,
-        "line": 6,
+        "line": 12,
         "renderedMessage": "Cannot find name 'GARBAGE'.",
-        "start": 1312,
+        "start": 1432,
       },
       Object {
         "category": 1,
         "character": 3,
         "code": 1435,
-        "id": "err-1435-321-4",
+        "id": "err-1435-468-4",
         "length": 4,
-        "line": 6,
+        "line": 12,
         "renderedMessage": "Unknown keyword or identifier. Did you mean 'this'?",
-        "start": 1304,
+        "start": 1424,
       },
       Object {
         "category": 1,
         "character": 8,
         "code": 1434,
-        "id": "err-1434-326-2",
+        "id": "err-1434-473-2",
         "length": 2,
-        "line": 6,
+        "line": 12,
         "renderedMessage": "Unexpected keyword or identifier.",
-        "start": 1309,
+        "start": 1429,
       },
     ],
     "nodeId": "formula_adef0feb9fc1b6e7513409c93d86aa4d9999d35608e1aaeecc07dca99bc591c8",
@@ -70,11 +70,11 @@ Array [
         "category": 1,
         "character": 18,
         "code": 2339,
-        "id": "err-2339-336-7",
+        "id": "err-2339-483-7",
         "length": 7,
-        "line": 6,
+        "line": 12,
         "renderedMessage": "Property 'missing' does not exist on type 'string'.",
-        "start": 1319,
+        "start": 1439,
       },
     ],
     "nodeId": "formula_4ef52e3adc6e5334e0925838eed0e51a372091d9b3a4499537ccf82fce5b1b25",
@@ -91,11 +91,11 @@ Array [
         "category": 1,
         "character": 10,
         "code": 18048,
-        "id": "err-18048-328-7",
+        "id": "err-18048-475-7",
         "length": 7,
-        "line": 6,
+        "line": 12,
         "renderedMessage": "'message' is possibly 'undefined'.",
-        "start": 1312,
+        "start": 1432,
       },
     ],
     "nodeId": "formula_a3e0e90a2ad3601e1b208a0581e1ce6dfc5aab302d20cb2a0488d78e236096f7",
@@ -1088,7 +1088,7 @@ Object {
 }
 `;
 
-exports[`templatemark interpreter should generate insurance 1`] = `
+exports[`templatemark interpreter should generate insurance_en 1`] = `
 Object {
   "$class": "org.accordproject.commonmark@0.5.0.Document",
   "nodes": Array [
@@ -1196,6 +1196,130 @@ Object {
                     Object {
                       "$class": "org.accordproject.commonmark@0.5.0.Text",
                       "text": " the damages",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate insurance_fr 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Si votre ",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "CAR, ACCESSORIES et SPARE_PARTS",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": " sont ",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "DAMAGED, LOST ou STOLEN",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": ", nous :",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Payer jusqu'à ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+                      "format": "0.0,00 K",
+                      "name": "limit",
+                      "value": "1.500,00 €",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " pour les frais de ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.EnumVariable",
+                      "elementType": "com.acme.insurance.auto@1.0.0.BenefitType",
+                      "enumValues": Array [
+                        "REPAIRING",
+                        "REPLACING",
+                      ],
+                      "name": "benefitType",
+                      "value": "REPAIRING",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " des dommages",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Payer jusqu'à ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+                      "format": "0.0,00 K",
+                      "name": "limit",
+                      "value": "500,00 €",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " pour les frais de ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.EnumVariable",
+                      "elementType": "com.acme.insurance.auto@1.0.0.BenefitType",
+                      "enumValues": Array [
+                        "REPAIRING",
+                        "REPLACING",
+                      ],
+                      "name": "benefitType",
+                      "value": "REPLACING",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " des dommages",
                     },
                   ],
                 },

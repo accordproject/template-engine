@@ -49,7 +49,9 @@ export class TemplateMarkToTypeScriptCompiler {
     writeFunctionToString(functionName: string, returnType: string, code: string): string {
         let result = '';
         result += '/// ---cut---\n';
-        result += `export function ${functionName}(data:TemplateModel.I${this.templateClass.getName()}, library:any, now:dayjs.Dayjs) : ${returnType} {\n`;
+        result += `export function ${functionName}(data:TemplateModel.I${this.templateClass.getName()}, library:any, options:GenerationOptions) : ${returnType} {\n`;
+        result += '   const now = dayjs(options?.now);\n';
+        result += '   const locale = options?.locale;\n';
         this.templateClass.getProperties().forEach((p: Property) => {
             result += `   const ${p.getName()} = data.${p.getName()};\n`;
         });
@@ -166,10 +168,9 @@ export class TemplateMarkToTypeScriptCompiler {
         fw.openFile('index.ts');
         fw.writeLine(0, '// generated code');
         fw.writeLine(0, 'import { readFileSync } from \'fs\';');
-        fw.writeLine(0, 'import dayjs from \'dayjs\';');
         fw.writeLine(0, 'import { generator } from \'./generator\';');
         fw.writeLine(0, 'if(process.argv.length === 3) {');
-        fw.writeLine(1, 'const result = generator( JSON.parse(readFileSync(process.argv[2], \'utf-8\')), {}, dayjs());');
+        fw.writeLine(1, 'const result = generator( JSON.parse(readFileSync(process.argv[2], \'utf-8\')), {}, {});');
         fw.writeLine(1, 'console.log(JSON.stringify(result, null, 2));');
         fw.writeLine(0, '}');
         fw.writeLine(0, 'else {');
@@ -299,6 +300,8 @@ export class TemplateMarkToTypeScriptCompiler {
         fw.writeLine(0, `import * as TemplateModel from './${this.templateClass.getNamespace()}';`);
         fw.writeLine(0, 'import dayjs from \'dayjs\';');
         fw.writeLine(0, 'import jp from \'jsonpath\';');
+        fw.writeLine(0, 'import {GenerationOptions} from \'./runtime/TypeScriptRuntime\';');
+
         fw.writeLine(0, '');
 
         const templateMarkDom = templateMark;

@@ -67,6 +67,11 @@ ${content}
 import * as TemplateModel from './${this.templateClass.getNamespace()}';
 import dayjs from 'dayjs';
 import jp from 'jsonpath';
+
+type GenerationOptions = {
+    now?:string,
+    locale?:string
+}
 `;
         return result;
     }

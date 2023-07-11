@@ -36,8 +36,8 @@ describe('hello world template', () => {
         const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate({ content: template }, modelManager, 'contract', { verbose: false });
         // console.log(JSON.stringify(templateMarkDom, null, 2));
 
-        const now = dayjs('2023-03-17T00:00:00.000Z');
-        const ciceroMark = await engine.generate(templateMarkDom, data, now);
+        const now = '2023-03-17T00:00:00.000Z';
+        const ciceroMark = await engine.generate(templateMarkDom, data, {now});
         expect(ciceroMark.getFullyQualifiedType()).toBe(`${CommonMarkModel.NAMESPACE}.Document`);
         expect(ciceroMark.toJSON()).toMatchSnapshot();
         // console.log(JSON.stringify(ciceroMark.toJSON(), null, 2));
