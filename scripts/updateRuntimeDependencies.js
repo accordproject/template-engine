@@ -11,10 +11,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const { readFileSync, writeFileSync } = require('fs');
-const { ensureDirSync, removeSync } = require('../src/utils');
+const { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } = require('fs');
 const tar = require('tar');
 const path = require('path');
+
+function ensureDirSync(path) {
+  !existsSync(path) && mkdirSync(path, { recursive: true });
+}
+
+function removeSync(path) {
+  rmSync(path, { recursive: true, force: true });
+}
 
 const HEADER = `/*
  * Licensed under the Apache License, Version 2.0 (the "License");
