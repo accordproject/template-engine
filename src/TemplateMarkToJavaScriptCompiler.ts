@@ -18,8 +18,8 @@ import { ClassDeclaration, ModelManager } from '@accordproject/concerto-core';
 import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler';
 import { TwoSlashReturn } from '@typescript/twoslash';
 import { getTemplateClassDeclaration } from './Common';
-import { TemplateMarkToTypeScriptCompiler } from './TemplateMarkToTypeScriptCompiler';
 import { CodeType, ICode } from './model-gen/org.accordproject.templatemark@0.5.0';
+import { nameUserCode, writeFunctionToString } from './utils';
 
 const CODE_NODES = [
     `${TemplateMarkModel.NAMESPACE}.FormulaDefinition`,
@@ -55,9 +55,7 @@ export class TemplateMarkToJavaScriptCompiler {
     }
 
     compile(templateJson: any) : any {
-        const namedTemplateMark = TemplateMarkToTypeScriptCompiler.nameUserCode(templateJson);
-        const functionCompiler = new TemplateMarkToTypeScriptCompiler(this.modelManager, this.templateClass.getFullyQualifiedName());
-
+        const namedTemplateMark = nameUserCode(templateJson);
         // eslint-disable-next-line @typescript-eslint/no-this-alias
         const that = this;
         const errors = Array<CompilerError>();
@@ -65,7 +63,7 @@ export class TemplateMarkToJavaScriptCompiler {
             if (x && CODE_NODES.includes(x.$class)) {
                 if (x.code) {  // formula
                     checkCode(x.code);
-                    const result = that.compiler.compile(functionCompiler.writeFunctionToString(x.name, 'any', x.code.contents));
+                    const result = that.compiler.compile(writeFunctionToString(that.templateClass, x.name, 'any', x.code.contents));
                     if(result.errors.length === 0) {
                         x.code.contents = result.code;
                         x.code.type = CodeType.ES_2020;
@@ -81,7 +79,7 @@ export class TemplateMarkToJavaScriptCompiler {
                 }
                 else if (x.condition) {  // condition or clause (boolean condition)
                     checkCode(x.condition);
-                    const result = that.compiler.compile(functionCompiler.writeFunctionToString(x.functionName, 'boolean', x.condition.contents));
+                    const result = that.compiler.compile(writeFunctionToString(that.templateClass, x.functionName, 'boolean', x.condition.contents));
                     if(result.errors.length === 0) {
                         x.condition.contents = result.code;
                         x.condition.type = CodeType.ES_2020;

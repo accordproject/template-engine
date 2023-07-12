@@ -25,7 +25,7 @@ import { getCompiler } from './compilers/NodeCompilers';
 import { RUNTIME_DIR, writeEpilog, writeImports, writeProlog } from './compilers/Common';
 import { getTemplateClassDeclaration } from './Common';
 import { RUNTIME_TGZ_BASE64 } from './runtime/runtime';
-import { ensureDirSync } from './utils';
+import { ensureDirSync, nameUserCode, writeFunctionToString } from './utils';
 
 export type ProcessingFunction = (fw: FileWriter, level: number, resource: any) => void;
 
@@ -47,24 +47,8 @@ export class TemplateMarkToTypeScriptCompiler {
         this.templateClass = getTemplateClassDeclaration(this.modelManager,templateConceptFqn);
     }
 
-    writeFunctionToString(functionName: string, returnType: string, code: string): string {
-        let result = '';
-        result += '/// ---cut---\n';
-        result += `export function ${functionName}(data:TemplateModel.I${this.templateClass.getName()}, library:any, options:GenerationOptions) : ${returnType} {\n`;
-        result += '   const now = dayjs(options?.now);\n';
-        result += '   const locale = options?.locale;\n';
-        this.templateClass.getProperties().forEach((p: Property) => {
-            result += `   const ${p.getName()} = data.${p.getName()};\n`;
-        });
-        result += '   ' + code.trim() + '\n';
-        result += '}\n';
-        result += '\n';
-
-        return result;
-    }
-
     writeFunction(fw: FileWriter, functionName: string, returnType: string, code: string) {
-        fw.writeLine(0, this.writeFunctionToString(functionName, returnType, code));
+        fw.writeLine(0, writeFunctionToString(this.templateClass, functionName, returnType, code));
     }
 
     /**
@@ -263,7 +247,7 @@ export class TemplateMarkToTypeScriptCompiler {
         this.generateTypeScript(this.getCiceroMarkModelManager(), outputDir);
 
         // generate names for all the nodes containing user code
-        const namedTemplateMark = TemplateMarkToTypeScriptCompiler.nameUserCode(templateMark.toJSON ? templateMark.toJSON() : templateMark);
+        const namedTemplateMark = nameUserCode(templateMark.toJSON ? templateMark.toJSON() : templateMark);
 
         // compile the user code
         this.compileUserCode(namedTemplateMark, outputDir);
@@ -278,16 +262,6 @@ export class TemplateMarkToTypeScriptCompiler {
             this.createPackage(outputDir);
             this.compileGenerator(namedTemplateMark, outputDir);
         }
-    }
-
-    static nameUserCode(templateMarkDom: any) {
-        return traverse(templateMarkDom).map(function (x) {
-            if (x && ((x.$class === `${TemplateMarkModel.NAMESPACE}.ConditionalDefinition` && x.condition) ||
-                (`${TemplateMarkModel.NAMESPACE}.ClauseDefinition` && x.condition))) {
-                x.functionName = `condition_${this.path.join('_')}`;
-            }
-            this.update(x);
-        });
     }
 
     compileUserCode(templateMark: any, outputDir: string) {

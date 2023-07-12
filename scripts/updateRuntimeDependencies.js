@@ -43,7 +43,7 @@ const HEADER = `/*
 
 /**
  * Package the TypeScript declarations for dayjs and jsonpath
- * Both of these are needed at runtime so compile user TypeScript code to JS
+ * Both of these are needed at runtime to compile user TypeScript code to JS
  */
 const dayjs = readFileSync('./node_modules/dayjs/index.d.ts').toString(
   'base64'
