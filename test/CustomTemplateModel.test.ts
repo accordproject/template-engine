@@ -1,9 +1,8 @@
 import { ModelManager } from '@accordproject/concerto-core';
 import { CommonMarkModel } from '@accordproject/markdown-common';
-import { readFileSync } from 'fs-extra';
+import { readFileSync } from 'fs';
 import { TemplateMarkInterpreter } from '../src';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
-import dayjs from 'dayjs';
 
 describe('template with custom template model', () => {
     test('should create agreementmark from a template and data', async () => {

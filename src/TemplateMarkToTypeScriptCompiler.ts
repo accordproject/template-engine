@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 import traverse from 'traverse';
-import { writeFileSync, ensureDirSync } from 'fs-extra';
+import { writeFileSync } from 'fs';
 import * as tar from 'tar';
 import { Readable } from 'stream';
 
@@ -25,6 +25,7 @@ import { getCompiler } from './compilers/NodeCompilers';
 import { RUNTIME_DIR, writeEpilog, writeImports, writeProlog } from './compilers/Common';
 import { getTemplateClassDeclaration } from './Common';
 import { RUNTIME_TGZ_BASE64 } from './runtime/runtime';
+import { ensureDirSync } from './utils';
 
 export type ProcessingFunction = (fw: FileWriter, level: number, resource: any) => void;
 

@@ -2,7 +2,8 @@ import { Factory, ModelManager, Serializer } from '@accordproject/concerto-core'
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 
 import { readFileSync, readdirSync } from 'fs';
-import { ensureDirSync, existsSync, rmSync, writeFileSync } from 'fs-extra';
+import { existsSync, rmSync, writeFileSync } from 'fs';
+import { ensureDirSync } from '../src/utils';
 import * as path from 'path';
 import { TemplateMarkToTypeScriptCompiler } from '../src/TemplateMarkToTypeScriptCompiler';
 

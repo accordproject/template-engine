@@ -1,5 +1,5 @@
 import { ModelManager } from '@accordproject/concerto-core';
-import { readFileSync } from 'fs-extra';
+import { readFileSync } from 'fs';
 import { TypeScriptToJavaScriptCompiler } from '../src/TypeScriptToJavaScriptCompiler';
 
 describe('typescript compiler', () => {

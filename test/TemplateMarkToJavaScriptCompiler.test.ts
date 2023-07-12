@@ -1,6 +1,6 @@
 import { ModelManager } from '@accordproject/concerto-core';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
-import { readFileSync } from 'fs-extra';
+import { readFileSync } from 'fs';
 import { TemplateMarkToJavaScriptCompiler } from '../src/TemplateMarkToJavaScriptCompiler';
 
 describe('templatemark to javascript compiler', () => {

@@ -12,10 +12,9 @@
  * limitations under the License.
  */
 const { readFileSync, writeFileSync } = require('fs');
-const { ensureDirSync } = require('fs-extra');
+const { ensureDirSync, removeSync } = require('../src/utils');
 const tar = require('tar');
 const path = require('path');
-const { removeSync } = require('fs-extra');
 
 const HEADER = `/*
  * Licensed under the Apache License, Version 2.0 (the "License");
