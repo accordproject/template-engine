@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 import ts from 'typescript';
-import { createDefaultMapFromNodeModules } from '@typescript/vfs';
+import { createDefaultMapFromNodeModules, createDefaultMapFromCDN } from '@typescript/vfs';
 import { twoslasher, TwoSlashOptions, TwoSlashReturn } from '@typescript/twoslash';
 import { ModelManager } from '@accordproject/concerto-core';
 import { TypeScriptCompilationContext } from './TypeScriptCompilationContext';
@@ -27,26 +27,36 @@ import { DAYJS_BASE64, JSONPATH_BASE64 } from './runtime/declarations';
  */
 export class TypeScriptToJavaScriptCompiler {
     context: string;
+    fsMap: Map<string,string>|undefined;
 
     constructor(modelManager: ModelManager, templateConceptFqn?: string) {
         this.context = new TypeScriptCompilationContext(modelManager, templateConceptFqn).getCompilationContext();
     }
 
+    async initialize() {
+        if(process.env.TEMPLATE_ENGINE_TYPESCRIPT_LOCAL_MAP) {
+            this.fsMap = createDefaultMapFromNodeModules({
+                target: ts.ScriptTarget.ES2020,
+            });
+        }
+        else {
+            this.fsMap = await createDefaultMapFromCDN({ target: ts.ScriptTarget.ES2020 }, ts.version, false, ts);
+        }
+        this.fsMap.set('/node_modules/@types/dayjs/index.d.ts', Buffer.from(DAYJS_BASE64, 'base64').toString());
+        this.fsMap.set('/node_modules/@types/jsonpath/index.d.ts', Buffer.from(JSONPATH_BASE64, 'base64').toString());
+    }
+
     compile(typescript: string): TwoSlashReturn {
-        const fsMap = createDefaultMapFromNodeModules({
-            target: ts.ScriptTarget.ES2020,
-        });
-
-        fsMap.set('/node_modules/@types/dayjs/index.d.ts', Buffer.from(DAYJS_BASE64, 'base64').toString());
-        fsMap.set('/node_modules/@types/jsonpath/index.d.ts', Buffer.from(JSONPATH_BASE64, 'base64').toString());
-
+        if(!this.fsMap) {
+            throw new Error('initialize must be awaited before compile is called.');
+        }
         const twoSlashCode =`
 ${this.context}
 ${typescript}
 `;
 
         const options: TwoSlashOptions = {
-            fsMap,
+            fsMap: this.fsMap,
             defaultOptions: {
                 showEmit: true,
                 noErrorValidation: true,

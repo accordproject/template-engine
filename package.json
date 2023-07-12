@@ -1,10 +1,10 @@
 {
     "name": "@accordproject/template-engine",
-    "version": "2.0.3",
+    "version": "2.1.0",
     "description": "Generation of AgreementMark from TemplateMark + JSON Data",
     "homepage": "https://github.com/accordproject",
     "engines": {
-        "node": ">=16",
+        "node": ">=18",
         "npm": ">=6"
     },
     "main": "dist/index.js",

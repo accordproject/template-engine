@@ -9,6 +9,7 @@ describe('templatemark to javascript compiler', () => {
         const modelManager = new ModelManager();
         modelManager.addCTOModel( readFileSync('./test/templates/good/full/model.cto', 'utf-8'), 'model.cto');
         const compiler = new TemplateMarkToJavaScriptCompiler(modelManager);
+        await compiler.initialize();
 
         const templateMd = readFileSync('./test/templates/good/full/template.md', 'utf-8');
         const templateMarkTransformer = new TemplateMarkTransformer();

@@ -54,6 +54,10 @@ export class TemplateMarkToJavaScriptCompiler {
         this.templateClass = getTemplateClassDeclaration(modelManager,templateConceptFqn);
     }
 
+    async initialize() {
+        await this.compiler.initialize();
+    }
+
     compile(templateJson: any) : any {
         const namedTemplateMark = nameUserCode(templateJson);
         // eslint-disable-next-line @typescript-eslint/no-this-alias

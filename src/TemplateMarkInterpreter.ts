@@ -402,12 +402,13 @@ export class TemplateMarkInterpreter {
      * @returns {*} TemplateMark JSON with JS nodes
      * @throws {Error} if the templateMark document is invalid
      */
-    compileTypeScriptToJavaScript(templateMark: object) : object {
+    async compileTypeScriptToJavaScript(templateMark: object) : Promise<object> {
         const templateConcept = (templateMark as any).nodes[0].elementType;
         if(!templateConcept) {
             throw new Error('TemplateMark is not typed');
         }
         const compiler = new TemplateMarkToJavaScriptCompiler(this.modelManager, templateConcept);
+        await compiler.initialize();
         return compiler.compile(templateMark);
     }
 
@@ -434,7 +435,7 @@ export class TemplateMarkInterpreter {
             throw new Error(`Template data must be of type '${this.templateClass.getFullyQualifiedName()}'.`);
         }
         const typedTemplateMark = this.checkTypes(templateMark);
-        const jsTemplateMark = this.compileTypeScriptToJavaScript(typedTemplateMark);
+        const jsTemplateMark = await this.compileTypeScriptToJavaScript(typedTemplateMark);
         const ciceroMark = generateAgreement(this.modelManager, this.clauseLibrary, jsTemplateMark, data, options);
         return this.validateCiceroMark(ciceroMark);
     }
