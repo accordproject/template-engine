@@ -11,36 +11,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import ts from 'typescript';
 import { createDefaultMapFromNodeModules, createDefaultMapFromCDN } from '@typescript/vfs';
 import { twoslasher, TwoSlashOptions, TwoSlashReturn } from '@typescript/twoslash';
 import { ModelManager } from '@accordproject/concerto-core';
 import { TypeScriptCompilationContext } from './TypeScriptCompilationContext';
 import { DAYJS_BASE64, JSONPATH_BASE64 } from './runtime/declarations';
+import * as lzstring from 'lz-string';
 
 /**
- * Compiles user Typescript code to JavaScript, This uses the '@typescript/twoslash'
+ * Compiles user Typescript code to JavaScript. This uses the '@typescript/twoslash'
  * project which is maintained by the Typescript team and powers their web playground.
  * It uses the TypeScriptCompilationContext class to construct a payload for twoslash
  * that is composed of multiple TS files to compile, along with their 3rd-party module
  * dependencies.
+ *
+ * Note that the 'typescript' module is either dynamically loaded from node_modules (Node.js)
+ * or from the CDN (browser). This module is used by twoslash.
+ *
+ * The 'updateRuntimeDependencies' script it used to package type declarations for 3rd-party
+ * modules that we need to expose to user TS code: dayjs and jsonpath, these also need to be
+ * added to the twoslash compilation context.
  */
 export class TypeScriptToJavaScriptCompiler {
     context: string;
     fsMap: Map<string,string>|undefined;
+    ts: any;
 
     constructor(modelManager: ModelManager, templateConceptFqn?: string) {
         this.context = new TypeScriptCompilationContext(modelManager, templateConceptFqn).getCompilationContext();
     }
 
     async initialize() {
-        if(process.env.TEMPLATE_ENGINE_TYPESCRIPT_LOCAL_MAP) {
+        if(typeof window === 'undefined') {
+            this.ts = await import ('typescript');
             this.fsMap = createDefaultMapFromNodeModules({
-                target: ts.ScriptTarget.ES2020,
+                target: this.ts.ScriptTarget.ES2020,
             });
         }
         else {
-            this.fsMap = await createDefaultMapFromCDN({ target: ts.ScriptTarget.ES2020 }, ts.version, false, ts);
+            this.ts = (await import('https://cdn.jsdelivr.net/npm/typescript@4.8.4/+esm')).default;
+            if(!this.ts) {
+                throw new Error('Failed to dynamically load typescript');
+            }
+            this.fsMap = await createDefaultMapFromCDN({ target: this.ts.ScriptTarget.ES2020 }, this.ts.version, false, this.ts);
         }
         this.fsMap.set('/node_modules/@types/dayjs/index.d.ts', Buffer.from(DAYJS_BASE64, 'base64').toString());
         this.fsMap.set('/node_modules/@types/jsonpath/index.d.ts', Buffer.from(JSONPATH_BASE64, 'base64').toString());
@@ -57,6 +70,8 @@ ${typescript}
 
         const options: TwoSlashOptions = {
             fsMap: this.fsMap,
+            tsModule: this.ts,
+            lzstringModule:lzstring,
             defaultOptions: {
                 showEmit: true,
                 noErrorValidation: true,
