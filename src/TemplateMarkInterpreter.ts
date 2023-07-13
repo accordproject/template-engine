@@ -34,13 +34,13 @@ import {
     CLAUSE_DEFINITION_RE,
     CONTRACT_DEFINITION_RE,
     TemplateData,
-    NAVIGATION_NODES,
-    getTemplateClassDeclaration
-} from './Common';
+    NAVIGATION_NODES
+} from './TemplateMarkNodes';
 import { TemplateMarkToJavaScriptCompiler } from './TemplateMarkToJavaScriptCompiler';
 import { CodeType, ICode } from './model-gen/org.accordproject.templatemark@0.5.0';
 import { GenerationOptions, joinList } from './TypeScriptRuntime';
 import dayjs from 'dayjs';
+import { getTemplateClassDeclaration } from './utils';
 
 function checkCode(code:ICode) {
     if(code.type !== CodeType.ES_2020) {

@@ -11,10 +11,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ClassDeclaration, Property } from '@accordproject/concerto-core';
+import { ClassDeclaration, Introspector, ModelManager, Property } from '@accordproject/concerto-core';
+import { TemplateMarkModel } from '@accordproject/markdown-common';
+import { templatemarkutil } from '@accordproject/markdown-template';
+
 import { existsSync, mkdirSync, rmSync } from 'fs';
 import traverse from 'traverse';
-import { TemplateMarkModel } from '@accordproject/markdown-common';
 
 export function ensureDirSync(path:string) {
     !existsSync(path) && mkdirSync(path, { recursive: true });
@@ -50,4 +52,13 @@ export function nameUserCode(templateMarkDom: any) {
     });
 }
 
-
+export function getTemplateClassDeclaration(modelManager: ModelManager, templateConceptFqn?: string) : ClassDeclaration {
+    const introspector = new Introspector(modelManager);
+    try {
+        return templatemarkutil.findTemplateConcept(introspector, 'clause', templateConceptFqn);
+    }
+    catch(err) {
+        console.log(err);
+        throw err;
+    }
+}

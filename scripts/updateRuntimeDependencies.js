@@ -64,33 +64,3 @@ export const DAYJS_BASE64 = '${dayjs}';
 export const JSONPATH_BASE64 = '${jsonpath}';
 `
 );
-
-/**
- * Packages the TypeScriptRuntime.ts and the contents of the 'drafting'
- * directory as this code is used by generated code and must be copied to
- * the output folder when we generate typescript code for a template
- */
-ensureDirSync('dist');
-
-tar
-  .c(
-    {
-      gzip: true,
-      file: path.join('dist', 'runtime.tgz'),
-    },
-    ['./src/drafting', './src/TypeScriptRuntime.ts']
-  )
-  .then((_) => {
-    const runtime = readFileSync(path.join('dist', 'runtime.tgz')).toString(
-      'base64'
-    );
-
-    writeFileSync(
-      './src/runtime/runtime.ts',
-      `
-${HEADER}
-
-export const RUNTIME_TGZ_BASE64 = '${runtime}';
-`
-    );
-  });

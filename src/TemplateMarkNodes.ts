@@ -12,9 +12,7 @@
  * limitations under the License.
  */
 
-import { ClassDeclaration, Introspector, ModelManager } from '@accordproject/concerto-core';
 import { TemplateMarkModel } from '@accordproject/markdown-common';
-import { templatemarkutil } from '@accordproject/markdown-template';
 
 // use to create agreementmark from templatemark
 export const TEMPLATEMARK_RE = /^(org\.accordproject\.templatemark)@(.+)\.(\w+)Definition$/;
@@ -43,14 +41,3 @@ export const NAVIGATION_NODES = [
     `${TemplateMarkModel.NAMESPACE}.OptionalDefinition`,
     `${TemplateMarkModel.NAMESPACE}.ClauseDefinition`
 ];
-
-export function getTemplateClassDeclaration(modelManager: ModelManager, templateConceptFqn?: string) : ClassDeclaration {
-    const introspector = new Introspector(modelManager);
-    try {
-        return templatemarkutil.findTemplateConcept(introspector, 'clause', templateConceptFqn);
-    }
-    catch(err) {
-        console.log(err);
-        throw err;
-    }
-}

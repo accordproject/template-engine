@@ -17,9 +17,8 @@ import { TemplateMarkModel } from '@accordproject/markdown-common';
 import { ClassDeclaration, ModelManager } from '@accordproject/concerto-core';
 import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler';
 import { TwoSlashReturn } from '@typescript/twoslash';
-import { getTemplateClassDeclaration } from './Common';
 import { CodeType, ICode } from './model-gen/org.accordproject.templatemark@0.5.0';
-import { nameUserCode, writeFunctionToString } from './utils';
+import { getTemplateClassDeclaration, nameUserCode, writeFunctionToString } from './utils';
 
 const CODE_NODES = [
     `${TemplateMarkModel.NAMESPACE}.FormulaDefinition`,

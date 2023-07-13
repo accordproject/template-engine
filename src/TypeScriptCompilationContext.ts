@@ -14,7 +14,7 @@
 import { ClassDeclaration, ModelManager } from '@accordproject/concerto-core';
 import { CodeGen } from '@accordproject/concerto-codegen';
 import { InMemoryWriter } from '@accordproject/concerto-util';
-import { getTemplateClassDeclaration } from './Common';
+import { getTemplateClassDeclaration } from './utils';
 
 /**
  * This class creates the typescript types
