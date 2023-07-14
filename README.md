@@ -2,7 +2,7 @@
 
 This is the [Accord Project](https://accordproject.org) template engine. Rich-text templates are defined in TemplateMark (either as markdown files, or JSON documents) and are then merged with JSON data to produce output documents. Templates may contain [TypeScript](https://www.typescriptlang.org) expressions.
 
-![Getting Started Video](https://vimeo.com/manage/videos/845273411)
+[Getting Started Video](https://vimeo.com/manage/videos/845273411)
 
 [Template Playground](https://playground.accordproject.org)
 
