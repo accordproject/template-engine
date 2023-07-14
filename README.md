@@ -2,6 +2,10 @@
 
 This is the [Accord Project](https://accordproject.org) template engine. Rich-text templates are defined in TemplateMark (either as markdown files, or JSON documents) and are then merged with JSON data to produce output documents. Templates may contain [TypeScript](https://www.typescriptlang.org) expressions.
 
+![Getting Started Video](https://vimeo.com/manage/videos/845273411)
+
+[Template Playground](https://playground.accordproject.org)
+
 The core template engine is a JSON to JSON transformation that converts TemplateMark JSON + agreement data (JSON) to AgreementMark JSON.
 
 > Note: Use the `@accordproject/markdown-transform` project to convert markdown templates to TemplateMark JSON and to convert AgreementMark JSON to output formats (HTML, PDF, DOCX etc.). For command-line usage please use `@accordproject/template-cli`.
