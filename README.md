@@ -143,11 +143,7 @@ The rich-text with variables of a template is associated with a [Concerto data m
 
 Templates may be statically compiled to TypeScript programs, enforcing type-safety, ensuring that no unsafe code evaluation ("eval") is required at runtime, and easing integration into applications.
 
-![Template Compiler](./assets/template-compilation.png)
-
-> Note that templates may also be executed using an interpreter for more dynamic scenarios.
-
-Accord Project template compilation is inspired by prior work on template compilation, not least [JSP](https://gist.github.com/sunfmin/5124605), but also work in the [Scala](https://www.playframework.com/documentation/2.1.0/ScalaTemplates), [Dart](http://blog.sethladd.com/2012/03/first-look-at-darts-html-template.html) and [Go](http://sunfmin.com/2013/03/22/a-compiled-template-for-golang.html) communities.
+The template compiler is a separate project, hosted here: https://github.com/accordproject/template-compiler
 
 ## Install
 
