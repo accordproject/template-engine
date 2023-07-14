@@ -40,7 +40,7 @@
     "author": "accordproject.org",
     "license": "Apache-2.0",
     "dependencies": {
-        "@accordproject/concerto-codegen": "^3.15.0",
+        "@accordproject/concerto-codegen": "3.15.1-20230712110314",
         "@accordproject/concerto-core": "^3.8.2",
         "@accordproject/concerto-util": "^3.8.2",
         "@accordproject/markdown-common": "0.16.13",
