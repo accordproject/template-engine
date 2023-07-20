@@ -1,0 +1,30 @@
+namespace hello@1.0.0
+import org.accordproject.money@0.3.0.{MonetaryAmount} from https://models.accordproject.org/money@0.3.0.cto
+
+concept Address {
+    o String line1
+    o String city
+    o String state
+    o String country
+}
+
+concept OrderLine {
+    o String sku
+    o Integer quantity
+    o Double price
+}
+
+concept Order {
+    o DateTime createdAt
+    o OrderLine[] orderLines
+}
+
+@template
+concept TemplateData {
+    o String name
+    o Address address
+    o Integer age optional
+    o MonetaryAmount salary
+    o String[] favoriteColors
+    o Order order
+}

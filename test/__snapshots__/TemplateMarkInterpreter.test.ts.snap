@@ -2853,3 +2853,359 @@ Object {
   "xmlns": "http://commonmark.org/xml/1.0",
 }
 `;
+
+exports[`templatemark interpreter should generate playground 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "3",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Welcome ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "name",
+              "value": "John Doe",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "!",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Image",
+              "destination": "https://avatars.githubusercontent.com/u/29445438?s=64",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "AP Logo",
+                },
+              ],
+              "title": "",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.ciceromark@0.6.0.Clause",
+          "elementType": "hello@1.0.0.Address",
+          "name": "address",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Heading",
+              "level": "4",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Address",
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.BlockQuote",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "line1",
+                      "value": "1 Main Street",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": ",",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Linebreak",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "city",
+                      "value": "Boson",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": ", ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "state",
+                      "value": "MA",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": ",",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Linebreak",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "country",
+                      "value": "USA",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "You are ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Emph",
+                      "nodes": Array [
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "Integer",
+                          "name": "age",
+                          "value": "42",
+                        },
+                      ],
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " years old",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Your monthly salary is ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+                      "format": "0,0.00 CCC",
+                      "name": "salary",
+                      "value": "1,500.00 EUR",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Your favorite colours are ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "red, green, and blue",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+        Object {
+          "$class": "org.accordproject.ciceromark@0.6.0.Clause",
+          "elementType": "hello@1.0.0.Order",
+          "name": "order",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Heading",
+              "level": "2",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Orders",
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Your last order was placed ",
+                },
+                Object {
+                  "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                  "elementType": "DateTime",
+                  "format": "D MMMM YYYY",
+                  "name": "createdAt",
+                  "value": "1 May 2023",
+                },
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": " (",
+                },
+                Object {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": Array [],
+                  "name": "formula_87067c9bed3b3c592c46445b8d60c223615c5dbc49d2ab1bacecb1e78350c991",
+                  "value": "-45",
+                },
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": " days ago).",
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.List",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Item",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                      "nodes": Array [
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "Integer",
+                          "name": "quantity",
+                          "value": "3",
+                        },
+                        Object {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "x ",
+                        },
+                        Object {
+                          "$class": "org.accordproject.commonmark@0.5.0.Emph",
+                          "nodes": Array [
+                            Object {
+                              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                              "elementType": "String",
+                              "name": "sku",
+                              "value": "ABC-123",
+                            },
+                          ],
+                        },
+                        Object {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": " @ £",
+                        },
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                          "elementType": "Double",
+                          "format": "0,0.00",
+                          "name": "price",
+                          "value": "29.99",
+                        },
+                      ],
+                    },
+                  ],
+                },
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Item",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                      "nodes": Array [
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "Integer",
+                          "name": "quantity",
+                          "value": "5",
+                        },
+                        Object {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "x ",
+                        },
+                        Object {
+                          "$class": "org.accordproject.commonmark@0.5.0.Emph",
+                          "nodes": Array [
+                            Object {
+                              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                              "elementType": "String",
+                              "name": "sku",
+                              "value": "DEF-456",
+                            },
+                          ],
+                        },
+                        Object {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": " @ £",
+                        },
+                        Object {
+                          "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                          "elementType": "Double",
+                          "format": "0,0.00",
+                          "name": "price",
+                          "value": "19.99",
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+              "tight": "true",
+              "type": "bullet",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Order total: ",
+                },
+                Object {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": Array [],
+                  "name": "formula_a6c3eb22d929c718c1ff356e4980b97a736d405a04fbb541ba5db1728cb3a579",
+                  "value": "£189.92",
+                },
+              ],
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Thank you.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
