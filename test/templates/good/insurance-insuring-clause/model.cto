@@ -1,0 +1,5 @@
+namespace insurance@1.0.0
+
+@template
+concept Insuring {
+}

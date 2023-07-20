@@ -1336,6 +1336,906 @@ Object {
 }
 `;
 
+exports[`templatemark interpreter should generate insurance-acquisitions 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Acquisitions",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Notwithstanding condition E1 (Alteration of Risk), this Policy shall apply automatically to any new acquisition or newly formed subsidiary or associated company (but only where indemnity is already provided under this Policy for associated companies) by an Insured company during the Period of Insurance, provided that:",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "the Insured notifies the Insurer in writing:",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "delimiter": "period",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "immediately for new acquisitions or creations where turnover exceeds ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+                      "format": "0,0.00 CCC",
+                      "name": "turnoverLimit",
+                      "value": "250,000.00 GBP",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " or ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Integer",
+                      "name": "turnoverPercentage",
+                      "value": "50",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "% of total group turnover declared at inception of this Policy, whichever is the greater;",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "within ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Integer",
+                      "name": "newAcquisitionsDays",
+                      "value": "30",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " days for new acquisitions or creations where turnover exceeds ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+                      "format": "0,0.00 CCC",
+                      "name": "newAcquisitionsTurnover",
+                      "value": "250,000.00 GBP",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " or ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Integer",
+                      "name": "newAcquisitionsGroupTurnoverPercentage",
+                      "value": "15",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "% of total group turnover declared at inception of this Policy, whichever is the greater;",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "within ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Integer",
+                      "name": "otherNewAcquisitionsDays",
+                      "value": "90",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " days for all other new acquisitions or creations; or",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "at the beginning of any new Period of Insurance, if this is earlier than above.",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "start": "1",
+          "tight": "true",
+          "type": "ordered",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "the turnover in respect of such new acquisition or creation is declared, and additional premium is paid, from the time of acquisition or creation in proportion to the total turnover declared at inception of the Period of Insurance.",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "where such new acquisition or creation has activities representing a material alteration to the Business or is reasonably expected to increase the risk by means of frequency or severity of claims, the Insurer reserves the right to determine specific rates and terms and conditions for that new acquisition or creation.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate insurance-deductible 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Deductible",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Other than as stated below the Deductible shall be as follows:",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "delimiter": "period",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "GBP XXXX any one Event",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Under Data Protection Extension C9 the Deductible shall be as follows",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "start": "1",
+          "tight": "false",
+          "type": "ordered",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "10% or GBP XXXX each and every claimant, whichever is the greater.",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "delimiter": "period",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Under Legionella Extension C15 the Deductible shall be as follows",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "start": "1",
+          "tight": "true",
+          "type": "ordered",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "10% or GBP 5,000 of each and every Event, whichever is the greater.",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Only one Deductible shall apply in respect of any one Event, and this shall be the highest applicable Deductible stated above.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate insurance-insuring-clause 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Insuring Clause",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "The Insurer will provide indemnity to the Insured:",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "against legal liability for claims for Damages in respect of:",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "delimiter": "period",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Physical Injury to any person;",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "loss of or damage to Property;",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "obstruction, nuisance, trespass, loss of amenity or interference with any right of way, air, light or water or other easement",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "start": "1",
+          "tight": "true",
+          "type": "ordered",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Physical Injury means;",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Linebreak",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Bodily Injury;",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "false arrest, invasion of the right of privacy, wrongful detention, false imprisonment, false eviction, harassment, discrimination, malicious prosecution;",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "assault and battery not committed by or at the direction of the Insured unless committed for the purpose of preventing or eliminating danger to persons or Property.",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Property means",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "physical property and does not include Data.",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate insurance-period 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Period of Insurance",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "From: ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+              "elementType": "DateTime",
+              "format": "DD MMMM YYYY",
+              "name": "from",
+              "value": "23 May 2018",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Linebreak",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "To:	",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+              "elementType": "DateTime",
+              "format": "DD MMMM YYYY",
+              "name": "to",
+              "value": "01 January 2021",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Linebreak",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "both dates inclusive, local standard time at the address of the Insured as stated above.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate insurance-premium 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Premium in Full – Non-adjustable",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Gross Premium: ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+              "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+              "format": "0,0.00 CCC",
+              "name": "gross",
+              "value": "75,000.00 GBP",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Linebreak",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "less Commission: ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+              "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+              "format": "0,0.00 CCC",
+              "name": "lessCommission",
+              "value": "5,000.00 GBP",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Net Premium:  ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+              "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+              "format": "0,0.00 CCC",
+              "name": "netPremium",
+              "value": "50,000.00 GBP",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Linebreak",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "plus, taxes of  ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+              "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+              "format": "0,0.00 CCC",
+              "name": "taxes",
+              "value": "20,000.00 GBP",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Linebreak",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "which the Insured agrees to pay as consideration for this Policy.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate insurance-retroactive-date 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Retroactive Date",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "The Retroactive Date for this Policy shall be follows:",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "delimiter": "period",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Data Protection Extension C9: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "DateTime",
+                      "format": "DD MMMM YYYY",
+                      "name": "dataProtectionExtension",
+                      "value": "23 May 2018",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Legionella Extension C15: ",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "DateTime",
+                      "format": "DD MMMM YYYY",
+                      "name": "legionellaExtension",
+                      "value": "01 January 2021",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "start": "1",
+          "tight": "true",
+          "type": "ordered",
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate insurance-sub-limits-liability 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Sub-Limits of Indemnity",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "The Sub-Limits of Indemnity for this Policy (subject to reduction by the applicable Deductible) shall be as follows:",
+            },
+          ],
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "delimiter": "period",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "The maximum liability of the Insurer under Corporate Manslaughter and Corporate Homicide Act 2007 – Defence Costs extension C6 shall not exceed:",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+                      "format": "0,0.00 CCC",
+                      "name": "corporateManslaughterMaximumLiability",
+                      "value": "500,000.00 GBP",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " in the aggregate during any one Period of Insurance.",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "The maximum liability of the Insurer under Data Protection Act extension C9 shall not exceed:",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+                      "format": "0,0.00 CCC",
+                      "name": "dataProtectionMaximumLiability",
+                      "value": "50,000.00 GBP",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " in the aggregate during any one Period of Insurance.",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "The maximum liability of the Insurer under Legionella Extension C15 shall not exceed:",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+                      "format": "0,0.00 CCC",
+                      "name": "legionellaMaximumLiability",
+                      "value": "500,000.00 GBP",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " in the aggregate during any one Period of Insurance.",
+                    },
+                  ],
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": Array [
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "The maximum liability of the Insurer under Pollution Clean Up Costs extension C17 shall not exceed:",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+                      "format": "0,0.00 CCC",
+                      "name": "pollutionMaximumLiability",
+                      "value": "500,000.00 GBP",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " in the aggregate during any one Period of Insurance.",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "start": "1",
+          "tight": "false",
+          "type": "ordered",
+        },
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "The Sub-Limits of Indemnity form part of the relevant Limit of Indemnity specified above and do not apply in addition to it.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
 exports[`templatemark interpreter should generate join 1`] = `
 Object {
   "$class": "org.accordproject.commonmark@0.5.0.Document",

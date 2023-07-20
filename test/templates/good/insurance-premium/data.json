@@ -1,0 +1,23 @@
+{
+    "$class": "insurance@1.0.0.Premum",
+    "gross": {
+      "$class": "org.accordproject.money@0.3.0.MonetaryAmount",
+      "doubleValue": 75000,
+      "currencyCode": "GBP"
+    },
+    "lessCommission": {
+      "$class": "org.accordproject.money@0.3.0.MonetaryAmount",
+      "doubleValue": 5000,
+      "currencyCode": "GBP"
+    },
+    "netPremium": {
+      "$class": "org.accordproject.money@0.3.0.MonetaryAmount",
+      "doubleValue": 50000,
+      "currencyCode": "GBP"
+    },
+    "taxes": {
+      "$class": "org.accordproject.money@0.3.0.MonetaryAmount",
+      "doubleValue": 20000,
+      "currencyCode": "GBP"
+    }
+  } 

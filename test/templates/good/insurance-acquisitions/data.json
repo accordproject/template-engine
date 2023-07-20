@@ -1,0 +1,17 @@
+{
+  "$class": "insurance@1.0.0.Acqusitions",
+  "turnoverLimit": {
+      "$class": "org.accordproject.money@0.3.0.MonetaryAmount",
+      "doubleValue": 250000,
+      "currencyCode": "GBP"
+    },
+    "turnoverPercentage": 50,
+    "newAcquisitionsDays": 30,
+    "newAcquisitionsTurnover": {
+      "$class": "org.accordproject.money@0.3.0.MonetaryAmount",
+      "doubleValue": 250000,
+      "currencyCode": "GBP"
+    },
+    "newAcquisitionsGroupTurnoverPercentage" : 15,
+    "otherNewAcquisitionsDays" : 90
+} 

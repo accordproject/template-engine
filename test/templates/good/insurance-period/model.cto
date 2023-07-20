@@ -1,0 +1,7 @@
+namespace insurance@1.0.0
+
+@template
+concept InsurancePeriod {
+    o DateTime from
+    o DateTime to
+}

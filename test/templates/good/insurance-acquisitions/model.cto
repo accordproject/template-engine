@@ -1,0 +1,13 @@
+namespace insurance@1.0.0
+import org.accordproject.money@0.3.0.{MonetaryAmount} from https://models.accordproject.org/money@0.3.0.cto
+
+@template
+concept Acqusitions {
+    o MonetaryAmount turnoverLimit
+    o Integer turnoverPercentage
+    o Integer newAcquisitionsDays
+    o MonetaryAmount newAcquisitionsTurnover
+    o Integer newAcquisitionsGroupTurnoverPercentage
+    o Integer otherNewAcquisitionsDays
+
+}
