@@ -32,24 +32,37 @@ import * as lzstring from 'lz-string';
  * modules that we need to expose to user TS code: dayjs and jsonpath, these also need to be
  * added to the twoslash compilation context.
  */
+const TYPESCRIPT_URL = process.env.TYPESCRIPT_URL ? process.env.TYPESCRIPT_URL : 'https://cdn.jsdelivr.net/npm/typescript@4.8.4/+esm';
+
 export class TypeScriptToJavaScriptCompiler {
     context: string;
     fsMap: Map<string,string>|undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ts: any;
+    typescriptUrl: string;
 
     constructor(modelManager: ModelManager, templateConceptFqn?: string) {
         this.context = new TypeScriptCompilationContext(modelManager, templateConceptFqn).getCompilationContext();
+        this.typescriptUrl = TYPESCRIPT_URL;
     }
 
-    async initialize() {
+    async initialize(typescriptUrl?: string) {
+        if(typescriptUrl) {
+            this.typescriptUrl = typescriptUrl;
+        }
         if(typeof window === 'undefined') {
+            // node does not (yet) support http(s) imports
+            // see: https://nodejs.org/api/esm.html#https-and-http-imports
             this.ts = await import ('typescript');
+            if(!this.ts) {
+                throw new Error('Failed to load typescript module');
+            }
             this.fsMap = createDefaultMapFromNodeModules({
                 target: this.ts.ScriptTarget.ES2020,
             });
         }
         else {
-            this.ts = (await import('https://cdn.jsdelivr.net/npm/typescript@4.8.4/+esm')).default;
+            this.ts = (await import(this.typescriptUrl)).default;
             if(!this.ts) {
                 throw new Error('Failed to dynamically load typescript');
             }
