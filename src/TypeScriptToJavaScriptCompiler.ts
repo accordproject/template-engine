@@ -34,6 +34,9 @@ import * as lzstring from 'lz-string';
  */
 const TYPESCRIPT_URL = process.env.TYPESCRIPT_URL ? process.env.TYPESCRIPT_URL : 'https://cdn.jsdelivr.net/npm/typescript@4.8.4/+esm';
 
+// https://microsoft.github.io/monaco-editor/typedoc/enums/languages.typescript.ScriptTarget.html#ES2020
+const ES2020_TARGET = 7;
+
 export class TypeScriptToJavaScriptCompiler {
     context: string;
     fsMap: Map<string,string>|undefined;
@@ -58,7 +61,7 @@ export class TypeScriptToJavaScriptCompiler {
                 throw new Error('Failed to load typescript module');
             }
             this.fsMap = createDefaultMapFromNodeModules({
-                target: this.ts.ScriptTarget.ES2020,
+                target: ES2020_TARGET,
             });
         }
         else {
@@ -66,7 +69,7 @@ export class TypeScriptToJavaScriptCompiler {
             if(!this.ts) {
                 throw new Error('Failed to dynamically load typescript');
             }
-            this.fsMap = await createDefaultMapFromCDN({ target: this.ts.ScriptTarget.ES2020 }, this.ts.version, false, this.ts);
+            this.fsMap = await createDefaultMapFromCDN({ target: ES2020_TARGET }, this.ts.version, false, this.ts);
         }
         this.fsMap.set('/node_modules/@types/dayjs/index.d.ts', Buffer.from(DAYJS_BASE64, 'base64').toString());
         this.fsMap.set('/node_modules/@types/jsonpath/index.d.ts', Buffer.from(JSONPATH_BASE64, 'base64').toString());
