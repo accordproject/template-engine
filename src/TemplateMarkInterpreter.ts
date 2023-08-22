@@ -412,7 +412,7 @@ export class TemplateMarkInterpreter {
         return compiler.compile(templateMark);
     }
 
-    validateCiceroMark(ciceroMark: object) {
+    validateCiceroMark(ciceroMark: object) : object {
         const modelManager = new ModelManager({ strict: true });
         modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
         modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');

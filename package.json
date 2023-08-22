@@ -1,6 +1,6 @@
 {
     "name": "@accordproject/template-engine",
-    "version": "2.3.3",
+    "version": "2.3.4",
     "description": "Generation of AgreementMark from TemplateMark + JSON Data",
     "homepage": "https://github.com/accordproject",
     "engines": {
@@ -25,8 +25,7 @@
         "coverage": "jest --coverage",
         "compile-js": "jest ./test/TypeScriptCompiler.test.ts",
         "test:watch": "jest --watchAll",
-        "updateRuntimeDependencies": "node ./scripts/updateRuntimeDependencies",
-        "updateCompiledTemplates": "rm -rf ./test/compiled-templates/ && mkdir ./test/compiled-templates/ && cp -r ./output/full ./test/compiled-templates/ "
+        "updateRuntimeDependencies": "node ./scripts/updateRuntimeDependencies"
     },
     "repository": {
         "type": "git",
@@ -34,17 +33,18 @@
     },
     "keywords": [
         "concerto",
-        "tools",
-        "modeling"
+        "template",
+        "engine",
+        "templatemark"
     ],
     "author": "accordproject.org",
     "license": "Apache-2.0",
     "dependencies": {
-        "@accordproject/concerto-codegen": "3.15.2",
+        "@accordproject/concerto-codegen": "^3.15.2",
         "@accordproject/concerto-core": "^3.11.1",
         "@accordproject/concerto-util": "^3.11.1",
-        "@accordproject/markdown-common": "0.16.19",
-        "@accordproject/markdown-template": "0.16.19",
+        "@accordproject/markdown-common": "^0.16.19",
+        "@accordproject/markdown-template": "^0.16.19",
         "@typescript/twoslash": "^3.2.1",
         "dayjs": "1.11.7",
         "jsonpath": "^1.1.1",
@@ -53,8 +53,8 @@
         "typescript": "^4.6.3"
     },
     "devDependencies": {
-        "@accordproject/markdown-html": "0.16.19",
-        "@accordproject/markdown-template": "0.16.19",
+        "@accordproject/markdown-html": "^0.16.19",
+        "@accordproject/markdown-template": "^0.16.19",
         "@types/jest": "^28.1.1",
         "@types/jsonpath": "^0.2.0",
         "@types/semver": "7.3.10",
