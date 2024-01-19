@@ -57,6 +57,9 @@ function checkCode(code:ICode) {
  * @returns {object} the result of evaluating the expression against the data
  */
 function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: string, options?: GenerationOptions): object {
+    if(options?.disableJavaScriptEvaluation) {
+        throw new Error('JavaScript evaluation is disabled.');
+    }
     if (!data || !fn) {
         throw new Error(`Cannot evaluate JS ${fn} against ${data}`);
     }
