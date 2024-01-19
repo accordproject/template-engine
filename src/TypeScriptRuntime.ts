@@ -23,6 +23,7 @@ const DEBUG = false;
 export type GenerationOptions = {
     now?:string,
     locale?:string
+    disableJavaScriptEvaluation?:boolean
 }
 
 export function joinList(data:Array<string>, joinDef:any, options?:GenerationOptions) : string {
