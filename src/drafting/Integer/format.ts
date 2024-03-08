@@ -12,6 +12,8 @@
  * limitations under the License.
  */
 
+import { numberToText } from "./numberToTextFormatter";
+
 /**
  * Creates a drafter for Integer
  * @param {number} value - the integer
