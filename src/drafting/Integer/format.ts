@@ -30,6 +30,9 @@ export function draftInteger(value:number) : string {
  * @returns {object} the parser
  */
 export function draftIntegerFormat(value:number,format:string) : string {
+  if (format === "text") {
+    return numberToText(value);
+  } else {
     return format.replace(/0(.)0/gi, function(_a,sep1){
         const vs = value.toFixed(0);
         let res = '';
@@ -40,4 +43,5 @@ export function draftIntegerFormat(value:number,format:string) : string {
         }
         return i + res;
     });
+  }
 }
