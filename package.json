@@ -73,6 +73,7 @@
         "rollup-plugin-dts": "^5.3.0",
         "rollup-plugin-esbuild": "^5.0.0",
         "terser": "^5.16.6",
+        "to-words": "^4.0.1",
         "ts-jest": "^28.0.4"
     },
     "license-check-and-add-config": {
