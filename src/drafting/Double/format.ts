@@ -29,7 +29,7 @@ export function draftDoubleIEEE(value:number) : string {
  * Creates a drafter for a formatted Double
  * @param {number} value - the Double
  * @param {string} format - the format
- * @returns {object} the parser
+ * @returns {string} formatted double value as string
  */
 export function draftDoubleFormat(value:number,format:string) : string {
     if(format==='word') {
