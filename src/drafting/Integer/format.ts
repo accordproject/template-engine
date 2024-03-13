@@ -27,7 +27,7 @@ export function draftInteger(value:number) : string {
  * Creates a drafter for a formatted Integer
  * @param {number} value - the Integer
  * @param {string} format - the format
- * @returns {object} the parser
+ * @returns {string} formatted integer value as string
  */
 export function draftIntegerFormat(value:number,format:string) : string {
     if (format === 'word') {
