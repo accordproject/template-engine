@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+import {ToWords} from 'to-words';
 /**
  * Creates a drafter for Double
  * @param {number} value - the double
@@ -29,22 +29,28 @@ export function draftDoubleIEEE(value:number) : string {
  * Creates a drafter for a formatted Double
  * @param {number} value - the Double
  * @param {string} format - the format
- * @returns {object} the parser
+ * @returns {string} formatted double value as string
  */
 export function draftDoubleFormat(value:number,format:string) : string {
-    return format.replace(/0(.)0((.)(0+))?/gi, function(_a,sep1,_b,sep2,digits){
-        const len = digits ? digits.length : 0;
-        const vs = value.toFixed(len);
-        let res = '';
-        if (sep2) {
-            const d = vs.substring(vs.length - len);
-            res += sep2 + d;
-        }
-        let i = vs.substring(0,vs.length - (len === 0 ? 0 : len+1));
-        while (i.length > 3) {
-            res = sep1 + i.substring(i.length - 3) + res;
-            i = i.substring(0, i.length - 3);
-        }
-        return i + res;
-    });
+    if(format==='word') {
+        const converter:ToWords = new ToWords();
+        const res:string=converter.convert(value);
+        return res;
+    } else {
+        return format.replace(/0(.)0((.)(0+))?/gi, function(_a,sep1,_b,sep2,digits){
+            const len = digits ? digits.length : 0;
+            const vs = value.toFixed(len);
+            let res = '';
+            if (sep2) {
+                const d = vs.substring(vs.length - len);
+                res += sep2 + d;
+            }
+            let i = vs.substring(0,vs.length - (len === 0 ? 0 : len+1));
+            while (i.length > 3) {
+                res = sep1 + i.substring(i.length - 3) + res;
+                i = i.substring(0, i.length - 3);
+            }
+            return i + res;
+        });
+    }
 }
