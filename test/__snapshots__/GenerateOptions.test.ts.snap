@@ -1,0 +1,49 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`template generation options should evaluate a formula with sandboxJavaScriptEvaluation set to true 1`] = `
+Object {
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": Array [
+    Object {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": Array [
+        Object {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": Array [
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Hello ",
+            },
+            Object {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "message",
+              "value": "World",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "! Your name is ",
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Strong",
+              "nodes": Array [
+                Object {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": Array [],
+                  "name": "formula_a3e0e90a2ad3601e1b208a0581e1ce6dfc5aab302d20cb2a0488d78e236096f7",
+                  "value": "5",
+                },
+              ],
+            },
+            Object {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": " characters long.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;

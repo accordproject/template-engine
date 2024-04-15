@@ -38,6 +38,7 @@ const GOOD_TEMPLATES_ROOT = './test/templates/good';
 const BAD_TEMPLATES_ROOT = './test/templates/bad';
 
 describe('templatemark interpreter', () => {
+    jest.setTimeout(30000);
     const goodTemplates: Array<{ name: string, content: string }> = readdirSync(GOOD_TEMPLATES_ROOT).map(dir => {
         return {
             name: dir,
@@ -76,10 +77,15 @@ describe('templatemark interpreter', () => {
             const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate({ content: templateMarkup }, modelManager, 'contract', { verbose: false });
             // console.log(JSON.stringify(templateMarkDom, null, 2));
 
+            // execute without sandbox
             const now = '2023-03-17T00:00:00.000Z';
             const ciceroMark = await engine.generate(templateMarkDom, data, {now, locale: 'en'});
             expect(ciceroMark.getFullyQualifiedType()).toBe(`${CommonMarkModel.NAMESPACE}.Document`);
             expect(ciceroMark.toJSON()).toMatchSnapshot();
+
+            // check we get the same result when we execute with sandbox
+            const ciceroMarkSandbox = await engine.generate(templateMarkDom, data, {now, locale: 'en', sandboxJavaScriptEvaluation: true});
+            expect(ciceroMarkSandbox.toJSON()).toStrictEqual(ciceroMark.toJSON());
         });
     });
 
