@@ -84,7 +84,7 @@ describe('templatemark interpreter', () => {
             expect(ciceroMark.toJSON()).toMatchSnapshot();
 
             // check we get the same result when we execute with sandbox
-            const ciceroMarkSandbox = await engine.generate(templateMarkDom, data, {now, locale: 'en', sandboxJavaScriptEvaluation: true});
+            const ciceroMarkSandbox = await engine.generate(templateMarkDom, data, {now, locale: 'en', childProcessJavaScriptEvaluation: true});
             expect(ciceroMarkSandbox.toJSON()).toStrictEqual(ciceroMark.toJSON());
         });
     });

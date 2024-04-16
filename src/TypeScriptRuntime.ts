@@ -24,7 +24,7 @@ export type GenerationOptions = {
     now?: string,
     locale?: string
     disableJavaScriptEvaluation?: boolean
-    sandboxJavaScriptEvaluation?: boolean
+    childProcessJavaScriptEvaluation?: boolean
 }
 
 export function joinList(data:Array<string>, joinDef:any, options?:GenerationOptions) : string {

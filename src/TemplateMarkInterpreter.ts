@@ -87,7 +87,7 @@ async function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: 
         throw new Error('Empty expression');
     }
     try {
-        if(options?.sandboxJavaScriptEvaluation) {
+        if(options?.childProcessJavaScriptEvaluation) {
             const r = await javaScriptEvaluator.evalChildProcess({code: expression, argumentNames: functionArgNames, arguments: functionArgValues});
             return (typeof r.result === 'object') ? JSON.stringify(r.result) : r.result.toString();
         }
