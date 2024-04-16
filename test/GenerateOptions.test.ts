@@ -30,7 +30,7 @@ describe('template generation options', () => {
             const templateMarkTransformer = new TemplateMarkTransformer();
             const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate({ content: template }, modelManager, 'contract', { verbose: false });
             const now = '2023-03-17T00:00:00.000Z';
-            return engine.generate(templateMarkDom, data, {now, sandboxJavaScriptEvaluation: false});
+            return engine.generate(templateMarkDom, data, {now, sandboxJavaScriptEvaluation: true});
         };
         await expect(f()).resolves.toMatchSnapshot();
     });

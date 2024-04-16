@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import { JavaScriptEvaluator } from '../src/JavaScriptEvaluator';
+import os from 'os';
 
 const now = '2023-03-17T00:00:00.000Z';
 
@@ -27,56 +28,82 @@ const CRASH_RESULT = {code: 0, result: undefined};
 const CRASH_ERROR = {code: 'process.exit(1); return 42;', argumentNames: [], arguments: []};
 const CRASH_ERROR_RESULT = {code: 1, result: undefined};
 
+const availableProcessors = os.availableParallelism();
+const javaScriptEvaluator = new JavaScriptEvaluator({
+    maxWorkers: availableProcessors, // how many child processes
+    waitInterval: 50, // how long to wait before rescheduling work
+    maxQueueDepth: 1000 // maximum number of queued work items
+});
+
 describe('javascript evaluator', () => {
+    test('should pass stress test with javascript safe', async () => {
+        const promises = [];
+        for(let n=0; n < 100; n++) {
+            const p = javaScriptEvaluator.evalSafe(SIMPLE, {timeout: 10000});
+            promises.push(p);
+        }
+        return Promise.all(promises)
+            .catch((error:any) => {
+                expect(error).toBeFalsy();
+            });
+    }, 60000);
     test('should eval simple javascript safe', async () => {
-        const result = await JavaScriptEvaluator.evalSafe(SIMPLE);
+        const result = await javaScriptEvaluator.evalSafe(SIMPLE);
+        delete result.elapsed;
         expect(result).toEqual(SIMPLE_RESULT);
     });
     test('should eval simple javascript danger', async () => {
-        const result = await JavaScriptEvaluator.evalDangerous(SIMPLE);
+        const result = await javaScriptEvaluator.evalDangerous(SIMPLE);
+        delete result.elapsed;
         expect(result).toEqual(SIMPLE_RESULT);
     });
     test('should eval now javascript safe', async () => {
-        const result = await JavaScriptEvaluator.evalSafe(NOW);
+        const result = await javaScriptEvaluator.evalSafe(NOW);
+        delete result.elapsed;
         expect(result).toEqual(NOW_RESULT);
     });
     test('should eval now javascript danger', async () => {
-        const result = await JavaScriptEvaluator.evalDangerous(NOW);
+        const result = await javaScriptEvaluator.evalDangerous(NOW);
+        delete result.elapsed;
         expect(result).toEqual(NOW_RESULT);
     });
     test('should eval infinite javascript safe', async () => {
         try {
-            await JavaScriptEvaluator.evalSafe(INFINITE, {timeout: 1000});
+            await javaScriptEvaluator.evalSafe(INFINITE, {timeout: 1000});
             expect(false).toBeTruthy();
         }
-        catch(err) {
+        catch(err:any) {
+            delete err.elapsed;
             expect(err).toEqual(INFINITE_RESULT);
         }
     });
     test('should eval exception javascript safe', async () => {
         try {
-            await JavaScriptEvaluator.evalSafe(EXCEPTION);
+            await javaScriptEvaluator.evalSafe(EXCEPTION);
             expect(false).toBeTruthy();
         }
-        catch(err) {
+        catch(err:any) {
+            delete err.elapsed;
             expect(err).toEqual(EXCEPTION_RESULT);
         }
     });
     test('should eval crash javascript safe', async () => {
         try {
-            await JavaScriptEvaluator.evalSafe(CRASH);
+            await javaScriptEvaluator.evalSafe(CRASH);
             expect(false).toBeTruthy();
         }
-        catch(err) {
+        catch(err:any) {
+            delete err.elapsed;
             expect(err).toEqual(CRASH_RESULT);
         }
     });
     test('should eval crash error javascript safe', async () => {
         try {
-            await JavaScriptEvaluator.evalSafe(CRASH_ERROR);
+            await javaScriptEvaluator.evalSafe(CRASH_ERROR);
             expect(false).toBeTruthy();
         }
-        catch(err) {
+        catch(err:any) {
+            delete err.elapsed;
             expect(err).toEqual(CRASH_ERROR_RESULT);
         }
     });

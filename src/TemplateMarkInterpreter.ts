@@ -14,6 +14,7 @@
 
 import jp from 'jsonpath';
 import traverse from 'traverse';
+import os from 'os';
 
 import { ClassDeclaration, Factory, Introspector, ModelManager, Serializer } from '@accordproject/concerto-core';
 import { getDrafter } from './drafting';
@@ -48,6 +49,13 @@ function checkCode(code:ICode) {
     }
 }
 
+const availableProcessors = os.availableParallelism();
+const javaScriptEvaluator = new JavaScriptEvaluator({
+    maxWorkers: availableProcessors, // how many child processes
+    waitInterval: 200, // how long to wait before rescheduling work
+    maxQueueDepth: 1000 // maximum number of queued work items
+});
+
 /**
  * Evaluates a JS expression
  * @param {*} clauseLibrary the clause library
@@ -80,16 +88,16 @@ async function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: 
     }
     try {
         if(options?.sandboxJavaScriptEvaluation) {
-            const r = await JavaScriptEvaluator.evalSafe({code: expression, argumentNames: functionArgNames, arguments: functionArgValues});
+            const r = await javaScriptEvaluator.evalSafe({code: expression, argumentNames: functionArgNames, arguments: functionArgValues});
             return (typeof r.result === 'object') ? JSON.stringify(r.result) : r.result.toString();
         }
         else {
-            const r = await JavaScriptEvaluator.evalDangerous({code: expression, argumentNames: functionArgNames, arguments: functionArgValues});
+            const r = await javaScriptEvaluator.evalDangerous({code: expression, argumentNames: functionArgNames, arguments: functionArgValues});
             return (typeof r.result === 'object') ? JSON.stringify(r.result) : r.result.toString();
         }
     }
     catch(err) {
-        throw new Error(`Caught error ${err} evaluating ${expression} with arguments ${functionArgValues}`);
+        throw new Error(`Caught error ${JSON.stringify(err)} evaluating ${expression} with arguments ${JSON.stringify(functionArgValues)}`);
     }
 }
 
