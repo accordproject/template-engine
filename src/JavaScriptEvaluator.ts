@@ -29,7 +29,6 @@ export type EvalRequest = {
 
 type WorkItem = {
     pid?: number;
-    timerId?: any;
     startTime: number;
     expireTime: number;
     request: EvalRequest;
@@ -46,7 +45,6 @@ export type EvalResponse = {
 
 export type JavaScriptEvaluatorOptions = {
     waitInterval: number;
-    maxQueueDepth: number;
     maxWorkers: number;
 }
 
@@ -76,7 +74,7 @@ export class JavaScriptEvaluator {
                 const fun = new Function(...['dayjs', 'jp', ...request.argumentNames], request.code);
                 const result = fun(...[dayjs, jp, ...request.arguments]);
                 const end = new Date().getTime();
-                resolve({ result, elapsed: end-start });
+                resolve({ result, elapsed: end - start });
             }
             catch (err: any) {
                 reject({
@@ -101,31 +99,22 @@ export class JavaScriptEvaluator {
     }
     private processQueue(workItem: WorkItem, options: EvalOptions) {
         const now = new Date().getTime();
-        if(this.queue.length > this.options.maxQueueDepth) {
-            workItem.reject({ timeout: true, maxQueueDepth: true, elapsed: now - workItem.startTime });
+        const notExpired = this.queue.filter(w => (now < w.expireTime));
+        const expired = this.queue.filter(w => (now >= w.expireTime));
+        this.queue = notExpired;
+        expired.forEach(w => {
+            w.reject({ timeout: true, starvation: true, elapsed: now - w.startTime });
+        });
+        if (this.workers.length < this.options.maxWorkers) {
+            this.doWork(workItem, options)
+                .then(result => workItem.resolve(result))
+                .catch(error => workItem.reject(error));
         }
         else {
-            this.queue.push(workItem);
-            const notExpired = this.queue.filter(w => (now < w.expireTime));
-            const expired = this.queue.filter(w => (now >= w.expireTime));
-            this.queue = notExpired;
-            expired.forEach(w => {
-                w.reject({ timeout: true, starvation: true, elapsed: now - w.startTime });
-            });
-            const next = this.queue.shift();
-            if (next) {
-                if (this.workers.length < this.options.maxWorkers) {
-                    this.doWork(next, options)
-                        .then(result => next.resolve(result))
-                        .catch(error => next.reject(error));
-                }
-                else {
-                    sleep(this.options.waitInterval)
-                        .then(() => {
-                            this.processQueue(next, options);
-                        });
-                }
-            }
+            sleep(this.options.waitInterval)
+                .then(() => {
+                    this.processQueue(workItem, options);
+                });
         }
     }
     private doWork(work: WorkItem, options: EvalOptions = { timeout: 5000 }): Promise<EvalResponse> {
@@ -146,7 +135,7 @@ export class JavaScriptEvaluator {
             worker.on('error', (err: any) => {
                 this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
                 const end = new Date().getTime();
-                reject({ message: err.message, elapsed: end-start });
+                reject({ message: err.message, elapsed: end - start });
             });
             worker.on('message', (msg: any) => {
                 result = msg;
@@ -155,18 +144,18 @@ export class JavaScriptEvaluator {
                 if (code === null) {
                     this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
                     const end = new Date().getTime();
-                    reject({ timeout: true, elapsed: end-start });
+                    reject({ timeout: true, elapsed: end - start });
                 }
                 else if (code === 0 && result) {
                     // result will be undefined
                     // if the user code called process.exit()...
                     this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
                     const end = new Date().getTime();
-                    resolve({...result, elapsed: end-start});
+                    resolve({ ...result, elapsed: end - start });
                 } else {
                     this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
                     const end = new Date().getTime();
-                    reject({ code, result, elapsed: end-start});
+                    reject({ code, result, elapsed: end - start });
                 }
             });
             worker.send(work.request);

@@ -32,14 +32,13 @@ const availableProcessors = os.availableParallelism();
 const javaScriptEvaluator = new JavaScriptEvaluator({
     maxWorkers: availableProcessors, // how many child processes
     waitInterval: 50, // how long to wait before rescheduling work
-    maxQueueDepth: 1000 // maximum number of queued work items
 });
 
 describe('javascript evaluator', () => {
     test('should pass stress test with javascript safe', async () => {
         const promises = [];
-        for(let n=0; n < 100; n++) {
-            const p = javaScriptEvaluator.evalSafe(SIMPLE, {timeout: 10000});
+        for(let n=0; n < 1000; n++) {
+            const p = javaScriptEvaluator.evalSafe(SIMPLE, {timeout: 1000});
             promises.push(p);
         }
         return Promise.all(promises)

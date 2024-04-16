@@ -52,8 +52,7 @@ function checkCode(code:ICode) {
 const availableProcessors = os.availableParallelism();
 const javaScriptEvaluator = new JavaScriptEvaluator({
     maxWorkers: availableProcessors, // how many child processes
-    waitInterval: 200, // how long to wait before rescheduling work
-    maxQueueDepth: 1000 // maximum number of queued work items
+    waitInterval: 50, // how long to wait before rescheduling work
 });
 
 /**
