@@ -106,7 +106,7 @@ export class JavaScriptEvaluator {
      * @param {EvalOptions} options the options for the request
      * @returns {Promise<EvalResponse>} the async result
      */
-    evalChildProcess(request: EvalRequest, options: EvalOptions = { timeout: 10000 }): Promise<EvalResponse> {
+    async evalChildProcess(request: EvalRequest, options: EvalOptions = { timeout: 10000 }): Promise<EvalResponse> {
         // console.log('Workers count: ' + this.workers.length);
         return new Promise((resolve, reject) => {
             const now = new Date().getTime();
