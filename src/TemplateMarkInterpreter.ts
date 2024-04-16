@@ -41,7 +41,7 @@ import { TemplateMarkToJavaScriptCompiler } from './TemplateMarkToJavaScriptComp
 import { CodeType, ICode } from './model-gen/org.accordproject.templatemark@0.5.0';
 import { GenerationOptions, joinList } from './TypeScriptRuntime';
 import { getTemplateClassDeclaration } from './utils';
-import { JavaScriptEvaluator } from './JavaScriptEvaluator';
+import { EvalResponse, JavaScriptEvaluator } from './JavaScriptEvaluator';
 
 function checkCode(code:ICode) {
     if(code.type !== CodeType.ES_2020) {
@@ -66,7 +66,7 @@ const javaScriptEvaluator = new JavaScriptEvaluator({
  * @param {GenerationOptions} options the generation options
  * @returns {object} the result of evaluating the expression against the data
  */
-async function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: string, options?: GenerationOptions): Promise<any> {
+async function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: string, options?: GenerationOptions): Promise<EvalResponse> {
     if(options?.disableJavaScriptEvaluation) {
         throw new Error('JavaScript evaluation is disabled.');
     }
