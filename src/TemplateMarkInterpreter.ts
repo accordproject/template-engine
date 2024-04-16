@@ -53,6 +53,7 @@ const availableProcessors = os.availableParallelism();
 const javaScriptEvaluator = new JavaScriptEvaluator({
     maxWorkers: availableProcessors, // how many child processes
     waitInterval: 50, // how long to wait before rescheduling work
+    maxQueueDepth: 100 // how many requests to queue
 });
 
 /**
@@ -87,11 +88,11 @@ async function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: 
     }
     try {
         if(options?.sandboxJavaScriptEvaluation) {
-            const r = await javaScriptEvaluator.evalSafe({code: expression, argumentNames: functionArgNames, arguments: functionArgValues});
+            const r = await javaScriptEvaluator.evalChildProcess({code: expression, argumentNames: functionArgNames, arguments: functionArgValues});
             return (typeof r.result === 'object') ? JSON.stringify(r.result) : r.result.toString();
         }
         else {
-            const r = await javaScriptEvaluator.evalDangerous({code: expression, argumentNames: functionArgNames, arguments: functionArgValues});
+            const r = await javaScriptEvaluator.evalDangerously({code: expression, argumentNames: functionArgNames, arguments: functionArgValues});
             return (typeof r.result === 'object') ? JSON.stringify(r.result) : r.result.toString();
         }
     }
