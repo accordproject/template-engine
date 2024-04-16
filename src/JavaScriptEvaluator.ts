@@ -62,7 +62,7 @@ async function sleep(msec: number) {
  * This class implements two JS function evaluation strategies:
  * 1. evalDangerously which creates a dynamic function and run it in-process
  * This should only be used with trusted code, or within a sandbox (e.g. the browser)
- * 2. evalChildProcess which spins up a child node process to eval the function
+ * 2. evalChildProcess which spins up a child Node process to eval the function
  * The maximum number of child processes is capped via JavaScriptEvaluatorOptions
  * as well as the maximum queue depth for the queue used to wait for a free worker
  * child process. Not that to prevent cross-request contamination
@@ -154,7 +154,7 @@ export class JavaScriptEvaluator {
             const start = new Date().getTime();
             // check for browser
             if (!child_process.fork) {
-                reject({ message: 'Cannot use evalSafe because child_process.fork is not defined.' });
+                reject({ message: 'Cannot use evalChildProcess because child_process.fork is not defined.' });
             }
             // on timeout will send SIGTERM
             const worker = child_process.fork('./dist/worker.js', { timeout: options.timeout, env: {} });
