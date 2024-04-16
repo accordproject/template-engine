@@ -49,11 +49,13 @@ function checkCode(code:ICode) {
     }
 }
 
-const availableProcessors = os.availableParallelism();
+// this is a global because we don't want the user
+// to configure child processes at the TemplateMarkInterpreter instance level
+const availableProcessors = process.env.MAX_WORKERS ? Number.parseInt(process.env.MAX_WORKERS) : os.availableParallelism();
 const javaScriptEvaluator = new JavaScriptEvaluator({
     maxWorkers: availableProcessors, // how many child processes
-    waitInterval: 50, // how long to wait before rescheduling work
-    maxQueueDepth: 100 // how many requests to queue
+    waitInterval: process.env.WAIT_INTERVAL ? Number.parseInt(process.env.WAIT_INTERVAL) : 50, // how long to wait before rescheduling work
+    maxQueueDepth: process.env.MAX_QUEUE_DEPTH ? Number.parseInt(process.env.MAX_QUEUE_DEPTH) : 1000 // max requests to queue
 });
 
 /**
@@ -87,12 +89,14 @@ async function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: 
         throw new Error('Empty expression');
     }
     try {
+        const request = {code: expression, argumentNames: functionArgNames, arguments: functionArgValues};
         if(options?.childProcessJavaScriptEvaluation) {
-            const r = await javaScriptEvaluator.evalChildProcess({code: expression, argumentNames: functionArgNames, arguments: functionArgValues});
+            const evalOptions = options?.timeout ? {timeout: options.timeout} : undefined;
+            const r = await javaScriptEvaluator.evalChildProcess(request, evalOptions);
             return (typeof r.result === 'object') ? JSON.stringify(r.result) : r.result.toString();
         }
         else {
-            const r = await javaScriptEvaluator.evalDangerously({code: expression, argumentNames: functionArgNames, arguments: functionArgValues});
+            const r = await javaScriptEvaluator.evalDangerously(request);
             return (typeof r.result === 'object') ? JSON.stringify(r.result) : r.result.toString();
         }
     }

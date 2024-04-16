@@ -25,6 +25,7 @@ export type GenerationOptions = {
     locale?: string
     disableJavaScriptEvaluation?: boolean
     childProcessJavaScriptEvaluation?: boolean
+    timeout?: number
 }
 
 export function joinList(data:Array<string>, joinDef:any, options?:GenerationOptions) : string {
