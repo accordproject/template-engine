@@ -29,7 +29,7 @@ process.on('message', (msg) => {
     ${msg.code}
     `;
     try {
-        // we expose just two node modules to the function: dayjs 'now' and the 'jsonpath' module
+        // we expose just two node modules to the function: 'dayjs' and 'jsonpath'
         const argNames = ['dayjs','jp',...msg.argumentNames];
         const args = [dayjs,jp,...msg.arguments];
         const fun = new Function(...argNames, code);

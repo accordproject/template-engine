@@ -38,7 +38,7 @@ type WorkItem = {
 export type EvalResponse = {
     result: any // success if not null
     timeout?: boolean // if true the promise is rejected due to timeout
-    starvaton?: boolean // if true the promise is rejected due to lack of child process
+    starvation?: boolean // if true the promise is rejected due to lack of child process
     message?: string; // if promise rejected due to a caught exception this will be set
     elapsed?: number; // the elapsed time in ms to process the work item
     maxQueueDepthExceeded?: boolean // if true the promise is rejected because the queue is full
@@ -158,10 +158,10 @@ export class JavaScriptEvaluator {
             }
             // on timeout will send SIGTERM
             const worker = child_process.fork('./dist/worker.js', { timeout: options.timeout, env: {} });
-            this.workers.push(worker);
             if (!worker.pid) {
                 throw new Error('Failed to fork child process');
             }
+            this.workers.push(worker);
             work.pid = worker.pid;
             let result: any;
             worker.on('error', (err: any) => {

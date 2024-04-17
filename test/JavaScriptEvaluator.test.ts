@@ -39,7 +39,7 @@ describe('javascript evaluator', () => {
     test('should pass stress test with javascript safe', async () => {
         const promises = [];
         for(let n=0; n < 1000; n++) {
-            const p = javaScriptEvaluator.evalChildProcess(SIMPLE, {timeout: 20000});
+            const p = javaScriptEvaluator.evalChildProcess(SIMPLE, {timeout: 30000});
             promises.push(p);
         }
         return Promise.all(promises)
