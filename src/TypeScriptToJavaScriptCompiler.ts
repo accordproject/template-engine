@@ -36,6 +36,7 @@ const TYPESCRIPT_URL = process.env.TYPESCRIPT_URL ? process.env.TYPESCRIPT_URL :
 
 // https://microsoft.github.io/monaco-editor/typedoc/enums/languages.typescript.ScriptTarget.html#ES2020
 const ES2020_TARGET = 7;
+// const ES5_TARGET = 1;
 
 export class TypeScriptToJavaScriptCompiler {
     context: string;

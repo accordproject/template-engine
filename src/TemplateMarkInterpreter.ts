@@ -14,6 +14,7 @@
 
 import jp from 'jsonpath';
 import traverse from 'traverse';
+import os from 'os';
 
 import { ClassDeclaration, Factory, Introspector, ModelManager, Serializer } from '@accordproject/concerto-core';
 import { getDrafter } from './drafting';
@@ -39,14 +40,23 @@ import {
 import { TemplateMarkToJavaScriptCompiler } from './TemplateMarkToJavaScriptCompiler';
 import { CodeType, ICode } from './model-gen/org.accordproject.templatemark@0.5.0';
 import { GenerationOptions, joinList } from './TypeScriptRuntime';
-import dayjs from 'dayjs';
 import { getTemplateClassDeclaration } from './utils';
+import { EvalResponse, JavaScriptEvaluator } from './JavaScriptEvaluator';
 
 function checkCode(code:ICode) {
     if(code.type !== CodeType.ES_2020) {
         throw new Error(`Cannot run ${code.contents} as it is not ES_2020 JavaScript.`);
     }
 }
+
+// this is a global because we don't want the user
+// to configure child processes at the TemplateMarkInterpreter instance level
+const availableProcessors = process.env.MAX_WORKERS ? Number.parseInt(process.env.MAX_WORKERS) : os.availableParallelism();
+const javaScriptEvaluator = new JavaScriptEvaluator({
+    maxWorkers: availableProcessors, // how many child processes
+    waitInterval: process.env.WAIT_INTERVAL ? Number.parseInt(process.env.WAIT_INTERVAL) : 50, // how long to wait before rescheduling work
+    maxQueueDepth: process.env.MAX_QUEUE_DEPTH ? Number.parseInt(process.env.MAX_QUEUE_DEPTH) : 1000 // max requests to queue
+});
 
 /**
  * Evaluates a JS expression
@@ -56,7 +66,7 @@ function checkCode(code:ICode) {
  * @param {GenerationOptions} options the generation options
  * @returns {object} the result of evaluating the expression against the data
  */
-function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: string, options?: GenerationOptions): object {
+async function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: string, options?: GenerationOptions): Promise<EvalResponse> {
     if(options?.disableJavaScriptEvaluation) {
         throw new Error('JavaScript evaluation is disabled.');
     }
@@ -67,16 +77,11 @@ function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: string
     functionArgNames.push('data');
     functionArgNames.push('library');
     functionArgNames.push('options');
-    functionArgNames.push('dayjs');
-    functionArgNames.push('jp');
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const functionArgValues = new Array<any>();
     functionArgValues.push(data);
     functionArgValues.push(clauseLibrary);
     functionArgValues.push(options);
-    functionArgValues.push(dayjs);
-    functionArgValues.push(jp);
 
     // chop the function header and closing
     const expression = fn.substring(fn.indexOf('{') + 1, fn.lastIndexOf('}'));
@@ -84,12 +89,19 @@ function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: string
         throw new Error('Empty expression');
     }
     try {
-        const fun = new Function(...functionArgNames, expression); // SECURITY!
-        const result = fun(...functionArgValues);
-        return result;
+        const request = {code: expression, argumentNames: functionArgNames, arguments: functionArgValues};
+        if(options?.childProcessJavaScriptEvaluation) {
+            const evalOptions = options?.timeout ? {timeout: options.timeout} : undefined;
+            const r = await javaScriptEvaluator.evalChildProcess(request, evalOptions);
+            return (typeof r.result === 'object') ? JSON.stringify(r.result) : r.result.toString();
+        }
+        else {
+            const r = await javaScriptEvaluator.evalDangerously(request);
+            return (typeof r.result === 'object') ? JSON.stringify(r.result) : r.result.toString();
+        }
     }
     catch(err) {
-        throw new Error(`Caught error ${err} evaluating ${expression} with arguments ${functionArgValues}`);
+        throw new Error(`Caught error ${JSON.stringify(err)} evaluating ${expression} with arguments ${JSON.stringify(functionArgValues)}`);
     }
 }
 
@@ -140,6 +152,102 @@ function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
     return withPath.length > 0 ? `$${withPath.join('')}` : '$';
 }
 
+// the key is a path[] joined with '/' from the traverse library
+// the value is the evaluation result
+type UserCodeResult = Record<string, any>;
+
+/**
+ * Evaluates all the user code in a template mark document
+ * @param {*} clauseLibrary - the clause library
+ * @param {*} templateMark - the TemplateMark JSON document
+ * @param {*} data - the template data JSON
+ * @param {[GenerationOptions]} options - the generation options
+ * @returns {Promise<UserCodeResult>} a promise to a UserCodeResult
+ */
+async function evaluateUserCode(clauseLibrary:object, templateMark: object, data: TemplateData, options?:GenerationOptions): Promise<UserCodeResult> {
+    const result:UserCodeResult = {};
+    const paths = traverse(templateMark).paths();
+    for(let n=0; n < paths.length; n++) {
+        const path = paths[n];
+        const context = traverse(templateMark).get(path);
+        if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
+            const nodeClass = context.$class as string;
+            if (FORMULA_DEFINITION_RE.test(nodeClass)) {
+                if (context.code) {
+                    checkCode(context.code);
+                    result[path.join('/')] = await evaluateJavaScript(clauseLibrary, data, context.code.contents, options);
+                }
+                else {
+                    throw new Error('Formula node is missing code.');
+                }
+            }
+            else if (CONDITIONAL_DEFINITION_RE.test(nodeClass) || CLAUSE_DEFINITION_RE.test(nodeClass)) {
+                if (context.condition) {
+                    checkCode(context.condition);
+                    result[path.join('/')] = await evaluateJavaScript(clauseLibrary, data, context.condition.contents, options);
+                }
+            }
+        }
+    }
+    return result;
+}
+
+// the key is a path[] joined with '/' from the traverse library
+// the value is an array of agreementmark Item nodes for the list block
+type ListBlockResult = Record<string, any[]>;
+
+/**
+ * Generates agreementmark for all list blocks
+ * Warning: this is async and recursive
+ * @param {ModelManager} modelManager - the template model
+ * @param {*} clauseLibrary - the clause library
+ * @param {*} templateMark - the TemplateMark JSON document
+ * @param {*} data - the template data JSON
+ * @param {[GenerationOptions]} options - the generation options
+ * @returns {*} the AgreementMark JSON for the list block
+ */
+async function generateListBlocks(modelManager:ModelManager, clauseLibrary:object, templateMark: object, data: TemplateData, options?:GenerationOptions): Promise<ListBlockResult> {
+    const result:ListBlockResult = {};
+    const paths = traverse(templateMark).paths();
+    for(let n=0; n < paths.length; n++) {
+        const thisPath = paths[n];
+        const context = traverse(templateMark).get(thisPath);
+        if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
+            const nodeClass = context.$class as string;
+
+            // evaluate lists, recursing on each list item
+            if (LISTBLOCK_DEFINITION_RE.test(nodeClass)) {
+                const path = getJsonPath(templateMark, context, thisPath);
+                const variableValues = jp.query(data, path, 1);
+
+                if (variableValues.length === 0) {
+                    throw new Error(`No values found for path '${path}' in data ${data}.`);
+                }
+                else {
+                    const arrayData = variableValues[0];
+                    if(!Array.isArray(arrayData)) {
+                        throw new Error(`Values found for path '${path}' in data ${data} is not an array: ${arrayData}.`);
+                    }
+                    else {
+                        const nodes = [];
+                        for(let n=0; n < arrayData.length; n++) {
+                            const arrayItem = arrayData[n];
+                            // arrayItem is now the data for the nested generation
+                            const subResult = await generateAgreement(modelManager, clauseLibrary, context.nodes[0].nodes[0], arrayItem, options);
+                            nodes.push({
+                                $class: `${CommonMarkModel.NAMESPACE}.Item`,
+                                nodes: subResult.nodes ? subResult.nodes : []
+                            });
+                        }
+                        result[thisPath.join('/')] = nodes;
+                    }
+                }
+            }
+        }
+    }
+    return result;
+}
+
 /**
  * Generates an AgreementMark JSON document from a template plus data.
  * @param {ModelManager} modelManager - the template model
@@ -149,8 +257,13 @@ function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
  * @param {[GenerationOptions]} options - the generation options
  * @returns {*} the AgreementMark JSON
  */
-function generateAgreement(modelManager:ModelManager, clauseLibrary:object, templateMark: object, data: TemplateData, options?:GenerationOptions): any {
+async function generateAgreement(modelManager:ModelManager, clauseLibrary:object, templateMark: object, data: TemplateData, options?:GenerationOptions): Promise<any> {
     const introspector = new Introspector(modelManager);
+    // evaluate all the user code (async)
+    const userCodeResults = await evaluateUserCode(clauseLibrary, templateMark, data, options);
+    // evaluate all list blocks (async)
+    const listBlockResults = await generateListBlocks(modelManager, clauseLibrary, templateMark, data, options);
+    // traverse the templatemark, creating an output agreementmark tree
     return traverse(templateMark).map(function (context: any) {
         let stopHere = false;
         if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
@@ -182,8 +295,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
             // with the result of evaluating the JS code
             else if (FORMULA_DEFINITION_RE.test(nodeClass)) {
                 if (context.code) {
-                    checkCode(context.code);
-                    const result = evaluateJavaScript(clauseLibrary, data, context.code.contents, options);
+                    const result = userCodeResults[this.path.join('/')];
                     if(result === null) {
                         context.value = '<null>';
                     }
@@ -202,32 +314,11 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
 
             // evaluate lists, recursing on each list item
             else if (LISTBLOCK_DEFINITION_RE.test(nodeClass)) {
-                const path = getJsonPath(templateMark, context, this.path);
-                const variableValues = jp.query(data, path, 1);
-
-                if (variableValues.length === 0) {
-                    throw new Error(`No values found for path '${path}' in data ${data}.`);
-                }
-                else {
-                    const arrayData = variableValues[0];
-                    if(!Array.isArray(arrayData)) {
-                        throw new Error(`Values found for path '${path}' in data ${data} is not an array: ${arrayData}.`);
-                    }
-                    else {
-                        context.$class = `${CommonMarkModel.NAMESPACE}.List`;
-                        delete context.elementType;
-                        delete context.name;
-                        context.nodes = arrayData.map( arrayItem => {
-                            // arrayItem is now the data for the nested traversal
-                            const subResult = generateAgreement(modelManager, clauseLibrary, context.nodes[0].nodes[0], arrayItem);
-                            return {
-                                $class: `${CommonMarkModel.NAMESPACE}.Item`,
-                                nodes: subResult.nodes ? subResult.nodes : []
-                            };
-                        });
-                        stopHere = true; // do not process child nodes, we've already done it above...
-                    }
-                }
+                context.$class = `${CommonMarkModel.NAMESPACE}.List`;
+                delete context.elementType;
+                delete context.name;
+                context.nodes = listBlockResults[this.path.join('/')];
+                stopHere = true; // do not process child nodes, we've already done it above...
             }
 
             // map over an array of items, joining them into a Text node
@@ -295,8 +386,8 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
             // with the result of evaluating the JS code or a boolean property
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
-                    checkCode(context.condition);
-                    context.isTrue = !!evaluateJavaScript(clauseLibrary, data, context.condition.contents, options) as unknown as boolean;
+                    const result = userCodeResults[this.path.join('/')];
+                    context.isTrue = !!result as unknown as boolean;
                 }
                 else {
                     const path = getJsonPath(templateMark, context, this.path);
@@ -323,7 +414,7 @@ function generateAgreement(modelManager:ModelManager, clauseLibrary:object, temp
             else if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
                     checkCode(context.condition);
-                    const result = !!evaluateJavaScript(clauseLibrary, data, context.condition.contents, options) as unknown as boolean;
+                    const result = !!userCodeResults[this.path.join('/')] as unknown as boolean;
                     if(!result) {
                         delete context.nodes;
                         stopHere = true;
@@ -439,7 +530,7 @@ export class TemplateMarkInterpreter {
         }
         const typedTemplateMark = this.checkTypes(templateMark);
         const jsTemplateMark = await this.compileTypeScriptToJavaScript(typedTemplateMark);
-        const ciceroMark = generateAgreement(this.modelManager, this.clauseLibrary, jsTemplateMark, data, options);
+        const ciceroMark = await generateAgreement(this.modelManager, this.clauseLibrary, jsTemplateMark, data, options);
         return this.validateCiceroMark(ciceroMark);
     }
 }
