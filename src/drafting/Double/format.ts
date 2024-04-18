@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 import {ToWords} from 'to-words';
+import { DraftFormat } from '../Integer/format';
 /**
  * Creates a drafter for Double
  * @param {number} value - the double
@@ -31,8 +32,8 @@ export function draftDoubleIEEE(value:number) : string {
  * @param {string} format - the format
  * @returns {string} formatted double value as string
  */
-export function draftDoubleFormat(value:number,format:string) : string {
-    if(format==='word') {
+export function draftDoubleFormat(value:number,format:DraftFormat=DraftFormat.NUMBER) : string {
+    if(format===DraftFormat.TEXT) {
         const converter:ToWords = new ToWords();
         const res:string=converter.convert(value);
         return res;

@@ -29,8 +29,9 @@ export function draftInteger(value:number) : string {
  * @param {string} format - the format
  * @returns {string} formatted integer value as string
  */
-export function draftIntegerFormat(value:number,format:string) : string {
-    if (format === 'word') {
+export enum DraftFormat{NUMBER='', TEXT='word'}
+export function draftIntegerFormat(value:number,format:DraftFormat=DraftFormat.NUMBER) : string {
+    if (format === DraftFormat.TEXT) {
         const converter:ToWords = new ToWords();
         const res:string=converter.convert(value);
         return res;
