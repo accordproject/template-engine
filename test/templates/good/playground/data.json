@@ -15,7 +15,7 @@
     },
     "favoriteColors" : ["red","green", "blue"],
     "order" : {
-        "createdAt" : "2023-05-01",
+        "createdAt" : "2023-05-01:00:00.000Z",
         "$class" : "hello@1.0.0.Order",
         "orderLines":
         [

@@ -12,6 +12,16 @@ const bundle = (config) => ({
 });
 
 export default [
+    {
+        input: {
+            worker: 'src/worker.js',
+        },
+        output: {
+            dir: './dist',
+            format: 'cjs',
+            sourcemap: true,
+        },
+    },
     bundle({
         plugins: [esbuild()],
         output: [
