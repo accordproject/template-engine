@@ -14,6 +14,7 @@
 
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
+import { DateTimeFormat } from '../DraftFormat';
 dayjs.extend(utc);
 
 /**
@@ -22,7 +23,7 @@ dayjs.extend(utc);
  * @param {object} format the the format
  * @returns {string} the text
  */
-export default function dateTimeDrafter(value:string,format:string) : string {
+export default function dateTimeDrafter(value:string,format?:DateTimeFormat) : string {
     const f = format ? format : 'MM/DD/YYYY';
     return dayjs.utc(value).format(f);
 }

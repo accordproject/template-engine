@@ -14,14 +14,15 @@
 
 import { draftInteger as draftLong } from '../Integer/format';
 import { draftIntegerFormat as draftLongFormat } from '../Integer/format';
+import { NumberDraftFormat } from '../DraftFormat';
 
 /**
  * Creates a drafter for a long
  * @param {number} value - the Long
- * @param {string} format - the format
+ * @param {NumberDraftFormat} format - the format
  * @returns {string} the text
  */
-export default function longDrafter(value:number,format:string) : string {
+export default function longDrafter(value:number,format?:NumberDraftFormat) : string {
     if (format) {
         return draftLongFormat(value,format);
     } else {

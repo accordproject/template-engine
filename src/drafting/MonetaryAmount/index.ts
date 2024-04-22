@@ -14,6 +14,7 @@
 
 import { draftDoubleIEEE } from '../Double/format';
 import { draftDoubleFormat } from '../Double/format';
+import { MonetaryAmountFormat } from '../DraftFormat';
 import { CurrencyCode } from './currencycode';
 
 type MonetaryAmount = {
@@ -51,7 +52,7 @@ function codeSymbol(c:string) : string {
  * @param {string} format the format
  * @returns {string} the text
  */
-function monetaryAmountFormatDrafter(value:MonetaryAmount,format:string) : string {
+function monetaryAmountFormatDrafter(value:MonetaryAmount,format:MonetaryAmountFormat) : string {
     return draftDoubleFormat(value.doubleValue,
         format
             .replace(/K/gi,codeSymbol(value.currencyCode))
@@ -64,7 +65,7 @@ function monetaryAmountFormatDrafter(value:MonetaryAmount,format:string) : strin
  * @param {string} format the format
  * @returns {string} the text
  */
-export default function monetaryAmountDrafter(value:MonetaryAmount,format:string) : string {
+export default function monetaryAmountDrafter(value:MonetaryAmount,format?:MonetaryAmountFormat) : string {
     if (format) {
         return monetaryAmountFormatDrafter(value,format);
     } else {

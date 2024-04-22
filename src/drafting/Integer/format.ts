@@ -13,7 +13,7 @@
  */
 
 import {ToWords} from 'to-words';
-export enum DraftFormat{NUMBER='', TEXT='word'}
+import { NumberDraftFormat } from '../DraftFormat';
 
 /**
  * Creates a drafter for Integer
@@ -27,11 +27,11 @@ export function draftInteger(value:number) : string {
 /**
  * Creates a drafter for a formatted Integer
  * @param {number} value - the Integer
- * @param {string|DraftFormat} format - the format
+ * @param {NumberDraftFormat} format - the format
  * @returns {string} formatted integer value as string
  */
-export function draftIntegerFormat(value:number,format:string|DraftFormat=DraftFormat.NUMBER) : string {
-    if (format === DraftFormat.TEXT) {
+export function draftIntegerFormat(value:number,format:NumberDraftFormat) : string {
+    if (format === 'text') {
         const converter:ToWords = new ToWords();
         const res:string=converter.convert(value);
         return res;

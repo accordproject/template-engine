@@ -12,16 +12,17 @@
  * limitations under the License.
  */
 
+import { NumberDraftFormat } from '../DraftFormat';
 import { draftDoubleIEEE } from './format';
 import { draftDoubleFormat } from './format';
 
 /**
  * Creates a drafter for a double
  * @param {number} value - the Double
- * @param {string} format - the format
+ * @param {NumberDraftFormat} format - the format
  * @returns {string} the text
  */
-export default function doubleDrafter(value:number,format:string) : string {
+export default function doubleDrafter(value:number,format?:NumberDraftFormat) : string {
     if (format) {
         return draftDoubleFormat(value,format);
     } else {

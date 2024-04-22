@@ -12,22 +12,8 @@
  * limitations under the License.
  */
 
-'use strict';
-
-import { NumberDraftFormat } from '../DraftFormat';
-import { draftInteger } from './format';
-import { draftIntegerFormat } from './format';
-
-/**
- * Creates a drafter for an Integer
- * @param {number} value - the integer
- * @param {NumberDraftFormat} format - the format
- * @returns {string} the text
- */
-export default function integerDrafter(value:number,format?:NumberDraftFormat) : string {
-    if (format) {
-        return draftIntegerFormat(value,format);
-    } else {
-        return draftInteger(value);
-    }
-}
+export const TextNumberDraftFormat = 'text';
+export type NumberDraftFormat = typeof TextNumberDraftFormat | string; // the magic format value 'text' is used to format as number as a textual value
+export type DateTimeFormat = string;
+export type MonetaryAmountFormat = string;
+export type DraftFormat = NumberDraftFormat | DateTimeFormat | MonetaryAmountFormat;

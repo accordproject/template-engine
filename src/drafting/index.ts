@@ -18,9 +18,10 @@ import doubleDrafter from './Double';
 import integerDrafter from './Integer';
 import longDrafter from './Long';
 import monetaryAmountDrafter from './MonetaryAmount';
+import { DraftFormat } from './DraftFormat';
 import stringDrafter from './String';
 
-export function getDrafter(typeName: string) : ((value:any, format:string) => string)|null  {
+export function getDrafter(typeName: string) : ((value:any, format?:DraftFormat) => string)|null  {
     switch(typeName) {
     case 'Boolean': return booleanDrafter;
     case 'DateTime': return dateTimeDrafter;

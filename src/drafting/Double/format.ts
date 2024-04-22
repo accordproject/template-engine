@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 import {ToWords} from 'to-words';
-import { DraftFormat } from '../Integer/format';
+import { NumberDraftFormat } from '../DraftFormat';
 /**
  * Creates a drafter for Double
  * @param {number} value - the double
@@ -29,11 +29,11 @@ export function draftDoubleIEEE(value:number) : string {
 /**
  * Creates a drafter for a formatted Double
  * @param {number} value - the Double
- * @param {string|DraftFormat} format - the format
+ * @param {NumberDraftFormat} format - the format
  * @returns {string} formatted double value as string
  */
-export function draftDoubleFormat(value:number,format:string|DraftFormat=DraftFormat.NUMBER) : string {
-    if(format===DraftFormat.TEXT) {
+export function draftDoubleFormat(value:number,format:NumberDraftFormat) : string {
+    if(format==='text') {
         const converter:ToWords = new ToWords();
         const res:string=converter.convert(value);
         return res;

@@ -2992,7 +2992,18 @@ Object {
                     },
                     Object {
                       "$class": "org.accordproject.commonmark@0.5.0.Text",
-                      "text": " years old",
+                      "text": " (",
+                    },
+                    Object {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "Integer",
+                      "format": "text",
+                      "name": "age",
+                      "value": "Forty Two",
+                    },
+                    Object {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": ") years old",
                     },
                   ],
                 },
