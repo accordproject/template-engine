@@ -1,6 +1,6 @@
 {
     "name": "@accordproject/template-engine",
-    "version": "2.5.0",
+    "version": "2.5.1",
     "description": "Generation of AgreementMark from TemplateMark + JSON Data",
     "homepage": "https://github.com/accordproject",
     "engines": {
@@ -18,7 +18,7 @@
         "build": "rollup -c",
         "tsc-template": "tsc --strict --esModuleInterop ./output/full/usercode.ts",
         "minify": "terser ./output/full/usercode.js --compress ecma=2020 --output ./output/full/usercode-min.js",
-        "pretest": "npm-run-all licchk lint",
+        "pretest": "npm-run-all licchk lint build",
         "lint": "eslint .",
         "licchk": "license-check-and-add",
         "test": "jest",
