@@ -15,6 +15,7 @@ import child_process from 'child_process';
 import jp from 'jsonpath';
 import dayjs from 'dayjs';
 import { EventEmitter } from 'node:events';
+import path from 'path';
 
 export type EvalOptions = {
     timeout: number // timeout in milliseconds for this eval request
@@ -149,6 +150,16 @@ export class JavaScriptEvaluator {
                 });
         }
     }
+    private getWorkerPath() : string {
+        try {
+            const thisPath = require.resolve('@accordproject/template-engine');
+            return path.join(thisPath,'..','worker.js');
+        } catch(err) {
+            // if we cannot load the module it likely means we are running
+            // a unit test inside the module...
+            return './dist/worker.js';
+        }
+    }
     private doWork(work: WorkItem, options: EvalOptions): Promise<EvalResponse> {
         return new Promise((resolve, reject) => {
             const start = new Date().getTime();
@@ -157,7 +168,7 @@ export class JavaScriptEvaluator {
                 reject({ message: 'Cannot use evalChildProcess because child_process.fork is not defined.' });
             }
             // on timeout will send SIGTERM
-            const worker = child_process.fork('./dist/worker.js', { timeout: options.timeout, env: {} });
+            const worker = child_process.fork(this.getWorkerPath(), { timeout: options.timeout, env: {} });
             if (!worker.pid) {
                 throw new Error('Failed to fork child process');
             }
