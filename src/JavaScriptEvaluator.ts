@@ -157,7 +157,7 @@ export class JavaScriptEvaluator {
         } catch(err) {
             // if we cannot load the module it likely means we are running
             // a unit test inside the module...
-            return './dist/worker.js';
+            return path.join(__dirname, '..', 'dist', 'worker.js');
         }
     }
     private doWork(work: WorkItem, options: EvalOptions): Promise<EvalResponse> {
@@ -168,7 +168,9 @@ export class JavaScriptEvaluator {
                 reject({ message: 'Cannot use evalChildProcess because child_process.fork is not defined.' });
             }
             // on timeout will send SIGTERM
-            const worker = child_process.fork(this.getWorkerPath(), { timeout: options.timeout, env: {} });
+            const workerPath = this.getWorkerPath();
+            // console.debug(`Worker path: ${workerPath}`);
+            const worker = child_process.fork(workerPath, { timeout: options.timeout, env: {} });
             if (!worker.pid) {
                 throw new Error('Failed to fork child process');
             }
