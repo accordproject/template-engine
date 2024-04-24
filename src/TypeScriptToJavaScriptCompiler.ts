@@ -57,7 +57,7 @@ export class TypeScriptToJavaScriptCompiler {
         if(typeof window === 'undefined') {
             // node does not (yet) support http(s) imports
             // see: https://nodejs.org/api/esm.html#https-and-http-imports
-            this.ts = await import ('typescript');
+            this.ts = (await import ('typescript')).default;
             if(!this.ts) {
                 throw new Error('Failed to load typescript module');
             }
@@ -88,6 +88,9 @@ ${typescript}
         const options: TwoSlashOptions = {
             fsMap: this.fsMap,
             tsModule: this.ts,
+            defaultCompilerOptions: {
+                target: ES2020_TARGET
+            },
             lzstringModule:lzstring,
             defaultOptions: {
                 showEmit: true,
