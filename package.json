@@ -1,6 +1,6 @@
 {
     "name": "@accordproject/template-engine",
-    "version": "2.5.7",
+    "version": "2.5.8",
     "description": "Generation of AgreementMark from TemplateMark + JSON Data",
     "homepage": "https://github.com/accordproject",
     "engines": {
@@ -16,7 +16,7 @@
         "clean": "rimraf dist",
         "prebuild": "npm-run-all clean && npm run updateRuntimeDependencies",
         "build": "rollup -c",
-        "tsc-template": "tsc --strict --esModuleInterop ./output/full/usercode.ts",
+        "tsc-template": "tsc --strict --target ESNext --moduleResolution node --esModuleInterop ./output/full/usercode.ts",
         "minify": "terser ./output/full/usercode.js --compress ecma=2020 --output ./output/full/usercode-min.js",
         "pretest": "npm-run-all licchk lint build",
         "lint": "eslint .",
@@ -40,17 +40,17 @@
     "author": "accordproject.org",
     "license": "Apache-2.0",
     "dependencies": {
-        "@accordproject/concerto-codegen": "^3.20.0",
-        "@accordproject/concerto-core": "^3.16.1",
-        "@accordproject/concerto-util": "^3.16.1",
+        "@accordproject/concerto-codegen": "3.23.1-20240508111011",
+        "@accordproject/concerto-core": "^3.16.8",
+        "@accordproject/concerto-util": "^3.16.8",
         "@accordproject/markdown-common": "^0.16.22",
         "@accordproject/markdown-template": "^0.16.22",
         "@typescript/twoslash": "^3.2.4",
         "dayjs": "1.11.10",
         "jsonpath": "^1.1.1",
         "tar": "^6.2.0",
-        "traverse": "^0.6.8",
-        "typescript": "^4",
+        "traverse": "^0.6.9",
+        "typescript": "^4.9.4",
         "to-words": "^4.0.1"
     },
     "devDependencies": {

@@ -32,7 +32,7 @@ import * as lzstring from 'lz-string';
  * modules that we need to expose to user TS code: dayjs and jsonpath, these also need to be
  * added to the twoslash compilation context.
  */
-const TYPESCRIPT_URL = process.env.TYPESCRIPT_URL ? process.env.TYPESCRIPT_URL : 'https://cdn.jsdelivr.net/npm/typescript@4.8.4/+esm';
+const TYPESCRIPT_URL = process.env.TYPESCRIPT_URL ? process.env.TYPESCRIPT_URL : 'https://cdn.jsdelivr.net/npm/typescript@4.9.4/+esm';
 
 // https://microsoft.github.io/monaco-editor/typedoc/enums/languages.typescript.ScriptTarget.html#ES2020
 const ES2020_TARGET = 7;
