@@ -21,6 +21,7 @@ export default [
             format: 'cjs',
             sourcemap: true,
         },
+        external: ['dayjs', 'jsonpath']
     },
     bundle({
         plugins: [esbuild()],
