@@ -74,7 +74,7 @@ export class JavaScriptEvaluator {
     workers: Array<ChildProcess>; // child processes
     queue: Array<WorkItem>; // queue of work to do
 
-    constructor(options: JavaScriptEvaluatorOptions) {
+    constructor(options: JavaScriptEvaluatorOptions = {waitInterval: 50, maxWorkers: 8, maxQueueDepth: 1000}) {
         this.options = options;
         this.workers = [];
         this.queue = [];

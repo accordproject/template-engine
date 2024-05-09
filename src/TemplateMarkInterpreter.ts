@@ -14,6 +14,7 @@
 
 import jp from 'jsonpath';
 import traverse from 'traverse';
+import { isBrowser } from 'browser-or-node';
 import os from 'os';
 
 import { ClassDeclaration, Factory, Introspector, ModelManager, Serializer } from '@accordproject/concerto-core';
@@ -51,9 +52,8 @@ function checkCode(code:ICode) {
 
 // this is a global because we don't want the user
 // to configure child processes at the TemplateMarkInterpreter instance level
-const availableProcessors = process.env.MAX_WORKERS ? Number.parseInt(process.env.MAX_WORKERS) : os.availableParallelism();
-const javaScriptEvaluator = new JavaScriptEvaluator({
-    maxWorkers: availableProcessors, // how many child processes
+const javaScriptEvaluator = isBrowser ? new JavaScriptEvaluator() : new JavaScriptEvaluator({
+    maxWorkers: process.env.MAX_WORKERS ? Number.parseInt(process.env.MAX_WORKERS) : os.availableParallelism(), // how many child processes
     waitInterval: process.env.WAIT_INTERVAL ? Number.parseInt(process.env.WAIT_INTERVAL) : 50, // how long to wait before rescheduling work
     maxQueueDepth: process.env.MAX_QUEUE_DEPTH ? Number.parseInt(process.env.MAX_QUEUE_DEPTH) : 1000 // max requests to queue
 });
@@ -91,6 +91,9 @@ async function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: 
     try {
         const request = {code: expression, argumentNames: functionArgNames, arguments: functionArgValues};
         if(options?.childProcessJavaScriptEvaluation) {
+            if(isBrowser) {
+                throw new Error('Child process evaluation is not supported inside web browser');
+            }
             const evalOptions = options?.timeout ? {timeout: options.timeout} : undefined;
             const r = await javaScriptEvaluator.evalChildProcess(request, evalOptions);
             return (typeof r.result === 'object') ? JSON.stringify(r.result) : r.result.toString();
