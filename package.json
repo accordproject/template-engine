@@ -64,7 +64,7 @@
         "@types/traverse": "^0.6.32",
         "@typescript-eslint/eslint-plugin": "^6.19.0",
         "@typescript-eslint/parser": "^6.19.0",
-        "esbuild": "^0.18.12",
+        "esbuild": "^0.25.0",
         "jest": "28.1.1",
         "license-check-and-add": "2.3.6",
         "mkdirp": "^2.1.3",
