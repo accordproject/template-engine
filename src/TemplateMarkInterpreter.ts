@@ -492,7 +492,7 @@ export class TemplateMarkInterpreter {
         const factory = new Factory(modelManager);
         const serializer = new Serializer(factory, modelManager);
 
-        // Validate basic TemplateMark structure
+
         try {
             serializer.fromJSON(templateMark);
         } catch (err) {
@@ -505,7 +505,7 @@ export class TemplateMarkInterpreter {
             );
         }
 
-        // Get optional properties from the template model
+
         const optionalProperties = new Set<string>();
         const properties = this.templateClass.getProperties();
         properties.forEach((prop) => {
@@ -514,7 +514,7 @@ export class TemplateMarkInterpreter {
             }
         });
 
-        // Traverse TemplateMark to check for unguarded optional variables
+
         traverse(templateMark).forEach(function (node) {
             if (
                 typeof node === 'object' &&
@@ -530,7 +530,7 @@ export class TemplateMarkInterpreter {
                 ) {
                     const varName = node.name;
                     if (optionalProperties.has(varName)) {
-                        // Check if this variable is guarded by an OptionalDefinition or ConditionalDefinition
+
                         const path = this.path;
                         let isGuarded = false;
 
@@ -545,7 +545,7 @@ export class TemplateMarkInterpreter {
                                     isGuarded = true;
                                     break;
                                 }
-                                // Stop at other structural nodes (e.g., ClauseDefinition) to avoid over-checking
+
                                 if (
                                     CLAUSE_DEFINITION_RE.test(parentClass) ||
                   CONTRACT_DEFINITION_RE.test(parentClass)
