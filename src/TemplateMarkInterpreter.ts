@@ -460,23 +460,30 @@ export class TemplateMarkInterpreter {
     templateClass: ClassDeclaration;
     clauseLibrary: object;
 
-    constructor(modelManager: ModelManager, clauseLibrary:object, templateConceptFqn?: string) {
+    constructor(
+        modelManager: ModelManager,
+        clauseLibrary: object,
+        templateConceptFqn?: string
+    ) {
         this.modelManager = modelManager;
         this.clauseLibrary = clauseLibrary;
-        this.templateClass = getTemplateClassDeclaration(this.modelManager,templateConceptFqn);
+        this.templateClass = getTemplateClassDeclaration(
+            this.modelManager,
+            templateConceptFqn
+        );
     }
 
     /**
-     * Checks that a TemplateMark JSON document is valid with respect to the
-     * TemplateMark model, as well as the template model.
-     *
-     * Checks:
-     * 1. Variable names are valid properties in the template model
-     * 2. Optional properties have guards
-     * @param {*} templateMark the TemplateMark JSON object
-     * @returns {*} TemplateMark JSON that has been typed checked and has type metadata added
-     * @throws {Error} if the templateMark document is invalid
-     */
+   * Checks that a TemplateMark JSON document is valid with respect to the
+   * TemplateMark model, as well as the template model.
+   *
+   * Checks:
+   * 1. Variable names are valid properties in the template model
+   * 2. Optional properties have guards
+   * @param {*} templateMark the TemplateMark JSON object
+   * @returns {*} TemplateMark JSON that has been typed checked and has type metadata added
+   * @throws {Error} if the templateMark document is invalid
+   */
     checkTypes(templateMark: object): object {
         const modelManager = new ModelManager({ strict: true });
         modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
@@ -484,32 +491,103 @@ export class TemplateMarkInterpreter {
         modelManager.addCTOModel(TemplateMarkModel.MODEL, 'templatemark.cto');
         const factory = new Factory(modelManager);
         const serializer = new Serializer(factory, modelManager);
+
+        // Validate basic TemplateMark structure
         try {
             serializer.fromJSON(templateMark);
-            return templateMark;
+        } catch (err) {
+            throw new Error(
+                `Generated invalid agreement: ${err}: ${JSON.stringify(
+                    templateMark,
+                    null,
+                    2
+                )}`
+            );
         }
-        catch(err) {
-            throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(templateMark, null, 2)}`);
-        }
+
+        // Get optional properties from the template model
+        const optionalProperties = new Set<string>();
+        const properties = this.templateClass.getProperties();
+        properties.forEach((prop) => {
+            if (prop.isOptional()) {
+                optionalProperties.add(prop.getName());
+            }
+        });
+
+        // Traverse TemplateMark to check for unguarded optional variables
+        traverse(templateMark).forEach(function (node) {
+            if (
+                typeof node === 'object' &&
+        node.$class &&
+        typeof node.$class === 'string'
+            ) {
+                const nodeClass = node.$class as string;
+
+                if (
+                    VARIABLE_DEFINITION_RE.test(nodeClass) ||
+          ENUM_VARIABLE_DEFINITION_RE.test(nodeClass) ||
+          FORMATTED_VARIABLE_DEFINITION_RE.test(nodeClass)
+                ) {
+                    const varName = node.name;
+                    if (optionalProperties.has(varName)) {
+                        // Check if this variable is guarded by an OptionalDefinition or ConditionalDefinition
+                        const path = this.path;
+                        let isGuarded = false;
+
+                        for (let i = path.length - 2; i >= 0; i--) {
+                            const parent = traverse(templateMark).get(path.slice(0, i + 1));
+                            if (parent && parent.$class) {
+                                const parentClass = parent.$class as string;
+                                if (
+                                    OPTIONAL_DEFINITION_RE.test(parentClass) ||
+                  CONDITIONAL_DEFINITION_RE.test(parentClass)
+                                ) {
+                                    isGuarded = true;
+                                    break;
+                                }
+                                // Stop at other structural nodes (e.g., ClauseDefinition) to avoid over-checking
+                                if (
+                                    CLAUSE_DEFINITION_RE.test(parentClass) ||
+                  CONTRACT_DEFINITION_RE.test(parentClass)
+                                ) {
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!isGuarded) {
+                            throw new Error(
+                                `Optional property '${varName}' used in template without a guard (e.g., {{#optional ${varName}}} or {{#if ${varName}}}).`
+                            );
+                        }
+                    }
+                }
+            }
+        });
+
+        return templateMark;
     }
 
     /**
-     * Compiles the code nodes containing TS to code nodes containing JS.
-     * @param {*} templateMark the TemplateMark JSON object
-     * @returns {*} TemplateMark JSON with JS nodes
-     * @throws {Error} if the templateMark document is invalid
-     */
-    async compileTypeScriptToJavaScript(templateMark: object) : Promise<object> {
+   * Compiles the code nodes containing TS to code nodes containing JS.
+   * @param {*} templateMark the TemplateMark JSON object
+   * @returns {*} TemplateMark JSON with JS nodes
+   * @throws {Error} if the templateMark document is invalid
+   */
+    async compileTypeScriptToJavaScript(templateMark: object): Promise<object> {
         const templateConcept = (templateMark as any).nodes[0].elementType;
-        if(!templateConcept) {
+        if (!templateConcept) {
             throw new Error('TemplateMark is not typed');
         }
-        const compiler = new TemplateMarkToJavaScriptCompiler(this.modelManager, templateConcept);
+        const compiler = new TemplateMarkToJavaScriptCompiler(
+            this.modelManager,
+            templateConcept
+        );
         await compiler.initialize();
         return compiler.compile(templateMark);
     }
 
-    validateCiceroMark(ciceroMark: object) : object {
+    validateCiceroMark(ciceroMark: object): object {
         const modelManager = new ModelManager({ strict: true });
         modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
         modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
@@ -518,22 +596,44 @@ export class TemplateMarkInterpreter {
         const serializer = new Serializer(factory, modelManager);
         try {
             return serializer.fromJSON(ciceroMark);
-        }
-        catch(err) {
-            throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(ciceroMark, null, 2)}`);
+        } catch (err) {
+            throw new Error(
+                `Generated invalid agreement: ${err}: ${JSON.stringify(
+                    ciceroMark,
+                    null,
+                    2
+                )}`
+            );
         }
     }
 
-    async generate(templateMark: object, data: TemplateData, options?:GenerationOptions): Promise<any> {
+    async generate(
+        templateMark: object,
+        data: TemplateData,
+        options?: GenerationOptions
+    ): Promise<any> {
         const factory = new Factory(this.modelManager);
         const serializer = new Serializer(factory, this.modelManager);
         const templateData = serializer.fromJSON(data);
-        if (templateData.getFullyQualifiedType() !== this.templateClass.getFullyQualifiedName()) {
-            throw new Error(`Template data must be of type '${this.templateClass.getFullyQualifiedName()}'.`);
+        if (
+            templateData.getFullyQualifiedType() !==
+      this.templateClass.getFullyQualifiedName()
+        ) {
+            throw new Error(
+                `Template data must be of type '${this.templateClass.getFullyQualifiedName()}'.`
+            );
         }
         const typedTemplateMark = this.checkTypes(templateMark);
-        const jsTemplateMark = await this.compileTypeScriptToJavaScript(typedTemplateMark);
-        const ciceroMark = await generateAgreement(this.modelManager, this.clauseLibrary, jsTemplateMark, data, options);
+        const jsTemplateMark = await this.compileTypeScriptToJavaScript(
+            typedTemplateMark
+        );
+        const ciceroMark = await generateAgreement(
+            this.modelManager,
+            this.clauseLibrary,
+            jsTemplateMark,
+            data,
+            options
+        );
         return this.validateCiceroMark(ciceroMark);
     }
 }
