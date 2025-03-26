@@ -40,11 +40,12 @@
     "author": "accordproject.org",
     "license": "Apache-2.0",
     "dependencies": {
-        "@accordproject/concerto-codegen": "3.23.1-20240702152232",
-        "@accordproject/concerto-core": "^3.16.10",
-        "@accordproject/concerto-util": "^3.16.10",
-        "@accordproject/markdown-common": "^0.16.22",
-        "@accordproject/markdown-template": "^0.16.22",
+        "@accordproject/cicero-core": "^0.24.0",
+        "@accordproject/concerto-codegen": "3.30.0",
+        "@accordproject/concerto-core": "^3.19.5",
+        "@accordproject/concerto-util": "^3.19.5",
+        "@accordproject/markdown-common": "0.16.20-20241108141903",
+        "@accordproject/markdown-template": "0.16.20-20241108141903",
         "@typescript/twoslash": "^3.2.4",
         "browser-or-node": "^3.0.0",
         "dayjs": "1.11.10",
@@ -55,8 +56,7 @@
         "typescript": "^4.9.4"
     },
     "devDependencies": {
-        "@accordproject/markdown-html": "^0.16.22",
-        "@accordproject/markdown-template": "^0.16.22",
+        "@accordproject/markdown-html": "0.16.20-20241108141903",
         "@types/jest": "^28.1.1",
         "@types/jsonpath": "^0.2.0",
         "@types/semver": "7.3.10",

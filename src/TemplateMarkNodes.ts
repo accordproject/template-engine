@@ -27,6 +27,7 @@ export const JOIN_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.Joi
 export const OPTIONAL_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.OptionalDefinition$/;
 export const CLAUSE_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ClauseDefinition$/;
 export const CONTRACT_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ContractDefinition$/;
+export const FOREACH_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.ForeachDefinition$/;
 
 export type TemplateData = Record<string, unknown>;
 
@@ -39,5 +40,6 @@ export const NAVIGATION_NODES = [
     `${TemplateMarkModel.NAMESPACE}.WithDefinition`,
     `${TemplateMarkModel.NAMESPACE}.JoinDefinition`,
     `${TemplateMarkModel.NAMESPACE}.OptionalDefinition`,
-    `${TemplateMarkModel.NAMESPACE}.ClauseDefinition`
+    `${TemplateMarkModel.NAMESPACE}.ClauseDefinition`,
+    `${TemplateMarkModel.NAMESPACE}.ForeachBlockDefinition`
 ];
