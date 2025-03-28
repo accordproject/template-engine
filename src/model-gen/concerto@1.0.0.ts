@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-interface */
+ 
 // Generated code for namespace: concerto@1.0.0
 
 // imports

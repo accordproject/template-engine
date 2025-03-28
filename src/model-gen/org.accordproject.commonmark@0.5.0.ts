@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-interface */
+ 
 // Generated code for namespace: org.accordproject.commonmark@0.5.0
 
 // imports

@@ -12,6 +12,8 @@
  * limitations under the License.
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import jp from 'jsonpath';
 import traverse from 'traverse';
 import { isBrowser } from 'browser-or-node';
@@ -59,6 +61,13 @@ const javaScriptEvaluator = isBrowser ? new JavaScriptEvaluator() : new JavaScri
     maxQueueDepth: process.env.MAX_QUEUE_DEPTH ? Number.parseInt(process.env.MAX_QUEUE_DEPTH) : 1000 // max requests to queue
 });
 
+const TEMPLATEMARK_ROOT_NODES = [
+    'org.accordproject.templatemark@0.5.0.ClauseDefinition',
+    'org.accordproject.templatemark@0.5.0.ContractDefinition'
+];
+
+const DOCUMENT_ROOT = 'org.accordproject.commonmark@0.5.0.Document';
+
 /**
  * Evaluates a JS expression
  * @param {*} clauseLibrary the clause library
@@ -97,11 +106,11 @@ async function evaluateJavaScript(clauseLibrary: object, data: TemplateData, fn:
             }
             const evalOptions = options?.timeout ? { timeout: options.timeout } : undefined;
             const r = await javaScriptEvaluator.evalChildProcess(request, evalOptions);
-            return (typeof r.result === 'object') ? JSON.stringify(r.result) : r.result.toString();
+            return r;
         }
         else {
             const r = await javaScriptEvaluator.evalDangerously(request);
-            return (typeof r.result === 'object') ? JSON.stringify(r.result) : r.result.toString();
+            return r;
         }
     }
     catch (err) {
@@ -144,7 +153,9 @@ function getJsonPath(rootData: any, currentNode: any, paths: string[]): string {
         // }
         if (obj && obj.$class) {
             if (NAVIGATION_NODES.indexOf(obj.$class) >= 0) {
-                withPath.push(`['${obj.name}']`);
+                if(obj.name !== 'top') { // HACK!!
+                    withPath.push(`['${obj.name}']`);
+                }
             }
         }
     }
@@ -179,7 +190,8 @@ async function evaluateUserCode(clauseLibrary: object, templateMark: object, dat
             if (FORMULA_DEFINITION_RE.test(nodeClass)) {
                 if (context.code) {
                     checkCode(context.code);
-                    result[path.join('/')] = await evaluateJavaScript(clauseLibrary, data, context.code.contents, options);
+                    const evalResponse = await evaluateJavaScript(clauseLibrary, data, context.code.contents, options);
+                    result[path.join('/')] = JSON.stringify(evalResponse.result);
                 }
                 else {
                     throw new Error('Formula node is missing code.');
@@ -188,7 +200,8 @@ async function evaluateUserCode(clauseLibrary: object, templateMark: object, dat
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass) || CLAUSE_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
                     checkCode(context.condition);
-                    result[path.join('/')] = await evaluateJavaScript(clauseLibrary, data, context.condition.contents, options);
+                    const evalResponse = await evaluateJavaScript(clauseLibrary, data, context.condition.contents, options);
+                    result[path.join('/')] = JSON.stringify(evalResponse.result);
                 }
             }
         }
@@ -227,7 +240,7 @@ async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary
                 const variableValues = jp.query(data, path, 1);
 
                 if (variableValues.length === 0) {
-                    throw new Error(`No values found for path '${path}' in data ${data}.`);
+                    throw new Error(`No values found for path '${path}' in data ${JSON.stringify(data)}.`);
                 }
                 else {
                     const arrayData = variableValues[0];
@@ -334,7 +347,7 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                 const variableValues = jp.query(data, path, 1);
 
                 if (variableValues.length === 0) {
-                    throw new Error(`No values found for path '${path}' in data ${data}.`);
+                    throw new Error(`No values found for path '${path}' in data ${JSON.stringify(data)}.`);
                 }
                 else {
                     const arrayData = variableValues[0];
@@ -361,7 +374,6 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
 
             // map over an array of items, joining them into a Text node
             else if (FOREACH_DEFINITION_RE.test(nodeClass)) {
-                console.log(JSON.stringify(foreachBlockResults[this.path.join('/')], null, 2));
                 context.$class = `${CommonMarkModel.NAMESPACE}.Foreach`;
                 delete context.elementType;
                 delete context.name;
@@ -378,7 +390,7 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                     const path = getJsonPath(templateMark, context, this.path);
                     const variableValues = jp.query(data, path, 1);
                     if (variableValues.length === 0) {
-                        throw new Error(`No values found for path '${path}' in data ${data}.`);
+                        throw new Error(`No values found for path '${path}' in data ${JSON.stringify(data)}.`);
                     }
                     else {
                         // convert the value to a string, optionally using the formatter
@@ -514,9 +526,26 @@ export class TemplateMarkInterpreter {
      * @throws {Error} if the templateMark document is invalid
      */
     async compileTypeScriptToJavaScript(templateMark: object): Promise<object> {
-        const templateConcept = (templateMark as any).nodes[0].elementType;
+        const clazz = (templateMark as any).$class;
+        if(clazz !== DOCUMENT_ROOT) {
+            throw new Error(`JSON is not CommonMark. $class is '${clazz}'. ${JSON.stringify(templateMark, null, 2)}`);
+        }
+
+        if(!(templateMark as any).nodes || !(templateMark as any).nodes.length || (templateMark as any).nodes.length < 1) {
+            throw new Error(`CommonMark does not have nodes: ${JSON.stringify(templateMark, null, 2)}`);
+        }
+        const firstChild = (templateMark as any).nodes[0];
+        const firstChildClazz = (firstChild as any).$class;
+
+        if(!TEMPLATEMARK_ROOT_NODES.includes(firstChildClazz)) {
+            throw new Error(`First child is not templatemark. $class is '${firstChildClazz}'. ${JSON.stringify(templateMark, null, 2)}`);
+        }
+        const templateConcept = (firstChild as any).elementType;
         if (!templateConcept) {
-            throw new Error('TemplateMark is not typed');
+            throw new Error(`First child is not typed: ${JSON.stringify(templateMark, null, 2)}`);
+        }
+        if(firstChild.name !== 'top') {
+            throw new Error('First child is not named "top"!');
         }
         const compiler = new TemplateMarkToJavaScriptCompiler(this.modelManager, templateConcept);
         await compiler.initialize();
@@ -547,10 +576,9 @@ export class TemplateMarkInterpreter {
         }
         const typedTemplateMark = this.checkTypes(templateMark);
         const jsTemplateMark = await this.compileTypeScriptToJavaScript(typedTemplateMark);
+        // console.log('Compiled JS: ' + JSON.stringify(jsTemplateMark, null, 2));
         const ciceroMark = await generateAgreement(this.modelManager, this.clauseLibrary, jsTemplateMark, data, options);
+        // console.log('Generated AgreementMark');
         return this.validateCiceroMark(ciceroMark);
-    }
-
-    async draft(templateArchive: object) {
     }
 }

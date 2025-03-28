@@ -12,6 +12,8 @@
  * limitations under the License.
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import traverse from 'traverse';
 import { TemplateMarkModel } from '@accordproject/markdown-common';
 import { ClassDeclaration, ModelManager } from '@accordproject/concerto-core';

@@ -11,6 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import child_process from 'child_process';
 import jp from 'jsonpath';
 import dayjs from 'dayjs';
@@ -154,7 +157,7 @@ export class JavaScriptEvaluator {
         try {
             const thisPath = require.resolve('@accordproject/template-engine');
             return path.join(thisPath,'..','worker.js');
-        } catch(err) {
+        } catch(err) { // eslint-disable-line @typescript-eslint/no-unused-vars
             // if we cannot load the module it likely means we are running
             // a unit test inside the module...
             return path.join(__dirname, '..', 'dist', 'worker.js');

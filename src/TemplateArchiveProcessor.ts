@@ -12,9 +12,12 @@
  * limitations under the License.
  */
 
-import { ModelManager } from '@accordproject/concerto-core';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { Template } from '@accordproject/cicero-core';
 import { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
+import { TemplateMarkTransformer } from '@accordproject/markdown-template';
+import { transform } from '@accordproject/markdown-transform';
 
 /**
  * A template archive processor: can draft content using the
@@ -23,22 +26,23 @@ import { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 export class TemplateArchiveProcessor {
     template: Template;
 
+    /**
+     * Creates a template archive processor
+     * @param {Template} template - the template to be used by the processor
+     */
     constructor(template: Template) {
         this.template = template;
     }
 
     /**
-     * Checks that a TemplateMark JSON document is valid with respect to the
-     * TemplateMark model, as well as the template model.
-     *
-     * Checks:
-     * 1. Variable names are valid properties in the template model
-     * 2. Optional properties have guards
-     * @param {*} templateMark the TemplateMark JSON object
-     * @returns {*} TemplateMark JSON that has been typed checked and has type metadata added
-     * @throws {Error} if the templateMark document is invalid
+     * Drafts a template by merging it with data
+     * @param {any} data the data to merge with the template
+     * @param {string} format the output format
+     * @param {any} options merge options
+     * @param {[string]} currentTime the current value for 'now'
+     * @returns {Promise} the drafted content
      */
-    async draft(data: any, format: string, options: any, currentTime?: string, utcOffset?: number): Promise<any> {
+    async draft(data: any, format: string, options: any, currentTime?: string): Promise<any> {
         // Setup
         const metadata = this.template.getMetadata();
         const templateKind = metadata.getTemplateType() !== 0 ? 'clause' : 'contract';
@@ -48,27 +52,29 @@ export class TemplateArchiveProcessor {
         const engine = new TemplateMarkInterpreter(modelManager, {});
         const templateMarkTransformer = new TemplateMarkTransformer();
         const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate(
-            { content: this.template.getTemplate() }, modelManager, templateKind, options);
+            { content: this.template.getTemplate() }, modelManager, templateKind, {options});
         const now = currentTime ? currentTime : new Date().toISOString();
+        // console.log(JSON.stringify(templateMarkDom, null, 2));
         const ciceroMark = await engine.generate(templateMarkDom, data, { now });
-        console.log(JSON.stringify(ciceroMark));
+        // console.log(JSON.stringify(ciceroMark));
         const result = transform(ciceroMark.toJSON(), 'ciceromark', ['ciceromark_unquoted', format], null, options);
-        console.log(result);
+        // console.log(result);
         return result;
 
     }
 
     /**
-     * Checks that a TemplateMark JSON document is valid with respect to the
-     * TemplateMark model, as well as the template model.
-     *
-     * Checks:
-     * 1. Variable names are valid properties in the template model
-     * 2. Optional properties have guards
-     * @param {*} templateMark the TemplateMark JSON object
-     * @returns {*} TemplateMark JSON that has been typed checked and has type metadata added
-     * @throws {Error} if the templateMark document is invalid
+     * Trigger the logic of a template
+     * @param {object} request - the request to send to the template logic
+     * @param {object} state - the current state of the template
+     * @param {[string]} currentTime - the current time, defaults to now
+     * @param {[number]} utcOffset - the UTC offer, defaults to zero
+     * @returns {Promise} the response and any events
      */
     async trigger(request: any, state: any, currentTime?: string, utcOffset?: number): Promise<any> {
+        console.log(request);
+        console.log(state);
+        console.log(currentTime);
+        console.log(utcOffset);
     }
 }

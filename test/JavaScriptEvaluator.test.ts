@@ -2,6 +2,8 @@ import dayjs from 'dayjs';
 import { JavaScriptEvaluator } from '../src/JavaScriptEvaluator';
 import os from 'os';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 const now = '2023-03-17T00:00:00.000Z';
 
 // simple

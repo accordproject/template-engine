@@ -11,6 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { createDefaultMapFromNodeModules, createDefaultMapFromCDN } from '@typescript/vfs';
 import { twoslasher, TwoSlashOptions, TwoSlashReturn } from '@typescript/twoslash';
 import { ModelManager } from '@accordproject/concerto-core';
@@ -41,7 +44,7 @@ const ES2020_TARGET = 7;
 export class TypeScriptToJavaScriptCompiler {
     context: string;
     fsMap: Map<string,string>|undefined;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     ts: any;
     typescriptUrl: string;
 

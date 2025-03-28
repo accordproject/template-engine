@@ -41,5 +41,6 @@ export const NAVIGATION_NODES = [
     `${TemplateMarkModel.NAMESPACE}.JoinDefinition`,
     `${TemplateMarkModel.NAMESPACE}.OptionalDefinition`,
     `${TemplateMarkModel.NAMESPACE}.ClauseDefinition`,
+    `${TemplateMarkModel.NAMESPACE}.ContractDefinition`,
     `${TemplateMarkModel.NAMESPACE}.ForeachBlockDefinition`
 ];
