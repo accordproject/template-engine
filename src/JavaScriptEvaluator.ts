@@ -119,7 +119,9 @@ export class JavaScriptEvaluator {
 
                       dynamicImport<TriggerFunction>(dataUri)
                         .then(triggerFunction => {
-                            result = triggerFunction(...request.arguments);
+                            // TODO (DCS)... this is a bit of a hack, but it works for now...
+                            const instance = new triggerFunction();
+                            result = instance.trigger(...request.arguments);
                             const end = new Date().getTime();
                             resolve({ result, elapsed: end - start });
                         })

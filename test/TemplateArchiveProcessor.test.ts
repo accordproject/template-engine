@@ -3,7 +3,7 @@ import { TemplateArchiveProcessor } from '../src/TemplateArchiveProcessor';
 
 describe('template archive processor', () => {
     test('should draft a template', async () => {
-        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript');
+        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
         const data = {
             "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
@@ -30,7 +30,7 @@ describe('template archive processor', () => {
     });
 
     test('should trigger a template', async () => {
-        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript');
+        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
         const data = {
             "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
@@ -54,7 +54,7 @@ describe('template archive processor', () => {
         const request = {
             goodsValue: 100
         };
-        const result = await templateArchiveProcessor.trigger(data, request);
-        expect(result).toBe('Penalty percentage is 10.5 and goods value is 100!');
+        const response = await templateArchiveProcessor.trigger(data, request);
+        expect(response.result.penalty).toBe(250);
     });
 });

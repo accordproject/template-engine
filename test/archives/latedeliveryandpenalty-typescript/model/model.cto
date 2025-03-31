@@ -51,7 +51,7 @@ asset TemplateModel extends Clause {
 transaction LateDeliveryAndPenaltyRequest extends Request {
 
   /**
-   * Are we in a force majeure situation? 
+   * Are we in a force majeure situation?
    */
   o Boolean forceMajeure
 
@@ -81,7 +81,7 @@ transaction LateDeliveryAndPenaltyResponse extends Response {
   o Double penalty
 
   /**
-   * Whether the buyer may terminate the contract 
+   * Whether the buyer may terminate the contract
    */
   o Boolean buyerMayTerminate
 }
