@@ -21,7 +21,7 @@
         "pretest": "npm-run-all licchk lint build",
         "lint": "eslint .",
         "licchk": "license-check-and-add",
-        "test": "jest",
+        "test": "node --experimental-vm-modules node_modules/.bin/jest",
         "coverage": "jest --coverage",
         "compile-js": "jest ./test/TypeScriptCompiler.test.ts",
         "test:watch": "jest --watchAll",
@@ -80,6 +80,7 @@
         "rollup-plugin-esbuild": "^6.2.1",
         "terser": "^5.39.0",
         "ts-jest": "^29.3.0",
+        "ts-node": "^10.9.2",
         "typescript-eslint": "^8.28.0"
     },
     "license-check-and-add-config": {

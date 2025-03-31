@@ -18,6 +18,10 @@ import { Template } from '@accordproject/cicero-core';
 import { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { transform } from '@accordproject/markdown-transform';
+import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler';
+import Script from '@accordproject/cicero-core/types/src/script';
+import { TwoSlashReturn } from '@typescript/twoslash';
+import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 
 /**
  * A template archive processor: can draft content using the
@@ -71,10 +75,33 @@ export class TemplateArchiveProcessor {
      * @param {[number]} utcOffset - the UTC offer, defaults to zero
      * @returns {Promise} the response and any events
      */
-    async trigger(request: any, state: any, currentTime?: string, utcOffset?: number): Promise<any> {
-        console.log(request);
-        console.log(state);
-        console.log(currentTime);
-        console.log(utcOffset);
+    async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number): Promise<any> {
+        const logicManager = this.template.getLogicManager();
+        if(logicManager.getLanguage() === 'typescript') {
+            const compiledCode:Record<string, TwoSlashReturn> = {};
+            const tsFiles:Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
+            for(let n=0; n < tsFiles.length; n++) {
+                const tsFile = tsFiles[n];
+
+                const compiler = new TypeScriptToJavaScriptCompiler(this.template.getModelManager(),
+                    this.template.getTemplateModel().getFullyQualifiedName());
+
+                await compiler.initialize();
+                const result = compiler.compile(tsFile.getContents());
+                compiledCode[tsFile.getIdentifier()] = result;
+            }
+            // console.log(compiledCode['logic/logic.ts'].code);
+            const evaluator = new JavaScriptEvaluator();
+            const evalResponse = await evaluator.evalDangerously( {
+                module: true,
+                code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
+                argumentNames: ['data', 'request', 'state'],
+                arguments: [data, request, state, currentTime, utcOffset]
+            });
+            return evalResponse.result;
+        }
+        else {
+            return -1;
+        }
     }
 }

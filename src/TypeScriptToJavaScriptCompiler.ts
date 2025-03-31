@@ -38,8 +38,44 @@ import * as lzstring from 'lz-string';
 const TYPESCRIPT_URL = process.env.TYPESCRIPT_URL ? process.env.TYPESCRIPT_URL : 'https://cdn.jsdelivr.net/npm/typescript@4.9.4/+esm';
 
 // https://microsoft.github.io/monaco-editor/typedoc/enums/languages.typescript.ScriptTarget.html#ES2020
-const ES2020_TARGET = 7;
-// const ES5_TARGET = 1;
+    // enum ScriptTarget {
+    //     /** @deprecated */
+    //     ES3 = 0,
+    //     ES5 = 1,
+    //     ES2015 = 2,
+    //     ES2016 = 3,
+    //     ES2017 = 4,
+    //     ES2018 = 5,
+    //     ES2019 = 6,
+    //     ES2020 = 7,
+    //     ES2021 = 8,
+    //     ES2022 = 9,
+    //     ES2023 = 10,
+    //     ES2024 = 11,
+    //     ESNext = 99,
+    //     JSON = 100,
+    //     Latest = 99,
+    // }
+
+const SCRIPT_TARGET = 9
+
+    // enum ModuleKind {
+    //     None = 0,
+    //     CommonJS = 1,
+    //     AMD = 2,
+    //     UMD = 3,
+    //     System = 4,
+    //     ES2015 = 5,
+    //     ES2020 = 6,
+    //     ES2022 = 7,
+    //     ESNext = 99,
+    //     Node16 = 100,
+    //     Node18 = 101,
+    //     NodeNext = 199,
+    //     Preserve = 200,
+    // }
+
+const MODULE_KIND = 6;
 
 export class TypeScriptToJavaScriptCompiler {
     context: string;
@@ -65,7 +101,7 @@ export class TypeScriptToJavaScriptCompiler {
                 throw new Error('Failed to load typescript module');
             }
             this.fsMap = createDefaultMapFromNodeModules({
-                target: ES2020_TARGET,
+                target: SCRIPT_TARGET,
             });
         }
         else {
@@ -73,7 +109,7 @@ export class TypeScriptToJavaScriptCompiler {
             if(!this.ts) {
                 throw new Error('Failed to dynamically load typescript');
             }
-            this.fsMap = await createDefaultMapFromCDN({ target: ES2020_TARGET }, this.ts.version, false, this.ts);
+            this.fsMap = await createDefaultMapFromCDN({ target: SCRIPT_TARGET }, this.ts.version, false, this.ts);
         }
         this.fsMap.set('/node_modules/@types/dayjs/index.d.ts', Buffer.from(DAYJS_BASE64, 'base64').toString());
         this.fsMap.set('/node_modules/@types/jsonpath/index.d.ts', Buffer.from(JSONPATH_BASE64, 'base64').toString());
@@ -92,7 +128,8 @@ ${typescript}
             fsMap: this.fsMap,
             tsModule: this.ts,
             defaultCompilerOptions: {
-                target: ES2020_TARGET
+                target: SCRIPT_TARGET,
+                module: MODULE_KIND,
             },
             lzstringModule:lzstring,
             defaultOptions: {

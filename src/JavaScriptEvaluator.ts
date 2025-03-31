@@ -25,6 +25,7 @@ export type EvalOptions = {
 }
 
 export type EvalRequest = {
+    module?: boolean, // if true the code is a module and must be imported
     code: string, // JS code to eval
     argumentNames: string[] // names of function args
     arguments: any[] // function arg values, these have to be serializable to JSON!
@@ -62,6 +63,19 @@ async function sleep(msec: number) {
     return new Promise(resolve => setTimeout(resolve, msec));
 }
 
+// we use this to import modules because it's an ESM module and direct imports won't work...
+// see: https://github.com/TypeStrong/ts-node/discussions/1290
+const _import = async (path: string) => new Function('specifier', 'return import(specifier)')(path);
+
+// we create a wrapper for the _import above and returns the `default` exported method/function/symbol
+// inferred by the module name or a custom one base on user preferences...
+export const dynamicImport = async <T>(path: string, symbol?: string) => {
+    const mod = await _import(path);
+    return symbol ? mod.symbol : mod.default as T;
+}
+
+type TriggerFunction = (request: any) => Promise<any>;
+
 /**
  * This class implements two JS function evaluation strategies:
  * 1. evalDangerously which creates a dynamic function and run it in-process
@@ -92,12 +106,33 @@ export class JavaScriptEvaluator {
         return new Promise((resolve, reject) => {
             try {
                 const start = new Date().getTime();
-                const fun = new Function(...['dayjs', 'jp', ...request.argumentNames], request.code);
-                const result = fun(...[dayjs, jp, ...request.arguments]);
-                const end = new Date().getTime();
-                resolve({ result, elapsed: end - start });
+                let result = null;
+                if(!request.module) {
+                    const fun = new Function(...['dayjs', 'jp', ...request.argumentNames], request.code);
+                    result = fun(...[dayjs, jp, ...request.arguments]);
+                    const end = new Date().getTime();
+                    resolve({ result, elapsed: end - start });
+                }
+                else {
+                    const dataUri = 'data:text/javascript;base64,'
+                      + btoa(request.code);
+
+                      dynamicImport<TriggerFunction>(dataUri)
+                        .then(triggerFunction => {
+                            result = triggerFunction(...request.arguments);
+                            const end = new Date().getTime();
+                            resolve({ result, elapsed: end - start });
+                        })
+                        .catch(err => {
+                            console.log(err);
+                            reject({
+                                message: err.message
+                            });
+                        });
+                }
             }
             catch (err: any) {
+                console.log(err);
                 reject({
                     message: err.message
                 });

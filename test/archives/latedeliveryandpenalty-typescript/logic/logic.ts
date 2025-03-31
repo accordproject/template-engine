@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
-export function trigger(request:any) : any {
-    console.log(request);
-    return 'hello!';
+export default function trigger(data: any, request:any) : any {
+    return `Penalty percentage is ${data.penaltyPercentage} and goods value is ${request.goodsValue}!`;
 }
