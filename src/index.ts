@@ -13,5 +13,5 @@
  */
 
 export { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
+export { TemplateArchiveProcessor } from './TemplateArchiveProcessor';
 export * from './utils';
-// export * from './slc/SmartLegalContract';
