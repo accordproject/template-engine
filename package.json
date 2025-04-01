@@ -1,6 +1,6 @@
 {
     "name": "@accordproject/template-engine",
-    "version": "2.6.1",
+    "version": "2.6.2",
     "description": "Generation of AgreementMark from TemplateMark + JSON Data",
     "homepage": "https://github.com/accordproject",
     "engines": {
@@ -44,7 +44,7 @@
         "@accordproject/concerto-codegen": "3.30.6-20250327205534",
         "@accordproject/concerto-core": "^3.20.4",
         "@accordproject/concerto-util": "^3.20.4",
-        "@accordproject/markdown-common": "0.16.26",
+        "@accordproject/markdown-common": "0.16.25",
         "@accordproject/markdown-template": "0.16.25",
         "@typescript/twoslash": "^3.2.9",
         "browser-or-node": "^3.0.0",
