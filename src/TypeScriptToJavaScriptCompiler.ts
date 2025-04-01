@@ -138,6 +138,7 @@ ${typescript}
                 showEmittedFile: 'code.js'
             }
         };
+        // console.log(twoSlashCode);
         const result = twoslasher(twoSlashCode, 'ts', options);
         return result;
     }

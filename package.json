@@ -97,6 +97,7 @@
             ".tern-project",
             "./mytemplate",
             "./model-gen",
+            "./slc/model-gen",
             "output"
         ],
         "file_type_method": "EXCLUDE",

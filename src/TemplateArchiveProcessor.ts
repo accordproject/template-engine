@@ -22,6 +22,7 @@ import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler
 import Script from '@accordproject/cicero-core/types/src/script';
 import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
+import { SMART_LEGAL_CONTRACT_BASE64 } from './runtime/declarations';
 
 /**
  * A template archive processor: can draft content using the
@@ -82,18 +83,25 @@ export class TemplateArchiveProcessor {
             const tsFiles:Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
             for(let n=0; n < tsFiles.length; n++) {
                 const tsFile = tsFiles[n];
+                // console.log(`Compiling ${tsFile.getIdentifier()}`);
 
                 const compiler = new TypeScriptToJavaScriptCompiler(this.template.getModelManager(),
                     this.template.getTemplateModel().getFullyQualifiedName());
 
                 await compiler.initialize();
-                const result = compiler.compile(tsFile.getContents());
+
+                // add the runtime type definitions to all ts files??
+                const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
+                ${tsFile.getContents()}`
+
+                const result = compiler.compile(code);
                 compiledCode[tsFile.getIdentifier()] = result;
             }
             // console.log(compiledCode['logic/logic.ts'].code);
             const evaluator = new JavaScriptEvaluator();
             const evalResponse = await evaluator.evalDangerously( {
-                module: true,
+                templateLogic: true,
+                verbose: true,
                 code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
                 argumentNames: ['data', 'request', 'state'],
                 arguments: [data, request, state, currentTime, utcOffset]

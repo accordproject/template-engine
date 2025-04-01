@@ -42,8 +42,8 @@ const HEADER = `/*
 `;
 
 /**
- * Package the TypeScript declarations for dayjs and jsonpath
- * Both of these are needed at runtime to compile user TypeScript code to JS
+ * Package the TypeScript declarations for dayjs, jsonpath and SmartLegalContract
+ * These are needed at runtime to compile user TypeScript code and template logic to JS
  */
 const dayjs = readFileSync('./node_modules/dayjs/index.d.ts').toString(
   'base64'
@@ -51,7 +51,9 @@ const dayjs = readFileSync('./node_modules/dayjs/index.d.ts').toString(
 const jsonpath = readFileSync(
   './node_modules/@types/jsonpath/index.d.ts'
 ).toString('base64');
-
+const smartLegalContract = readFileSync(
+  './src/slc/SmartLegalContract.d.ts'
+).toString('base64');
 
 removeSync('./src/runtime/');
 ensureDirSync('./src/runtime/');
@@ -62,5 +64,6 @@ ${HEADER}
 
 export const DAYJS_BASE64 = '${dayjs}';
 export const JSONPATH_BASE64 = '${jsonpath}';
+export const SMART_LEGAL_CONTRACT_BASE64 = '${smartLegalContract}';
 `
 );

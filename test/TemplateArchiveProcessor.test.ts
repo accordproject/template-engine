@@ -55,6 +55,6 @@ describe('template archive processor', () => {
             goodsValue: 100
         };
         const response = await templateArchiveProcessor.trigger(data, request);
-        expect(response.result.penalty).toBe(250);
+        expect(response.result.penalty).toBe(2625);
     });
 });

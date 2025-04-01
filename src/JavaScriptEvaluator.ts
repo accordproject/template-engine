@@ -25,7 +25,8 @@ export type EvalOptions = {
 }
 
 export type EvalRequest = {
-    module?: boolean, // if true the code is a module and must be imported
+    verbose?: boolean, // if true the code is verbose and will be logged to the console
+    templateLogic?: boolean, // if true the code template logic (a module)
     code: string, // JS code to eval
     argumentNames: string[] // names of function args
     arguments: any[] // function arg values, these have to be serializable to JSON!
@@ -74,7 +75,7 @@ export const dynamicImport = async <T>(path: string, symbol?: string) => {
     return symbol ? mod.symbol : mod.default as T;
 }
 
-type TriggerFunction = (request: any) => Promise<any>;
+type TemplateLogicClassConstructor = () => void;
 
 /**
  * This class implements two JS function evaluation strategies:
@@ -105,22 +106,26 @@ export class JavaScriptEvaluator {
     async evalDangerously(request: EvalRequest): Promise<EvalResponse> {
         return new Promise((resolve, reject) => {
             try {
+                if(request.verbose) {
+                    console.log(request.code);
+                }
                 const start = new Date().getTime();
                 let result = null;
-                if(!request.module) {
+                // is this a simple JS function?
+                if(!request.templateLogic) {
                     const fun = new Function(...['dayjs', 'jp', ...request.argumentNames], request.code);
                     result = fun(...[dayjs, jp, ...request.arguments]);
                     const end = new Date().getTime();
                     resolve({ result, elapsed: end - start });
                 }
                 else {
+                    // this is a template logic module, so we need to import it
                     const dataUri = 'data:text/javascript;base64,'
                       + btoa(request.code);
 
-                      dynamicImport<TriggerFunction>(dataUri)
-                        .then(triggerFunction => {
-                            // TODO (DCS)... this is a bit of a hack, but it works for now...
-                            const instance = new triggerFunction();
+                      dynamicImport<TemplateLogicClassConstructor>(dataUri)
+                        .then(templateLogicConstructor => {
+                            const instance = new templateLogicConstructor();
                             result = instance.trigger(...request.arguments);
                             const end = new Date().getTime();
                             resolve({ result, elapsed: end - start });
