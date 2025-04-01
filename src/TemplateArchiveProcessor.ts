@@ -101,7 +101,7 @@ export class TemplateArchiveProcessor {
             const evaluator = new JavaScriptEvaluator();
             const evalResponse = await evaluator.evalDangerously( {
                 templateLogic: true,
-                verbose: true,
+                verbose: false,
                 code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
                 argumentNames: ['data', 'request', 'state'],
                 arguments: [data, request, state, currentTime, utcOffset]

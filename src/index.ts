@@ -12,6 +12,9 @@
  * limitations under the License.
  */
 
+import type { TemplateLogic } from './slc/SmartLegalContract.d.ts';
+
 export { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 export { TemplateArchiveProcessor } from './TemplateArchiveProcessor';
+export { TemplateLogic }
 export * from './utils';
