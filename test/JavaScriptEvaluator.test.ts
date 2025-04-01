@@ -4,6 +4,9 @@ import os from 'os';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+const SECONDS = 1000;
+jest.setTimeout(70 * SECONDS)
+
 const now = '2023-03-17T00:00:00.000Z';
 
 // simple

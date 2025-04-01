@@ -1,6 +1,6 @@
 {
     "name": "@accordproject/template-engine",
-    "version": "2.6.3",
+    "version": "2.6.4",
     "description": "Generation of AgreementMark from TemplateMark + JSON Data",
     "homepage": "https://github.com/accordproject",
     "engines": {
@@ -23,7 +23,6 @@
         "licchk": "license-check-and-add",
         "test": "node --experimental-vm-modules node_modules/.bin/jest",
         "coverage": "jest --coverage",
-        "compile-js": "jest ./test/TypeScriptCompiler.test.ts",
         "test:watch": "jest --watchAll",
         "updateRuntimeDependencies": "node ./scripts/updateRuntimeDependencies"
     },
