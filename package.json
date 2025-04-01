@@ -1,6 +1,6 @@
 {
     "name": "@accordproject/template-engine",
-    "version": "2.6.2",
+    "version": "2.6.3",
     "description": "Generation of AgreementMark from TemplateMark + JSON Data",
     "homepage": "https://github.com/accordproject",
     "engines": {
@@ -138,5 +138,8 @@
         "collectCoverageFrom": [
             "src/**/*.ts"
         ]
+    },
+    "optionalDependencies": {
+        "@rollup/rollup-linux-x64-gnu": "^4.38.0"
     }
 }
