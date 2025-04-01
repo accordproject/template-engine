@@ -21,5 +21,5 @@ implementing the trigger method and optionally the init method.
 
 ## Current Limitations
 
-1. All template logic must be written in TypeScript and in a single file called logic.ts
+1. All template logic must be written in TypeScript and in a single file called logic.ts within the logic folder of the template
 2. You cannot import third-party modules into your template logic

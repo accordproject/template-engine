@@ -119,7 +119,7 @@ export class JavaScriptEvaluator {
                     resolve({ result, elapsed: end - start });
                 }
                 else {
-                    // this is a template logic module, so we need to import it
+                    // this is a template logic esm module, so we need to dynamic import it
                     const dataUri = 'data:text/javascript;base64,'
                       + btoa(request.code);
 
@@ -232,6 +232,7 @@ export class JavaScriptEvaluator {
             });
             worker.on('exit', (code: any) => {
                 if (code === null) {
+                    // timeout
                     this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
                     const end = new Date().getTime();
                     reject({ timeout: true, elapsed: end - start });
