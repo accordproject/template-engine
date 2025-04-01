@@ -1,6 +1,8 @@
 import { getDrafter } from '../src/drafting';
 import { TextNumberDraftFormat } from '../src/drafting/DraftFormat';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 describe('number format', ()=>{
     test('should format integer to number', ()=>{
         const drafter:any=getDrafter('Integer');

@@ -12,6 +12,8 @@
  * limitations under the License.
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import jp from 'jsonpath';
 import traverse from 'traverse';
 import { isBrowser } from 'browser-or-node';
@@ -32,6 +34,7 @@ import {
     WITH_DEFINITION_RE,
     LISTBLOCK_DEFINITION_RE,
     JOIN_DEFINITION_RE,
+    FOREACH_DEFINITION_RE,
     OPTIONAL_DEFINITION_RE,
     CLAUSE_DEFINITION_RE,
     CONTRACT_DEFINITION_RE,
@@ -44,8 +47,8 @@ import { GenerationOptions, joinList } from './TypeScriptRuntime';
 import { getTemplateClassDeclaration } from './utils';
 import { EvalResponse, JavaScriptEvaluator } from './JavaScriptEvaluator';
 
-function checkCode(code:ICode) {
-    if(code.type !== CodeType.ES_2020) {
+function checkCode(code: ICode) {
+    if (code.type !== CodeType.ES_2020) {
         throw new Error(`Cannot run ${code.contents} as it is not ES_2020 JavaScript.`);
     }
 }
@@ -58,6 +61,13 @@ const javaScriptEvaluator = isBrowser ? new JavaScriptEvaluator() : new JavaScri
     maxQueueDepth: process.env.MAX_QUEUE_DEPTH ? Number.parseInt(process.env.MAX_QUEUE_DEPTH) : 1000 // max requests to queue
 });
 
+const TEMPLATEMARK_ROOT_NODES = [
+    'org.accordproject.templatemark@0.5.0.ClauseDefinition',
+    'org.accordproject.templatemark@0.5.0.ContractDefinition'
+];
+
+const DOCUMENT_ROOT = 'org.accordproject.commonmark@0.5.0.Document';
+
 /**
  * Evaluates a JS expression
  * @param {*} clauseLibrary the clause library
@@ -66,8 +76,8 @@ const javaScriptEvaluator = isBrowser ? new JavaScriptEvaluator() : new JavaScri
  * @param {GenerationOptions} options the generation options
  * @returns {object} the result of evaluating the expression against the data
  */
-async function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: string, options?: GenerationOptions): Promise<EvalResponse> {
-    if(options?.disableJavaScriptEvaluation) {
+async function evaluateJavaScript(clauseLibrary: object, data: TemplateData, fn: string, options?: GenerationOptions): Promise<EvalResponse> {
+    if (options?.disableJavaScriptEvaluation) {
         throw new Error('JavaScript evaluation is disabled.');
     }
     if (!data || !fn) {
@@ -85,25 +95,25 @@ async function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: 
 
     // chop the function header and closing
     const expression = fn.substring(fn.indexOf('{') + 1, fn.lastIndexOf('}'));
-    if(expression.trim().length === 0) {
+    if (expression.trim().length === 0) {
         throw new Error('Empty expression');
     }
     try {
-        const request = {code: expression, argumentNames: functionArgNames, arguments: functionArgValues};
-        if(options?.childProcessJavaScriptEvaluation) {
-            if(isBrowser) {
+        const request = { code: expression, argumentNames: functionArgNames, arguments: functionArgValues };
+        if (options?.childProcessJavaScriptEvaluation) {
+            if (isBrowser) {
                 throw new Error('Child process evaluation is not supported inside web browser');
             }
-            const evalOptions = options?.timeout ? {timeout: options.timeout} : undefined;
+            const evalOptions = options?.timeout ? { timeout: options.timeout } : undefined;
             const r = await javaScriptEvaluator.evalChildProcess(request, evalOptions);
-            return (typeof r.result === 'object') ? JSON.stringify(r.result) : r.result.toString();
+            return r;
         }
         else {
             const r = await javaScriptEvaluator.evalDangerously(request);
-            return (typeof r.result === 'object') ? JSON.stringify(r.result) : r.result.toString();
+            return r;
         }
     }
-    catch(err) {
+    catch (err) {
         throw new Error(`Caught error ${JSON.stringify(err)} evaluating ${expression} with arguments ${JSON.stringify(functionArgValues)}`);
     }
 }
@@ -119,18 +129,18 @@ async function evaluateJavaScript(clauseLibrary:object, data: TemplateData, fn: 
  * @param {string[]} paths the traverse path to the current node
  * @returns {string} the JSON path to use to retrieve data
  */
-function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
-    if(!currentNode) {
+function getJsonPath(rootData: any, currentNode: any, paths: string[]): string {
+    if (!currentNode) {
         throw new Error('Node must be supplied');
     }
-    if(!currentNode.name) {
+    if (!currentNode.name) {
         throw new Error(`Node must have a name: ${JSON.stringify(currentNode)}`);
     }
-    if(currentNode.name.indexOf('.') >=0) {
+    if (currentNode.name.indexOf('.') >= 0) {
         // prevent JSON path injection
         throw new Error(`Invalid name property ${currentNode.name}`);
     }
-    if(!paths || !paths.length || paths.length <1 ) {
+    if (!paths || !paths.length || paths.length < 1) {
         throw new Error('Paths must be supplied');
     }
     const withPath = [];
@@ -142,13 +152,15 @@ function getJsonPath(rootData:any, currentNode:any, paths:string[]) : string {
         //     throw new Error(`Failed to find data with path ${sub} and data ${JSON.stringify(rootData, null, 2)}`);
         // }
         if (obj && obj.$class) {
-            if(NAVIGATION_NODES.indexOf(obj.$class) >= 0) {
-                withPath.push(`['${obj.name}']`);
+            if (NAVIGATION_NODES.indexOf(obj.$class) >= 0) {
+                if(obj.name !== 'top') { // HACK!!
+                    withPath.push(`['${obj.name}']`);
+                }
             }
         }
     }
 
-    if(currentNode.name !== 'this') {
+    if (currentNode.name !== 'this') {
         withPath.push(`['${currentNode.name}']`);
     }
 
@@ -167,10 +179,10 @@ type UserCodeResult = Record<string, any>;
  * @param {[GenerationOptions]} options - the generation options
  * @returns {Promise<UserCodeResult>} a promise to a UserCodeResult
  */
-async function evaluateUserCode(clauseLibrary:object, templateMark: object, data: TemplateData, options?:GenerationOptions): Promise<UserCodeResult> {
-    const result:UserCodeResult = {};
+async function evaluateUserCode(clauseLibrary: object, templateMark: object, data: TemplateData, options?: GenerationOptions): Promise<UserCodeResult> {
+    const result: UserCodeResult = {};
     const paths = traverse(templateMark).paths();
-    for(let n=0; n < paths.length; n++) {
+    for (let n = 0; n < paths.length; n++) {
         const path = paths[n];
         const context = traverse(templateMark).get(path);
         if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
@@ -178,7 +190,8 @@ async function evaluateUserCode(clauseLibrary:object, templateMark: object, data
             if (FORMULA_DEFINITION_RE.test(nodeClass)) {
                 if (context.code) {
                     checkCode(context.code);
-                    result[path.join('/')] = await evaluateJavaScript(clauseLibrary, data, context.code.contents, options);
+                    const evalResponse = await evaluateJavaScript(clauseLibrary, data, context.code.contents, options);
+                    result[path.join('/')] = JSON.stringify(evalResponse.result);
                 }
                 else {
                     throw new Error('Formula node is missing code.');
@@ -187,7 +200,8 @@ async function evaluateUserCode(clauseLibrary:object, templateMark: object, data
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass) || CLAUSE_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
                     checkCode(context.condition);
-                    result[path.join('/')] = await evaluateJavaScript(clauseLibrary, data, context.condition.contents, options);
+                    const evalResponse = await evaluateJavaScript(clauseLibrary, data, context.condition.contents, options);
+                    result[path.join('/')] = JSON.stringify(evalResponse.result);
                 }
             }
         }
@@ -196,49 +210,51 @@ async function evaluateUserCode(clauseLibrary:object, templateMark: object, data
 }
 
 // the key is a path[] joined with '/' from the traverse library
-// the value is an array of agreementmark Item nodes for the list block
-type ListBlockResult = Record<string, any[]>;
+// the value is an array of agreementmark Item nodes for the recursive block
+type RecursiveBlockResult = Record<string, any[]>;
 
 /**
- * Generates agreementmark for all list blocks
+ * Generates agreementmark for all recursive blocks (list, foreach)
  * Warning: this is async and recursive
  * @param {ModelManager} modelManager - the template model
  * @param {*} clauseLibrary - the clause library
  * @param {*} templateMark - the TemplateMark JSON document
  * @param {*} data - the template data JSON
+ * @param {RegExp} nodeRegExp - the regex used to match against $class of nodes
+ * @param {string} childNodeClass - the $class to use for the node that wraps child items
  * @param {[GenerationOptions]} options - the generation options
  * @returns {*} the AgreementMark JSON for the list block
  */
-async function generateListBlocks(modelManager:ModelManager, clauseLibrary:object, templateMark: object, data: TemplateData, options?:GenerationOptions): Promise<ListBlockResult> {
-    const result:ListBlockResult = {};
+async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary: object, templateMark: object, data: TemplateData, nodeRegExp: RegExp, childNodeClass: string, options?: GenerationOptions): Promise<RecursiveBlockResult> {
+    const result: RecursiveBlockResult = {};
     const paths = traverse(templateMark).paths();
-    for(let n=0; n < paths.length; n++) {
+    for (let n = 0; n < paths.length; n++) {
         const thisPath = paths[n];
         const context = traverse(templateMark).get(thisPath);
         if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
             const nodeClass = context.$class as string;
 
-            // evaluate lists, recursing on each list item
-            if (LISTBLOCK_DEFINITION_RE.test(nodeClass)) {
+            // evaluate nodes, recursing on each child item
+            if (nodeRegExp.test(nodeClass)) {
                 const path = getJsonPath(templateMark, context, thisPath);
                 const variableValues = jp.query(data, path, 1);
 
                 if (variableValues.length === 0) {
-                    throw new Error(`No values found for path '${path}' in data ${data}.`);
+                    throw new Error(`No values found for path '${path}' in data ${JSON.stringify(data)}.`);
                 }
                 else {
                     const arrayData = variableValues[0];
-                    if(!Array.isArray(arrayData)) {
+                    if (!Array.isArray(arrayData)) {
                         throw new Error(`Values found for path '${path}' in data ${data} is not an array: ${arrayData}.`);
                     }
                     else {
                         const nodes = [];
-                        for(let n=0; n < arrayData.length; n++) {
+                        for (let n = 0; n < arrayData.length; n++) {
                             const arrayItem = arrayData[n];
                             // arrayItem is now the data for the nested generation
                             const subResult = await generateAgreement(modelManager, clauseLibrary, context.nodes[0].nodes[0], arrayItem, options);
                             nodes.push({
-                                $class: `${CommonMarkModel.NAMESPACE}.Item`,
+                                $class: childNodeClass,
                                 nodes: subResult.nodes ? subResult.nodes : []
                             });
                         }
@@ -260,12 +276,13 @@ async function generateListBlocks(modelManager:ModelManager, clauseLibrary:objec
  * @param {[GenerationOptions]} options - the generation options
  * @returns {*} the AgreementMark JSON
  */
-async function generateAgreement(modelManager:ModelManager, clauseLibrary:object, templateMark: object, data: TemplateData, options?:GenerationOptions): Promise<any> {
+async function generateAgreement(modelManager: ModelManager, clauseLibrary: object, templateMark: object, data: TemplateData, options?: GenerationOptions): Promise<any> {
     const introspector = new Introspector(modelManager);
     // evaluate all the user code (async)
     const userCodeResults = await evaluateUserCode(clauseLibrary, templateMark, data, options);
-    // evaluate all list blocks (async)
-    const listBlockResults = await generateListBlocks(modelManager, clauseLibrary, templateMark, data, options);
+    // evaluate all recursive blocks (async)
+    const listBlockResults = await generateRecursiveBlocks(modelManager, clauseLibrary, templateMark, data, LISTBLOCK_DEFINITION_RE, `${CommonMarkModel.NAMESPACE}.Item`, options);
+    const foreachBlockResults = await generateRecursiveBlocks(modelManager, clauseLibrary, templateMark, data, FOREACH_DEFINITION_RE, `${CommonMarkModel.NAMESPACE}.Paragraph`, options);
     // traverse the templatemark, creating an output agreementmark tree
     return traverse(templateMark).map(function (context: any) {
         let stopHere = false;
@@ -278,7 +295,7 @@ async function generateAgreement(modelManager:ModelManager, clauseLibrary:object
                 context.$class = `${CiceroMarkModel.NAMESPACE}.${match[3]}`;
             }
 
-            // convert a contract node to a clause note HACK
+            // convert a contract node to a clause node (HACK)
             if (CONTRACT_DEFINITION_RE.test(nodeClass)) {
                 context.$class = `${CommonMarkModel.NAMESPACE}.Paragraph`;
                 delete context.name;
@@ -299,10 +316,10 @@ async function generateAgreement(modelManager:ModelManager, clauseLibrary:object
             else if (FORMULA_DEFINITION_RE.test(nodeClass)) {
                 if (context.code) {
                     const result = userCodeResults[this.path.join('/')];
-                    if(result === null) {
+                    if (result === null) {
                         context.value = '<null>';
                     }
-                    else if(typeof result === 'string') {
+                    else if (typeof result === 'string') {
                         context.value = result;
                     }
                     else {
@@ -330,17 +347,17 @@ async function generateAgreement(modelManager:ModelManager, clauseLibrary:object
                 const variableValues = jp.query(data, path, 1);
 
                 if (variableValues.length === 0) {
-                    throw new Error(`No values found for path '${path}' in data ${data}.`);
+                    throw new Error(`No values found for path '${path}' in data ${JSON.stringify(data)}.`);
                 }
                 else {
                     const arrayData = variableValues[0];
-                    if(!Array.isArray(arrayData)) {
+                    if (!Array.isArray(arrayData)) {
                         throw new Error(`Values found for path '${path}' in data ${data} is not an array: ${arrayData}.`);
                     }
                     else {
                         context.$class = `${CommonMarkModel.NAMESPACE}.Text`;
                         const drafter = getDrafter(context.elementType);
-                        context.text = joinList(arrayData.map( arrayItem => {
+                        context.text = joinList(arrayData.map(arrayItem => {
                             return drafter ? drafter(arrayItem, context.format) : arrayItem as string;
                         }), context, options);
                         delete context.elementType;
@@ -355,16 +372,25 @@ async function generateAgreement(modelManager:ModelManager, clauseLibrary:object
                 }
             }
 
+            // map over an array of items, joining them into a Text node
+            else if (FOREACH_DEFINITION_RE.test(nodeClass)) {
+                context.$class = `${CommonMarkModel.NAMESPACE}.Foreach`;
+                delete context.elementType;
+                delete context.name;
+                context.nodes = foreachBlockResults[this.path.join('/')];
+                stopHere = true; // do not process child nodes, we've already done it above...
+            }
+
             // add a 'value' property to VariableDefinition
             // with the value of the variable from 'data'
             else if (VARIABLE_DEFINITION_RE.test(nodeClass) ||
                 ENUM_VARIABLE_DEFINITION_RE.test(nodeClass) ||
                 FORMATTED_VARIABLE_DEFINITION_RE.test(nodeClass)) {
-                if(typeof data === 'object') {
+                if (typeof data === 'object') {
                     const path = getJsonPath(templateMark, context, this.path);
                     const variableValues = jp.query(data, path, 1);
                     if (variableValues.length === 0) {
-                        throw new Error(`No values found for path '${path}' in data ${data}.`);
+                        throw new Error(`No values found for path '${path}' in data ${JSON.stringify(data)}.`);
                     }
                     else {
                         // convert the value to a string, optionally using the formatter
@@ -396,7 +422,7 @@ async function generateAgreement(modelManager:ModelManager, clauseLibrary:object
                     const path = getJsonPath(templateMark, context, this.path);
                     const variableValues = jp.query(data, path, 1);
                     if (variableValues && variableValues.length) {
-                        if(variableValues.length === 1) {
+                        if (variableValues.length === 1) {
                             context.isTrue = !!variableValues[0];
                         }
                         else {
@@ -418,7 +444,7 @@ async function generateAgreement(modelManager:ModelManager, clauseLibrary:object
                 if (context.condition) {
                     checkCode(context.condition);
                     const result = !!userCodeResults[this.path.join('/')] as unknown as boolean;
-                    if(!result) {
+                    if (!result) {
                         delete context.nodes;
                         stopHere = true;
                     }
@@ -432,7 +458,7 @@ async function generateAgreement(modelManager:ModelManager, clauseLibrary:object
                 const path = getJsonPath(templateMark, context, this.path);
                 const variableValues = jp.query(data, path, 1);
                 if (variableValues && variableValues.length) {
-                    if(variableValues.length === 1) {
+                    if (variableValues.length === 1) {
                         context.hasSome = true;
                         context.whenNone = [];
                     }
@@ -460,10 +486,10 @@ export class TemplateMarkInterpreter {
     templateClass: ClassDeclaration;
     clauseLibrary: object;
 
-    constructor(modelManager: ModelManager, clauseLibrary:object, templateConceptFqn?: string) {
+    constructor(modelManager: ModelManager, clauseLibrary: object, templateConceptFqn?: string) {
         this.modelManager = modelManager;
         this.clauseLibrary = clauseLibrary;
-        this.templateClass = getTemplateClassDeclaration(this.modelManager,templateConceptFqn);
+        this.templateClass = getTemplateClassDeclaration(this.modelManager, templateConceptFqn);
     }
 
     /**
@@ -488,7 +514,7 @@ export class TemplateMarkInterpreter {
             serializer.fromJSON(templateMark);
             return templateMark;
         }
-        catch(err) {
+        catch (err) {
             throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(templateMark, null, 2)}`);
         }
     }
@@ -499,17 +525,34 @@ export class TemplateMarkInterpreter {
      * @returns {*} TemplateMark JSON with JS nodes
      * @throws {Error} if the templateMark document is invalid
      */
-    async compileTypeScriptToJavaScript(templateMark: object) : Promise<object> {
-        const templateConcept = (templateMark as any).nodes[0].elementType;
-        if(!templateConcept) {
-            throw new Error('TemplateMark is not typed');
+    async compileTypeScriptToJavaScript(templateMark: object): Promise<object> {
+        const clazz = (templateMark as any).$class;
+        if(clazz !== DOCUMENT_ROOT) {
+            throw new Error(`JSON is not CommonMark. $class is '${clazz}'. ${JSON.stringify(templateMark, null, 2)}`);
+        }
+
+        if(!(templateMark as any).nodes || !(templateMark as any).nodes.length || (templateMark as any).nodes.length < 1) {
+            throw new Error(`CommonMark does not have nodes: ${JSON.stringify(templateMark, null, 2)}`);
+        }
+        const firstChild = (templateMark as any).nodes[0];
+        const firstChildClazz = (firstChild as any).$class;
+
+        if(!TEMPLATEMARK_ROOT_NODES.includes(firstChildClazz)) {
+            throw new Error(`First child is not templatemark. $class is '${firstChildClazz}'. ${JSON.stringify(templateMark, null, 2)}`);
+        }
+        const templateConcept = (firstChild as any).elementType;
+        if (!templateConcept) {
+            throw new Error(`First child is not typed: ${JSON.stringify(templateMark, null, 2)}`);
+        }
+        if(firstChild.name !== 'top') {
+            throw new Error('First child is not named "top"!');
         }
         const compiler = new TemplateMarkToJavaScriptCompiler(this.modelManager, templateConcept);
         await compiler.initialize();
         return compiler.compile(templateMark);
     }
 
-    validateCiceroMark(ciceroMark: object) : object {
+    validateCiceroMark(ciceroMark: object): object {
         const modelManager = new ModelManager({ strict: true });
         modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
         modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
@@ -519,12 +562,12 @@ export class TemplateMarkInterpreter {
         try {
             return serializer.fromJSON(ciceroMark);
         }
-        catch(err) {
+        catch (err) {
             throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(ciceroMark, null, 2)}`);
         }
     }
 
-    async generate(templateMark: object, data: TemplateData, options?:GenerationOptions): Promise<any> {
+    async generate(templateMark: object, data: TemplateData, options?: GenerationOptions): Promise<any> {
         const factory = new Factory(this.modelManager);
         const serializer = new Serializer(factory, this.modelManager);
         const templateData = serializer.fromJSON(data);
@@ -533,7 +576,9 @@ export class TemplateMarkInterpreter {
         }
         const typedTemplateMark = this.checkTypes(templateMark);
         const jsTemplateMark = await this.compileTypeScriptToJavaScript(typedTemplateMark);
+        // console.log('Compiled JS: ' + JSON.stringify(jsTemplateMark, null, 2));
         const ciceroMark = await generateAgreement(this.modelManager, this.clauseLibrary, jsTemplateMark, data, options);
+        // console.log('Generated AgreementMark');
         return this.validateCiceroMark(ciceroMark);
     }
 }

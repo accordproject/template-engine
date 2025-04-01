@@ -1,45 +1,45 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`templatemark to javascript compiler should compile templatemark containing typescript to javascript 1`] = `
-Object {
+{
   "$class": "org.accordproject.commonmark@0.5.0.Document",
-  "nodes": Array [
-    Object {
+  "nodes": [
+    {
       "$class": "org.accordproject.templatemark@0.5.0.ContractDefinition",
       "elementType": "test@1.0.0.TemplateData",
       "name": "top",
-      "nodes": Array [
-        Object {
+      "nodes": [
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Heading",
           "level": "1",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "Welcome!",
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "Hello ",
             },
-            Object {
+            {
               "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
               "elementType": "String",
               "name": "firstName",
             },
-            Object {
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": " ",
             },
-            Object {
+            {
               "$class": "org.accordproject.templatemark@0.5.0.JoinDefinition",
               "name": "middleNames",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                   "elementType": "String",
                   "name": "this",
@@ -47,13 +47,13 @@ Object {
               ],
               "separator": "-",
             },
-            Object {
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": " ",
             },
-            Object {
+            {
               "$class": "org.accordproject.templatemark@0.5.0.ConditionalDefinition",
-              "condition": Object {
+              "condition": {
                 "$class": "org.accordproject.templatemark@0.5.0.Code",
                 "contents": "export function condition_nodes_0_nodes_1_nodes_5(data, library, options) {
     const now = dayjs(options?.now);
@@ -73,53 +73,53 @@ Object {
 ",
                 "type": "ES_2020",
               },
-              "dependencies": Array [],
+              "dependencies": [],
               "functionName": "condition_nodes_0_nodes_1_nodes_5",
               "name": "lastName",
-              "whenFalse": Array [
-                Object {
+              "whenFalse": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
                   "text": "Dude",
                 },
               ],
-              "whenTrue": Array [
-                Object {
+              "whenTrue": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
                   "text": "Mister",
                 },
               ],
             },
-            Object {
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "!",
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Heading",
           "level": "2",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "Middle Names",
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.templatemark@0.5.0.ListBlockDefinition",
           "delimiter": "period",
           "name": "middleNames",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.List",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Item",
-                  "nodes": Array [
-                    Object {
+                  "nodes": [
+                    {
                       "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-                      "nodes": Array [
-                        Object {
+                      "nodes": [
+                        {
                           "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "elementType": "String",
                           "name": "this",
@@ -137,50 +137,50 @@ Object {
           "tight": "true",
           "type": "ordered",
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "Middle names: ",
             },
-            Object {
+            {
               "$class": "org.accordproject.templatemark@0.5.0.JoinDefinition",
               "locale": "en",
               "name": "middleNames",
-              "nodes": Array [],
+              "nodes": [],
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Heading",
           "level": "2",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "Address",
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.templatemark@0.5.0.ClauseDefinition",
           "elementType": "test@1.0.0.Address",
           "name": "address",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.List",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Item",
-                  "nodes": Array [
-                    Object {
+                  "nodes": [
+                    {
                       "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-                      "nodes": Array [
-                        Object {
+                      "nodes": [
+                        {
                           "$class": "org.accordproject.commonmark@0.5.0.Text",
                           "text": "Street: ",
                         },
-                        Object {
+                        {
                           "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "elementType": "String",
                           "name": "street",
@@ -189,17 +189,17 @@ Object {
                     },
                   ],
                 },
-                Object {
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Item",
-                  "nodes": Array [
-                    Object {
+                  "nodes": [
+                    {
                       "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-                      "nodes": Array [
-                        Object {
+                      "nodes": [
+                        {
                           "$class": "org.accordproject.commonmark@0.5.0.Text",
                           "text": "City: ",
                         },
-                        Object {
+                        {
                           "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "elementType": "String",
                           "name": "city",
@@ -208,17 +208,17 @@ Object {
                     },
                   ],
                 },
-                Object {
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Item",
-                  "nodes": Array [
-                    Object {
+                  "nodes": [
+                    {
                       "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-                      "nodes": Array [
-                        Object {
+                      "nodes": [
+                        {
                           "$class": "org.accordproject.commonmark@0.5.0.Text",
                           "text": "ZIP: ",
                         },
-                        Object {
+                        {
                           "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "elementType": "String",
                           "name": "zip",
@@ -233,25 +233,25 @@ Object {
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "Your city is: ",
             },
-            Object {
+            {
               "$class": "org.accordproject.templatemark@0.5.0.WithDefinition",
               "elementType": "test@1.0.0.Address",
               "name": "address",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Emph",
-                  "nodes": Array [
-                    Object {
+                  "nodes": [
+                    {
                       "$class": "org.accordproject.commonmark@0.5.0.Strong",
-                      "nodes": Array [
-                        Object {
+                      "nodes": [
+                        {
                           "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                           "elementType": "String",
                           "name": "city",
@@ -260,7 +260,7 @@ Object {
                     },
                   ],
                 },
-                Object {
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
                   "text": ".",
                 },
@@ -268,30 +268,30 @@ Object {
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Heading",
           "level": "2",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "Account Status",
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.templatemark@0.5.0.ConditionalDefinition",
               "name": "active",
-              "whenFalse": Array [
-                Object {
+              "whenFalse": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
                   "text": "Your account has been deactivated.",
                 },
               ],
-              "whenTrue": Array [
-                Object {
+              "whenTrue": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
                   "text": "Your account is active.",
                 },
@@ -299,22 +299,22 @@ Object {
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.BlockQuote",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
                   "text": "Thank you for visiting us ",
                 },
-                Object {
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Strong",
-                  "nodes": Array [
-                    Object {
+                  "nodes": [
+                    {
                       "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
-                      "code": Object {
+                      "code": {
                         "$class": "org.accordproject.templatemark@0.5.0.Code",
                         "contents": "export function formula_53113a901ca88208df47bc83374866e8d497d84099c0f88123c918ff1960b17e(data, library, options) {
     const now = dayjs(options?.now);
@@ -334,29 +334,29 @@ Object {
 ",
                         "type": "ES_2020",
                       },
-                      "dependencies": Array [],
+                      "dependencies": [],
                       "name": "formula_53113a901ca88208df47bc83374866e8d497d84099c0f88123c918ff1960b17e",
                     },
                   ],
                 },
-                Object {
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
                   "text": " days ago.",
                 },
-                Object {
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Linebreak",
                 },
-                Object {
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
                   "text": "Your last visit was: ",
                 },
-                Object {
+                {
                   "$class": "org.accordproject.templatemark@0.5.0.FormattedVariableDefinition",
                   "elementType": "DateTime",
                   "format": "MM/DD/YYYY",
                   "name": "lastVisit",
                 },
-                Object {
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
                   "text": ".",
                 },
@@ -364,12 +364,12 @@ Object {
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
-              "code": Object {
+              "code": {
                 "$class": "org.accordproject.templatemark@0.5.0.Code",
                 "contents": "export function formula_7841bd178366af21ea233d10968eaf538d12fb7a50cbaf9cbe1b51a00cb0f6a8(data, library, options) {
     const now = dayjs(options?.now);
@@ -399,54 +399,54 @@ Object {
 ",
                 "type": "ES_2020",
               },
-              "dependencies": Array [],
+              "dependencies": [],
               "name": "formula_7841bd178366af21ea233d10968eaf538d12fb7a50cbaf9cbe1b51a00cb0f6a8",
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Heading",
           "level": "2",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "Orders",
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.templatemark@0.5.0.ListBlockDefinition",
           "delimiter": "period",
           "elementType": "test@1.0.0.Order",
           "name": "orders",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.List",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Item",
-                  "nodes": Array [
-                    Object {
+                  "nodes": [
+                    {
                       "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-                      "nodes": Array [
-                        Object {
+                      "nodes": [
+                        {
                           "$class": "org.accordproject.commonmark@0.5.0.Strong",
-                          "nodes": Array [
-                            Object {
+                          "nodes": [
+                            {
                               "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                               "elementType": "String",
                               "name": "sku",
                             },
                           ],
                         },
-                        Object {
+                        {
                           "$class": "org.accordproject.commonmark@0.5.0.Text",
                           "text": " : ",
                         },
-                        Object {
+                        {
                           "$class": "org.accordproject.commonmark@0.5.0.Emph",
-                          "nodes": Array [
-                            Object {
+                          "nodes": [
+                            {
                               "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                               "elementType": "Integer",
                               "name": "amount",
@@ -466,25 +466,25 @@ Object {
           "tight": "true",
           "type": "ordered",
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.templatemark@0.5.0.OptionalDefinition",
               "elementType": "test@1.0.0.LoyaltyStatus",
               "name": "loyaltyStatus",
-              "whenNone": Array [
-                Object {
+              "whenNone": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
                   "text": "You do not have a loyalty status.",
                 },
               ],
-              "whenSome": Array [
-                Object {
+              "whenSome": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
                   "text": "Your loyalty status: ",
                 },
-                Object {
+                {
                   "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                   "elementType": "String",
                   "name": "level",
@@ -493,9 +493,9 @@ Object {
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.templatemark@0.5.0.ClauseDefinition",
-          "condition": Object {
+          "condition": {
             "$class": "org.accordproject.templatemark@0.5.0.Code",
             "contents": "export function condition_nodes_0_nodes_15(data, library, options) {
     const now = dayjs(options?.now);
@@ -518,27 +518,27 @@ Object {
           "elementType": "test@1.0.0.Preferences",
           "functionName": "condition_nodes_0_nodes_15",
           "name": "preferences",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Heading",
               "level": "2",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
                   "text": "Favorite Colors",
                 },
               ],
             },
-            Object {
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
                   "text": "Your favorite colors are: ",
                 },
-                Object {
+                {
                   "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
-                  "code": Object {
+                  "code": {
                     "$class": "org.accordproject.templatemark@0.5.0.Code",
                     "contents": "export function formula_4b8f7e95470eda90057c4648aac4e4c7abb3f93559ed348246b6a15ec1fea473(data, library, options) {
     const now = dayjs(options?.now);
@@ -558,37 +558,37 @@ Object {
 ",
                     "type": "ES_2020",
                   },
-                  "dependencies": Array [],
+                  "dependencies": [],
                   "name": "formula_4b8f7e95470eda90057c4648aac4e4c7abb3f93559ed348246b6a15ec1fea473",
                 },
               ],
             },
-            Object {
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.Image",
                   "destination": "https://www.litmus.com/wp-content/uploads/2021/02/motion-tween-example.gif",
-                  "nodes": Array [],
+                  "nodes": [],
                   "title": "",
                 },
               ],
             },
-            Object {
+            {
               "$class": "org.accordproject.templatemark@0.5.0.ListBlockDefinition",
               "delimiter": "period",
               "name": "favoriteColors",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.commonmark@0.5.0.List",
-                  "nodes": Array [
-                    Object {
+                  "nodes": [
+                    {
                       "$class": "org.accordproject.commonmark@0.5.0.Item",
-                      "nodes": Array [
-                        Object {
+                      "nodes": [
+                        {
                           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-                          "nodes": Array [
-                            Object {
+                          "nodes": [
+                            {
                               "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
                               "elementType": "String",
                               "name": "this",
@@ -606,12 +606,12 @@ Object {
               "tight": "true",
               "type": "ordered",
             },
-            Object {
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.templatemark@0.5.0.ConditionalDefinition",
-                  "condition": Object {
+                  "condition": {
                     "$class": "org.accordproject.templatemark@0.5.0.Code",
                     "contents": "export function condition_nodes_0_nodes_15_nodes_4_nodes_0(data, library, options) {
     const now = dayjs(options?.now);
@@ -631,17 +631,17 @@ Object {
 ",
                     "type": "ES_2020",
                   },
-                  "dependencies": Array [],
+                  "dependencies": [],
                   "functionName": "condition_nodes_0_nodes_15_nodes_4_nodes_0",
                   "name": "favoriteColors",
-                  "whenFalse": Array [
-                    Object {
+                  "whenFalse": [
+                    {
                       "$class": "org.accordproject.commonmark@0.5.0.Text",
                       "text": "Why don't you like PINK!",
                     },
                   ],
-                  "whenTrue": Array [
-                    Object {
+                  "whenTrue": [
+                    {
                       "$class": "org.accordproject.commonmark@0.5.0.Text",
                       "text": "You like pink!",
                     },
@@ -651,35 +651,35 @@ Object {
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Heading",
           "level": "2",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "Dynamic Query of Clauses",
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Heading",
           "level": "3",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "Onboarding Clauses",
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.BlockQuote",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
-                  "code": Object {
+                  "code": {
                     "$class": "org.accordproject.templatemark@0.5.0.Code",
                     "contents": "export function formula_a8a1d7714d95baa82f730e0105d2f2d0a9fc25ee9b6055058cc09667c01c01ab(data, library, options) {
     const now = dayjs(options?.now);
@@ -694,42 +694,42 @@ Object {
     const orders = data.orders;
     const loyaltyStatus = data.loyaltyStatus;
     const preferences = data.preferences;
-    return jp.query(library, \`$.clauses[?(@.category==\\"onboarding\\")]\`);
+    return jp.query(library, \`$.clauses[?(@.category=="onboarding")]\`);
 }
 ",
                     "type": "ES_2020",
                   },
-                  "dependencies": Array [],
+                  "dependencies": [],
                   "name": "formula_a8a1d7714d95baa82f730e0105d2f2d0a9fc25ee9b6055058cc09667c01c01ab",
                 },
               ],
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Heading",
           "level": "3",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "Authored by ",
             },
-            Object {
+            {
               "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
               "elementType": "String",
               "name": "firstName",
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.BlockQuote",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
-                  "code": Object {
+                  "code": {
                     "$class": "org.accordproject.templatemark@0.5.0.Code",
                     "contents": "export function formula_daca9cb2f5bc16b65f544e6f408c1e3121d50a3251ec4fbe2f27132818acc3d2(data, library, options) {
     const now = dayjs(options?.now);
@@ -744,37 +744,37 @@ Object {
     const orders = data.orders;
     const loyaltyStatus = data.loyaltyStatus;
     const preferences = data.preferences;
-    return jp.query(library, \`$.clauses[?(@.author==\\"\${firstName}\\")]\`);
+    return jp.query(library, \`$.clauses[?(@.author=="\${firstName}")]\`);
 }
 ",
                     "type": "ES_2020",
                   },
-                  "dependencies": Array [],
+                  "dependencies": [],
                   "name": "formula_daca9cb2f5bc16b65f544e6f408c1e3121d50a3251ec4fbe2f27132818acc3d2",
                 },
               ],
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Heading",
           "level": "3",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "High Risk",
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.BlockQuote",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
-                  "code": Object {
+                  "code": {
                     "$class": "org.accordproject.templatemark@0.5.0.Code",
                     "contents": "export function formula_4c874b2977b5eef204e4987efc0a5594c7cce66403e54c17daa1e1c721d755a0(data, library, options) {
     const now = dayjs(options?.now);
@@ -794,37 +794,37 @@ Object {
 ",
                     "type": "ES_2020",
                   },
-                  "dependencies": Array [],
+                  "dependencies": [],
                   "name": "formula_4c874b2977b5eef204e4987efc0a5594c7cce66403e54c17daa1e1c721d755a0",
                 },
               ],
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Heading",
           "level": "3",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "Low Risk and authored by ",
             },
-            Object {
+            {
               "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
               "elementType": "String",
               "name": "firstName",
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.BlockQuote",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-              "nodes": Array [
-                Object {
+              "nodes": [
+                {
                   "$class": "org.accordproject.templatemark@0.5.0.FormulaDefinition",
-                  "code": Object {
+                  "code": {
                     "$class": "org.accordproject.templatemark@0.5.0.Code",
                     "contents": "export function formula_646a6cadec2125e4fd9e4b756aac72bc618b528967f04d325b28a817774441dd(data, library, options) {
     const now = dayjs(options?.now);
@@ -839,22 +839,22 @@ Object {
     const orders = data.orders;
     const loyaltyStatus = data.loyaltyStatus;
     const preferences = data.preferences;
-    return jp.query(library, \`$.clauses[?(@.risk<3 && @.author==\\"\${firstName}\\")]\`);
+    return jp.query(library, \`$.clauses[?(@.risk<3 && @.author=="\${firstName}")]\`);
 }
 ",
                     "type": "ES_2020",
                   },
-                  "dependencies": Array [],
+                  "dependencies": [],
                   "name": "formula_646a6cadec2125e4fd9e4b756aac72bc618b528967f04d325b28a817774441dd",
                 },
               ],
             },
           ],
         },
-        Object {
+        {
           "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
-          "nodes": Array [
-            Object {
+          "nodes": [
+            {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": "Done.",
             },

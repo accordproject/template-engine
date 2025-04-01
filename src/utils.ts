@@ -11,6 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { ClassDeclaration, Introspector, ModelManager, Property } from '@accordproject/concerto-core';
 import { TemplateMarkModel } from '@accordproject/markdown-common';
 import { templatemarkutil } from '@accordproject/markdown-template';
@@ -19,7 +22,9 @@ import { existsSync, mkdirSync, rmSync } from 'fs';
 import traverse from 'traverse';
 
 export function ensureDirSync(path:string) {
-    !existsSync(path) && mkdirSync(path, { recursive: true });
+    if(!existsSync(path)) {
+        mkdirSync(path, { recursive: true });
+    }
 }
 
 export function removeSync(path:string) {
@@ -45,7 +50,7 @@ export function writeFunctionToString(templateClass:ClassDeclaration, functionNa
 export function nameUserCode(templateMarkDom: any) {
     return traverse(templateMarkDom).map(function (x) {
         if (x && ((x.$class === `${TemplateMarkModel.NAMESPACE}.ConditionalDefinition` && x.condition) ||
-            (`${TemplateMarkModel.NAMESPACE}.ClauseDefinition` && x.condition))) {
+            (x.$class === `${TemplateMarkModel.NAMESPACE}.ClauseDefinition` && x.condition))) {
             x.functionName = `condition_${this.path.join('_')}`;
         }
         this.update(x);

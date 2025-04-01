@@ -11,6 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+
 const DEBUG = false;
 
 // BEWARE adding imports to this file
@@ -81,7 +84,12 @@ export function push($data:any[], item:any) : number {
 
 export function addChild($data:any[], item:any) {
     const node = peek($data);
-    node.nodes ? node.nodes.push(item) : node.nodes = [item];
+    if(node.nodes) {
+        node.nodes.push(item);
+    }
+    else {
+        node.nodes = [item];
+    }
 }
 
 export function pop($data:any[]) : any {

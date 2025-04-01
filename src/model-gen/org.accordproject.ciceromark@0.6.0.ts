@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-interface */
+ 
 // Generated code for namespace: org.accordproject.ciceromark@0.6.0
 
 // imports

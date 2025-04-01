@@ -12,6 +12,8 @@
  * limitations under the License.
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import booleanDrafter from './Boolean';
 import dateTimeDrafter from './DateTime';
 import doubleDrafter from './Double';
