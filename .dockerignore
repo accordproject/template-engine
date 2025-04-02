@@ -5,3 +5,6 @@ dist
 Dockerfile
 docker-compose.yml
 npm-debug.log
+coverage
+test
+scripts

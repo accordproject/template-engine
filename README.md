@@ -1,3 +1,39 @@
+## Docker Support
+
+This project includes Docker support, allowing you to run the application in a containerized environment. Below are the steps to build and use the Docker image:
+
+### Building the Docker Image
+To build the Docker image, run the following command in the root directory of the project:
+```bash
+Command 1: docker build -t template-engine .    
+Note: You can replace "template-engine" with the name you want to give to the Docker image
+
+Running the Docker Container
+Once the image is built, you can run the container using:
+Command 2: docker run -p 3000:3000 template-engine
+
+The -p 3000:3000 flag maps port 3000 of the container to port 3000 on your local machine.
+If the application uses a different port, update the -p flag accordingly.
+
+Environment Variables
+If the application requires environment variables (e.g., database credentials, API keys, etc.), you can pass them using a .env file. Create a .env file in the root directory with the required variables in the following format:
+
+KEY=value
+
+Then, run the container with:
+Command 4: docker run --env-file .env -p 3000:3000 template-engine
+
+Accessing the Application
+http://localhost:3000
+
+To stop the running container, use:
+Command 5: docker stop <container-id>    
+
+Replace <container-id> with the ID or name of the running container, which you can find using: docker ps
+
+Happy Coding...
+
+
 # Template Engine
 
 This is the [Accord Project](https://accordproject.org) template engine. Rich-text templates are defined in TemplateMark (either as markdown files, or JSON documents) and are then merged with JSON data to produce output documents. Templates may contain [TypeScript](https://www.typescriptlang.org) expressions.
