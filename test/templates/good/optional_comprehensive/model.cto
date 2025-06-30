@@ -1,0 +1,21 @@
+namespace test@1.0.0
+
+concept Address {
+    o String street
+    o String city
+}
+
+concept Person {
+    o String name
+    o Integer age optional
+}
+
+@template
+concept TemplateData {
+    o Integer age optional
+    o String middleName optional
+    o Boolean active optional
+    o Address address optional
+    o Person person optional
+    o DateTime lastVisit optional
+} 
