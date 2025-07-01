@@ -16,6 +16,6 @@
 
 ### Formatted Optional
 
-{{#optional lastVisit}}Last visit: {{this}}{{else}}Never visited{{/optional}}
+{{#optional lastVisit}}Last visit: {{this as "MMMM DD, YYYY"}}{{else}}Never visited{{/optional}}
 
 Complete.

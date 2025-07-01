@@ -3100,10 +3100,11 @@ exports[`templatemark interpreter should generate optional_comprehensive 1`] = `
                   "text": "Last visit: ",
                 },
                 {
-                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
                   "elementType": "DateTime",
+                  "format": "MMMM DD, YYYY",
                   "name": "this",
-                  "value": "12/01/2023",
+                  "value": "December 01, 2023",
                 },
               ],
               "whenNone": [],
