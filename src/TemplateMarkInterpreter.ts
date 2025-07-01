@@ -245,13 +245,13 @@ async function generateOptionalBlocks(modelManager: ModelManager, clauseLibrary:
                     // Optional property exists, process whenSome with the property value as context
                     const optionalPropertyValue = variableValues[0];
                     if (context.whenSome && context.whenSome.length > 0) {
-                        // Create a document wrapper for the whenSome content
-                        const whenSomeDocument = {
-                            $class: 'org.accordproject.commonmark@0.5.0.Document',
+                        // Create a paragraph wrapper for the whenSome content
+                        const whenSomeParagraph = {
+                            $class: 'org.accordproject.commonmark@0.5.0.Paragraph',
                             nodes: context.whenSome
                         };
                         // Process with the optional property value as the new data context
-                        const subResult = await generateAgreement(modelManager, clauseLibrary, whenSomeDocument, optionalPropertyValue, options);
+                        const subResult = await generateAgreement(modelManager, clauseLibrary, whenSomeParagraph, optionalPropertyValue, options);
                         result[thisPath.join('/')] = subResult.nodes ? subResult.nodes : [];
                     } else {
                         result[thisPath.join('/')] = [];
