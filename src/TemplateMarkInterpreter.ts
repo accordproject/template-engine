@@ -213,6 +213,58 @@ async function evaluateUserCode(clauseLibrary: object, templateMark: object, dat
 // the value is an array of agreementmark Item nodes for the recursive block
 type RecursiveBlockResult = Record<string, any[]>;
 
+// the key is a path[] joined with '/' from the traverse library
+// the value is an array of agreementmark nodes for the optional block
+type OptionalBlockResult = Record<string, any[]>;
+
+/**
+ * Generates agreementmark for all optional blocks with proper context switching
+ * Warning: this is async and recursive
+ * @param {ModelManager} modelManager - the template model
+ * @param {*} clauseLibrary - the clause library
+ * @param {*} templateMark - the TemplateMark JSON document
+ * @param {*} data - the template data JSON
+ * @param {[GenerationOptions]} options - the generation options
+ * @returns {*} the AgreementMark JSON for optional blocks
+ */
+async function generateOptionalBlocks(modelManager: ModelManager, clauseLibrary: object, templateMark: object, data: TemplateData, options?: GenerationOptions): Promise<OptionalBlockResult> {
+    const result: OptionalBlockResult = {};
+    const paths = traverse(templateMark).paths();
+    for (let n = 0; n < paths.length; n++) {
+        const thisPath = paths[n];
+        const context = traverse(templateMark).get(thisPath);
+        if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
+            const nodeClass = context.$class as string;
+
+            // evaluate optional blocks, processing the whenSome content with the optional property value as context
+            if (OPTIONAL_DEFINITION_RE.test(nodeClass)) {
+                const path = getJsonPath(templateMark, context, thisPath);
+                const variableValues = jp.query(data, path, 1);
+
+                if (variableValues.length > 0) {
+                    // Optional property exists, process whenSome with the property value as context
+                    const optionalPropertyValue = variableValues[0];
+                    if (context.whenSome && context.whenSome.length > 0) {
+                        // Create a paragraph wrapper for the whenSome content
+                        const whenSomeParagraph = {
+                            $class: 'org.accordproject.commonmark@0.5.0.Paragraph',
+                            nodes: context.whenSome
+                        };
+                        // Process with the optional property value as the new data context
+                        const subResult = await generateAgreement(modelManager, clauseLibrary, whenSomeParagraph, optionalPropertyValue, options);
+                        result[thisPath.join('/')] = subResult.nodes ? subResult.nodes : [];
+                    } else {
+                        result[thisPath.join('/')] = [];
+                    }
+                }
+                // If optional property doesn't exist, we don't add anything to results
+                // and the normal processing will handle whenNone
+            }
+        }
+    }
+    return result;
+}
+
 /**
  * Generates agreementmark for all recursive blocks (list, foreach)
  * Warning: this is async and recursive
@@ -283,6 +335,8 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
     // evaluate all recursive blocks (async)
     const listBlockResults = await generateRecursiveBlocks(modelManager, clauseLibrary, templateMark, data, LISTBLOCK_DEFINITION_RE, `${CommonMarkModel.NAMESPACE}.Item`, options);
     const foreachBlockResults = await generateRecursiveBlocks(modelManager, clauseLibrary, templateMark, data, FOREACH_DEFINITION_RE, `${CommonMarkModel.NAMESPACE}.Paragraph`, options);
+    // evaluate all optional blocks (async)
+    const optionalBlockResults = await generateOptionalBlocks(modelManager, clauseLibrary, templateMark, data, options);
     // traverse the templatemark, creating an output agreementmark tree
     return traverse(templateMark).map(function (context: any) {
         let stopHere = false;
@@ -461,6 +515,15 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                     if (variableValues.length === 1) {
                         context.hasSome = true;
                         context.whenNone = [];
+                        // Check if we have processed optional blocks for this path
+                        if (optionalBlockResults[this.path.join('/')]) {
+                            context.nodes = optionalBlockResults[this.path.join('/')];
+                            // Set whenSome to empty since we've processed it, but keep the field for validation
+                            context.whenSome = [];
+                            stopHere = true; // do not process child nodes, we've already done it above...
+                        } else {
+                            context.nodes = context.whenSome;
+                        }
                     }
                     else {
                         throw new Error(`Multiple values found for path '${path}' in data ${data}.`);
@@ -469,8 +532,8 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                 else {
                     context.hasSome = false;
                     context.whenSome = [];
+                    context.nodes = context.whenNone;
                 }
-                context.nodes = context.hasSome ? context.whenSome : context.whenNone;
             }
         }
         this.update(context, stopHere);

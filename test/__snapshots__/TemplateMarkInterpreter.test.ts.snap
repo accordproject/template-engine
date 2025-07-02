@@ -2831,6 +2831,303 @@ exports[`templatemark interpreter should generate optional 1`] = `
 }
 `;
 
+exports[`templatemark interpreter should generate optional_comprehensive 1`] = `
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": [
+    {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Comprehensive Optional Blocks Test",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "3",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Scalar Optional Cases",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "delimiter": "period",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Integer: ",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+                      "elementType": "Integer",
+                      "hasSome": true,
+                      "name": "age",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "Age is ",
+                        },
+                        {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "Integer",
+                          "name": "this",
+                          "value": "30",
+                        },
+                      ],
+                      "whenNone": [],
+                      "whenSome": [],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "String: ",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+                      "elementType": "String",
+                      "hasSome": false,
+                      "name": "middleName",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "No middle name",
+                        },
+                      ],
+                      "whenNone": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "No middle name",
+                        },
+                      ],
+                      "whenSome": [],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Boolean: ",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+                      "elementType": "Boolean",
+                      "hasSome": true,
+                      "name": "active",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "Status: ",
+                        },
+                        {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "Boolean",
+                          "name": "this",
+                          "value": "true",
+                        },
+                      ],
+                      "whenNone": [],
+                      "whenSome": [],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "start": "1",
+          "tight": "true",
+          "type": "ordered",
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "3",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Object Optional Cases",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+              "elementType": "test@1.0.0.Address",
+              "hasSome": true,
+              "name": "address",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Address: ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "String",
+                  "name": "street",
+                  "value": "123 Main St",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": ", ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "String",
+                  "name": "city",
+                  "value": "Boston",
+                },
+              ],
+              "whenNone": [],
+              "whenSome": [],
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "3",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Nested Optional Within Optional",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+              "elementType": "test@1.0.0.Person",
+              "hasSome": true,
+              "name": "person",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Person: ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "String",
+                  "name": "name",
+                  "value": "Alice",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": " ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+                  "elementType": "Integer",
+                  "hasSome": true,
+                  "name": "age",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "(",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Integer",
+                      "name": "this",
+                      "value": "25",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " years old)",
+                    },
+                  ],
+                  "whenNone": [],
+                  "whenSome": [],
+                },
+              ],
+              "whenNone": [],
+              "whenSome": [],
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "3",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Formatted Optional",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+              "elementType": "DateTime",
+              "hasSome": true,
+              "name": "lastVisit",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Last visit: ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                  "elementType": "DateTime",
+                  "format": "MMMM DD, YYYY",
+                  "name": "this",
+                  "value": "December 01, 2023",
+                },
+              ],
+              "whenNone": [],
+              "whenSome": [],
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Complete.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
 exports[`templatemark interpreter should generate paragraph 1`] = `
 {
   "$class": "org.accordproject.commonmark@0.5.0.Document",
