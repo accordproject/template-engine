@@ -83,3 +83,17 @@ transaction LateDeliveryAndPenaltyResponse extends Response {
    */
   o Boolean buyerMayTerminate
 }
+
+/**
+ * Define an event that is emitted by the template
+ */
+event LateDeliveryAndPenaltyEvent {
+  o Boolean penaltyCalculated
+}
+
+/**
+ * Defines the state of the template
+ */
+concept LateDeliveryAndPenaltyState identified {
+  o Integer count
+}

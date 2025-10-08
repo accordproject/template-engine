@@ -28,6 +28,7 @@ export type EvalRequest = {
     verbose?: boolean, // if true the code is verbose and will be logged to the console
     templateLogic?: boolean, // if true the code template logic (a module)
     code: string, // JS code to eval
+    functionName?: string, // name of the function to call on the class, in the case templateLogic is true
     argumentNames: string[] // names of function args
     arguments: any[] // function arg values, these have to be serializable to JSON!
 }
@@ -126,7 +127,10 @@ export class JavaScriptEvaluator {
                       dynamicImport<TemplateLogicClassConstructor>(dataUri)
                         .then(templateLogicConstructor => {
                             const instance = new templateLogicConstructor();
-                            result = instance.trigger(...request.arguments);
+                            if(!request.functionName) {
+                                throw new Error('No function name specified for template logic');
+                            }
+                            result = instance[request.functionName](...request.arguments);
                             const end = new Date().getTime();
                             resolve({ result, elapsed: end - start });
                         })

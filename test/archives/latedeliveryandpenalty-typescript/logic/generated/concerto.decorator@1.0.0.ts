@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
+/* eslint-disable @typescript-eslint/no-empty-object-type*/
 // Generated code for namespace: concerto.decorator@1.0.0
 
 // imports

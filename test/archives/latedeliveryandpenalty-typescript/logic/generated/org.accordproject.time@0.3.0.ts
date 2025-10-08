@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-interface */
+/* eslint-disable @typescript-eslint/no-empty-object-type*/
 // Generated code for namespace: org.accordproject.time@0.3.0
 
 // imports
@@ -55,4 +55,3 @@ export interface IPeriod extends IConcept {
    amount: number;
    unit: PeriodUnit;
 }
-

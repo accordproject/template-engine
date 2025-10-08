@@ -24,6 +24,18 @@ import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { SMART_LEGAL_CONTRACT_BASE64 } from './runtime/declarations';
 
+export type State = object;
+export type Response = object;
+export type Event = object;
+
+export type TriggerResponse = {
+    result: Response;
+}
+
+export type InitResponse = {
+    state: State;
+}
+
 /**
  * A template archive processor: can draft content using the
  * templatemark for the archive and trigger the logic of the archive
@@ -76,7 +88,7 @@ export class TemplateArchiveProcessor {
      * @param {[number]} utcOffset - the UTC offer, defaults to zero
      * @returns {Promise} the response and any events
      */
-    async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number): Promise<any> {
+    async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number): Promise<TriggerResponse> {
         const logicManager = this.template.getLogicManager();
         if(logicManager.getLanguage() === 'typescript') {
             const compiledCode:Record<string, TwoSlashReturn> = {};
@@ -102,14 +114,69 @@ export class TemplateArchiveProcessor {
             const evalResponse = await evaluator.evalDangerously( {
                 templateLogic: true,
                 verbose: false,
+                functionName: 'trigger',
                 code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
                 argumentNames: ['data', 'request', 'state'],
                 arguments: [data, request, state, currentTime, utcOffset]
             });
-            return evalResponse.result;
+            if(evalResponse.result) {
+                return evalResponse.result;
+            }
+            else {
+                throw new Error('Trigger failed with message: ' + evalResponse.message);
+            }
         }
         else {
-            return -1;
+            throw new Error('Only TypeScript is supported at this time');
+        }
+    }
+
+    /**
+     * Init the logic of a template
+     * @param {[string]} currentTime - the current time, defaults to now
+     * @param {[number]} utcOffset - the UTC offer, defaults to zero
+     * @returns {Promise} the response and any events
+     */
+    async init(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
+        const logicManager = this.template.getLogicManager();
+        if(logicManager.getLanguage() === 'typescript') {
+            const compiledCode:Record<string, TwoSlashReturn> = {};
+            const tsFiles:Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
+            for(let n=0; n < tsFiles.length; n++) {
+                const tsFile = tsFiles[n];
+                // console.log(`Compiling ${tsFile.getIdentifier()}`);
+
+                const compiler = new TypeScriptToJavaScriptCompiler(this.template.getModelManager(),
+                    this.template.getTemplateModel().getFullyQualifiedName());
+
+                await compiler.initialize();
+
+                // add the runtime type definitions to all ts files??
+                const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
+                ${tsFile.getContents()}`
+
+                const result = compiler.compile(code);
+                compiledCode[tsFile.getIdentifier()] = result;
+            }
+            // console.log(compiledCode['logic/logic.ts'].code);
+            const evaluator = new JavaScriptEvaluator();
+            const evalResponse = await evaluator.evalDangerously( {
+                templateLogic: true,
+                verbose: false,
+                functionName: 'init',
+                code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
+                argumentNames: ['data'],
+                arguments: [data, currentTime, utcOffset]
+            });
+            if(evalResponse.result) {
+                return evalResponse.result;
+            }
+            else {
+                throw new Error('Init failed with message: ' + evalResponse.message);
+            }
+        }
+        else {
+            throw new Error('Only TypeScript is supported at this time');
         }
     }
 }

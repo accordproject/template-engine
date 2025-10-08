@@ -1,10 +1,12 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars*/
 // Generated code for namespace: concerto@1.0.0
 
 // imports
 
 // Warning: Beware of circular dependencies when modifying these imports
+import type {
+	ILateDeliveryAndPenaltyState
+} from './io.clause.latedeliveryandpenalty@0.1.0';
 import type {
 	Month,
 	Day,
@@ -16,12 +18,12 @@ import type {
 
 // Warning: Beware of circular dependencies when modifying these imports
 import type {
-	IState
-} from './org.accordproject.runtime@0.2.0';
-import type {
 	IContract,
 	IClause
 } from './org.accordproject.contract@0.2.0';
+import type {
+	IState
+} from './org.accordproject.runtime@0.2.0';
 
 // Warning: Beware of circular dependencies when modifying these imports
 import type {
@@ -31,6 +33,9 @@ import type {
 
 // Warning: Beware of circular dependencies when modifying these imports
 import type {
+	ILateDeliveryAndPenaltyEvent
+} from './io.clause.latedeliveryandpenalty@0.1.0';
+import type {
 	IObligation
 } from './org.accordproject.runtime@0.2.0';
 
@@ -39,16 +44,17 @@ export interface IConcept {
    $class: string;
 }
 
-export type ConceptUnion = IDuration |
+export type ConceptUnion = ILateDeliveryAndPenaltyState |
+IDuration |
 IPeriod;
 
 export interface IAsset extends IConcept {
    $identifier: string;
 }
 
-export type AssetUnion = IState |
-IContract |
-IClause;
+export type AssetUnion = IContract |
+IClause |
+IState;
 
 export interface IParticipant extends IConcept {
    $identifier: string;
@@ -65,4 +71,5 @@ export interface IEvent extends IConcept {
    $timestamp: Date;
 }
 
-export type EventUnion = IObligation;
+export type EventUnion = ILateDeliveryAndPenaltyEvent |
+IObligation;

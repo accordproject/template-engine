@@ -54,7 +54,7 @@ interface IClause extends IAsset {
    clauseId: string;
 }
 
-interface TriggerResponse<S extends IState> extends EngineResponse<S> {
+interface TriggerResponse<S extends IState = IState> extends EngineResponse<S> {
     result: IResponse;
 }
 

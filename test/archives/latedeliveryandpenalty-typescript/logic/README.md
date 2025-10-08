@@ -14,7 +14,7 @@ The template model may optionally also define a state type for the template logi
 # Template Logic
 
 To write your template logic you should first generate the TypeScript source code for the template
-using the `concerto compile --model model.cto --target typescript --output generated` CLI command.
+using the `concerto compile --model ./model/model.cto --target typescript --output logic/generated` CLI command.
 
 You can then define and export the template logic class, which should implement the `TemplateLogic` interface,
 implementing the trigger method and optionally the init method.

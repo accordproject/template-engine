@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-interface */
+/* eslint-disable @typescript-eslint/no-empty-object-type*/
 // Generated code for namespace: org.accordproject.contract@0.2.0
 
 // imports
@@ -19,4 +19,3 @@ export interface IClause extends IAsset {
 }
 
 export type ClauseUnion = ITemplateModel;
-
