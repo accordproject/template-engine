@@ -1,144 +1,144 @@
 {
-    "name": "@accordproject/template-engine",
-    "version": "2.6.7",
-    "description": "Generation of AgreementMark from TemplateMark + JSON Data",
-    "homepage": "https://github.com/accordproject",
-    "engines": {
-        "node": ">=20",
-        "npm": ">=6"
-    },
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "files": [
-        "dist"
+  "name": "@accordproject/template-engine",
+  "version": "2.6.7",
+  "description": "Generation of AgreementMark from TemplateMark + JSON Data",
+  "homepage": "https://github.com/accordproject",
+  "engines": {
+    "node": ">=20",
+    "npm": ">=6"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "rimraf dist",
+    "prebuild": "npm-run-all clean && npm run updateRuntimeDependencies",
+    "build": "rollup -c",
+    "tsc-template": "tsc --strict --target ESNext --moduleResolution node --esModuleInterop ./output/full/usercode.ts",
+    "minify": "terser ./output/full/usercode.js --compress ecma=2020 --output ./output/full/usercode-min.js",
+    "pretest": "npm-run-all licchk lint build",
+    "lint": "eslint .",
+    "licchk": "license-check-and-add",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
+    "test:watch": "jest --watchAll",
+    "updateRuntimeDependencies": "node ./scripts/updateRuntimeDependencies"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/accordproject/template-engine.git"
+  },
+  "keywords": [
+    "concerto",
+    "template",
+    "engine",
+    "templatemark"
+  ],
+  "author": "accordproject.org",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@accordproject/cicero-core": "0.25.1-20250328175253",
+    "@accordproject/concerto-codegen": "3.30.6-20250327205534",
+    "@accordproject/concerto-core": "^3.20.4",
+    "@accordproject/concerto-util": "^3.20.4",
+    "@accordproject/markdown-common": "0.16.25",
+    "@accordproject/markdown-template": "0.16.25",
+    "@typescript/twoslash": "^3.2.9",
+    "browser-or-node": "^3.0.0",
+    "dayjs": "1.11.13",
+    "jsonpath": "^1.1.1",
+    "tar": "^7.4.3",
+    "to-words": "^4.4.0",
+    "traverse": "^0.6.11",
+    "typescript": "^5.8.2"
+  },
+  "devDependencies": {
+    "@accordproject/markdown-html": "0.16.25",
+    "@eslint/eslintrc": "^3.3.1",
+    "@eslint/js": "^9.23.0",
+    "@types/jest": "^29.5.14",
+    "@types/jsonpath": "^0.2.4",
+    "@types/semver": "7.7.0",
+    "@types/tar": "^6.1.13",
+    "@types/traverse": "^0.6.37",
+    "@typescript-eslint/eslint-plugin": "^8.28.0",
+    "@typescript-eslint/parser": "^8.28.0",
+    "esbuild": "^0.25.1",
+    "eslint": "^9.23.0",
+    "globals": "^16.0.0",
+    "jest": "^29.7.0",
+    "license-check-and-add": "2.3.6",
+    "mkdirp": "^3.0.1",
+    "node-fetch": "^3.3.2",
+    "npm-run-all": "4.1.5",
+    "rimraf": "6.0.1",
+    "rollup": "^4.37.0",
+    "rollup-plugin-dts": "^6.2.1",
+    "rollup-plugin-esbuild": "^6.2.1",
+    "terser": "^5.39.0",
+    "ts-jest": "^29.3.0",
+    "ts-node": "^10.9.2",
+    "typescript-eslint": "^8.28.0"
+  },
+  "license-check-and-add-config": {
+    "folder": "./src",
+    "license": "HEADER",
+    "exact_paths_method": "EXCLUDE",
+    "exact_paths": [
+      "coverage",
+      "index.d.ts",
+      "LICENSE",
+      "node_modules",
+      ".nyc-output",
+      "out",
+      ".tern-project",
+      "./mytemplate",
+      "./model-gen",
+      "./slc/model-gen",
+      "output"
     ],
-    "scripts": {
-        "clean": "rimraf dist",
-        "prebuild": "npm-run-all clean && npm run updateRuntimeDependencies",
-        "build": "rollup -c",
-        "tsc-template": "tsc --strict --target ESNext --moduleResolution node --esModuleInterop ./output/full/usercode.ts",
-        "minify": "terser ./output/full/usercode.js --compress ecma=2020 --output ./output/full/usercode-min.js",
-        "pretest": "npm-run-all licchk lint build",
-        "lint": "eslint .",
-        "licchk": "license-check-and-add",
-        "test": "node --experimental-vm-modules node_modules/.bin/jest",
-        "coverage": "jest --coverage",
-        "test:watch": "jest --watchAll",
-        "updateRuntimeDependencies": "node ./scripts/updateRuntimeDependencies"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/accordproject/template-engine.git"
-    },
-    "keywords": [
-        "concerto",
-        "template",
-        "engine",
-        "templatemark"
+    "file_type_method": "EXCLUDE",
+    "file_types": [
+      ".yml",
+      ".yaml",
+      ".zip",
+      ".tgz"
     ],
-    "author": "accordproject.org",
-    "license": "Apache-2.0",
-    "dependencies": {
-        "@accordproject/cicero-core": "0.25.1-20250328175253",
-        "@accordproject/concerto-codegen": "3.30.6-20250327205534",
-        "@accordproject/concerto-core": "^3.20.4",
-        "@accordproject/concerto-util": "^3.20.4",
-        "@accordproject/markdown-common": "0.16.25",
-        "@accordproject/markdown-template": "0.16.25",
-        "@typescript/twoslash": "^3.2.9",
-        "browser-or-node": "^3.0.0",
-        "dayjs": "1.11.13",
-        "jsonpath": "^1.1.1",
-        "tar": "^7.4.3",
-        "to-words": "^4.4.0",
-        "traverse": "^0.6.11",
-        "typescript": "^5.8.2"
-    },
-    "devDependencies": {
-        "@accordproject/markdown-html": "0.16.25",
-        "@eslint/eslintrc": "^3.3.1",
-        "@eslint/js": "^9.23.0",
-        "@types/jest": "^29.5.14",
-        "@types/jsonpath": "^0.2.4",
-        "@types/semver": "7.7.0",
-        "@types/tar": "^6.1.13",
-        "@types/traverse": "^0.6.37",
-        "@typescript-eslint/eslint-plugin": "^8.28.0",
-        "@typescript-eslint/parser": "^8.28.0",
-        "esbuild": "^0.25.1",
-        "eslint": "^9.23.0",
-        "globals": "^16.0.0",
-        "jest": "^29.7.0",
-        "license-check-and-add": "2.3.6",
-        "mkdirp": "^3.0.1",
-        "node-fetch": "^3.3.2",
-        "npm-run-all": "4.1.5",
-        "rimraf": "6.0.1",
-        "rollup": "^4.37.0",
-        "rollup-plugin-dts": "^6.2.1",
-        "rollup-plugin-esbuild": "^6.2.1",
-        "terser": "^5.39.0",
-        "ts-jest": "^29.3.0",
-        "ts-node": "^10.9.2",
-        "typescript-eslint": "^8.28.0"
-    },
-    "license-check-and-add-config": {
-        "folder": "./src",
-        "license": "HEADER",
-        "exact_paths_method": "EXCLUDE",
-        "exact_paths": [
-            "coverage",
-            "index.d.ts",
-            "LICENSE",
-            "node_modules",
-            ".nyc-output",
-            "out",
-            ".tern-project",
-            "./mytemplate",
-            "./model-gen",
-            "./slc/model-gen",
-            "output"
-        ],
-        "file_type_method": "EXCLUDE",
-        "file_types": [
-            ".yml",
-            ".yaml",
-            ".zip",
-            ".tgz"
-        ],
-        "insert_license": false,
-        "license_formats": {
-            "js|ts|njk|pegjs|cto|acl|qry": {
-                "prepend": "/*",
-                "append": " */",
-                "eachLine": {
-                    "prepend": " * "
-                }
-            },
-            "npmrc|editorconfig|txt": {
-                "eachLine": {
-                    "prepend": "# "
-                }
-            },
-            "md": {
-                "file": "./HEADER.md"
-            }
+    "insert_license": false,
+    "license_formats": {
+      "js|ts|njk|pegjs|cto|acl|qry": {
+        "prepend": "/*",
+        "append": " */",
+        "eachLine": {
+          "prepend": " * "
         }
-    },
-    "jest": {
-        "preset": "ts-jest",
-        "testEnvironment": "node",
-        "testPathIgnorePatterns": [
-            "<rootDir>/dist/",
-            "/node_modules/",
-            "/scripts"
-        ],
-        "collectCoverage": false,
-        "collectCoverageFrom": [
-            "src/**/*.ts"
-        ]
-    },
-    "optionalDependencies": {
-        "@rollup/rollup-linux-x64-gnu": "^4.38.0"
+      },
+      "npmrc|editorconfig|txt": {
+        "eachLine": {
+          "prepend": "# "
+        }
+      },
+      "md": {
+        "file": "./HEADER.md"
+      }
     }
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testPathIgnorePatterns": [
+      "<rootDir>/dist/",
+      "/node_modules/",
+      "/scripts"
+    ],
+    "collectCoverage": false,
+    "collectCoverageFrom": [
+      "src/**/*.ts"
+    ]
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "^4.38.0"
+  }
 }

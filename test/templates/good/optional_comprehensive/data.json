@@ -1,0 +1,16 @@
+{
+  "$class": "test@1.0.0.TemplateData",
+  "age": 30,
+  "active": true,
+  "address": {
+    "$class": "test@1.0.0.Address",
+    "street": "123 Main St",
+    "city": "Boston"
+  },
+  "person": {
+    "$class": "test@1.0.0.Person",
+    "name": "Alice",
+    "age": 25
+  },
+  "lastVisit": "2023-12-01T10:30:00.000Z"
+}
