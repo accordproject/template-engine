@@ -30,6 +30,8 @@ export type Event = object;
 
 export type TriggerResponse = {
     result: Response;
+    state: State;
+    events: Event[];
 }
 
 export type InitResponse = {
