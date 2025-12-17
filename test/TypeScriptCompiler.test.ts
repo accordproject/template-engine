@@ -22,7 +22,7 @@ export function condition_nodes_0_nodes_13_nodes_4_nodes_0(data:TemplateModel.IT
         modelManager.addCTOModel( readFileSync('./test/templates/good/full/model.cto', 'utf-8'), 'model.cto');
         const compiler = new TypeScriptToJavaScriptCompiler(modelManager);
         await compiler.initialize();
-        const results = compiler.compile(code);
+        const results = await compiler.compile(code);
         expect(results).toMatchSnapshot();
     });
 });

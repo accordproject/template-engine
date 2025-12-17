@@ -1,5 +1,8 @@
 import {Template} from '@accordproject/cicero-core';
 import { TemplateArchiveProcessor } from '../src/TemplateArchiveProcessor';
+import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
+dayjs.extend(duration);
 
 describe('template archive processor', () => {
     test('should draft a template', async () => {
@@ -62,14 +65,14 @@ describe('template archive processor', () => {
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
         const data = {
             "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
-            "forceMajeure": true,
+            "forceMajeure": false,
             "penaltyDuration": {
                 "$class": "org.accordproject.time@0.3.0.Duration",
-                "amount": 2,
+                "amount": 1,
                 "unit": "days"
             },
-            "penaltyPercentage": 10.5,
-            "capPercentage": 55,
+            "penaltyPercentage": 10,
+            "capPercentage": 25,
             "termination": {
                 "$class": "org.accordproject.time@0.3.0.Duration",
                 "amount": 15,
@@ -79,8 +82,12 @@ describe('template archive processor', () => {
             "clauseId": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8",
             "$identifier": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8"
         };
+        const threeDays = dayjs.duration(3, "days");
+        const agreed = dayjs().subtract(threeDays);
         const request = {
-            goodsValue: 100
+            $timestamp: dayjs().toISOString(),
+            goodsValue: 100,
+            agreedDelivery: agreed.toISOString()
         };
 
         // first we init the template
@@ -92,7 +99,8 @@ describe('template archive processor', () => {
         const payload:any = response;
 
         // we should have a result
-        expect(payload.result.penalty).toBe(2625);
+        // three days late, 10% per day, but it is capped at 25% of goods value
+        expect(payload.result.penalty).toBe(25);
 
         // the state should have been updated
         expect(payload.state.count).toBe(1);

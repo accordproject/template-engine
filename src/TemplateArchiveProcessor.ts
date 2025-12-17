@@ -18,11 +18,8 @@ import { Template } from '@accordproject/cicero-core';
 import { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { transform } from '@accordproject/markdown-transform';
-import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler';
 import Script from '@accordproject/cicero-core/types/src/script';
-import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
-import { SMART_LEGAL_CONTRACT_BASE64 } from './runtime/declarations';
 
 export type State = object;
 export type Response = object;
@@ -92,32 +89,19 @@ export class TemplateArchiveProcessor {
      */
     async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number): Promise<TriggerResponse> {
         const logicManager = this.template.getLogicManager();
-        if(logicManager.getLanguage() === 'typescript') {
-            const compiledCode:Record<string, TwoSlashReturn> = {};
-            const tsFiles:Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
-            for(let n=0; n < tsFiles.length; n++) {
-                const tsFile = tsFiles[n];
-                // console.log(`Compiling ${tsFile.getIdentifier()}`);
-
-                const compiler = new TypeScriptToJavaScriptCompiler(this.template.getModelManager(),
-                    this.template.getTemplateModel().getFullyQualifiedName());
-
-                await compiler.initialize();
-
-                // add the runtime type definitions to all ts files??
-                const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
-                ${tsFile.getContents()}`
-
-                const result = compiler.compile(code);
-                compiledCode[tsFile.getIdentifier()] = result;
+        if(logicManager.getLanguage() === 'es6') {
+            const jsFiles:Array<Script> = logicManager.getScriptManager().getScriptsForTarget('es6');
+            const main = jsFiles.find((script) => script.getIdentifier() === 'logic/logic.js');
+            if(!main) {
+                throw new Error('Failed to find logic.js');
             }
-            // console.log(compiledCode['logic/logic.ts'].code);
+            
             const evaluator = new JavaScriptEvaluator();
             const evalResponse = await evaluator.evalDangerously( {
                 templateLogic: true,
                 verbose: false,
                 functionName: 'trigger',
-                code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
+                code: main.contents,
                 argumentNames: ['data', 'request', 'state'],
                 arguments: [data, request, state, currentTime, utcOffset]
             });
@@ -129,7 +113,7 @@ export class TemplateArchiveProcessor {
             }
         }
         else {
-            throw new Error('Only TypeScript is supported at this time');
+            throw new Error('Only JavaScript is supported at this time');
         }
     }
 
@@ -141,32 +125,18 @@ export class TemplateArchiveProcessor {
      */
     async init(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
         const logicManager = this.template.getLogicManager();
-        if(logicManager.getLanguage() === 'typescript') {
-            const compiledCode:Record<string, TwoSlashReturn> = {};
-            const tsFiles:Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
-            for(let n=0; n < tsFiles.length; n++) {
-                const tsFile = tsFiles[n];
-                // console.log(`Compiling ${tsFile.getIdentifier()}`);
-
-                const compiler = new TypeScriptToJavaScriptCompiler(this.template.getModelManager(),
-                    this.template.getTemplateModel().getFullyQualifiedName());
-
-                await compiler.initialize();
-
-                // add the runtime type definitions to all ts files??
-                const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
-                ${tsFile.getContents()}`
-
-                const result = compiler.compile(code);
-                compiledCode[tsFile.getIdentifier()] = result;
+        if(logicManager.getLanguage() === 'es6') {
+            const jsFiles:Array<Script> = logicManager.getScriptManager().getScriptsForTarget('es6');
+            const main = jsFiles.find((script) => script.getIdentifier() === 'logic/logic.js');
+            if(!main) {
+                throw new Error('Failed to find logic.js');
             }
-            // console.log(compiledCode['logic/logic.ts'].code);
             const evaluator = new JavaScriptEvaluator();
             const evalResponse = await evaluator.evalDangerously( {
                 templateLogic: true,
                 verbose: false,
                 functionName: 'init',
-                code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
+                code: main.contents,
                 argumentNames: ['data'],
                 arguments: [data, currentTime, utcOffset]
             });
@@ -178,7 +148,7 @@ export class TemplateArchiveProcessor {
             }
         }
         else {
-            throw new Error('Only TypeScript is supported at this time');
+            throw new Error('Only JavaScript is supported at this time');
         }
     }
 }

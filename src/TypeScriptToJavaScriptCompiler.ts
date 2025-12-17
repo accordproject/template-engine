@@ -18,8 +18,10 @@ import { createDefaultMapFromNodeModules, createDefaultMapFromCDN } from '@types
 import { twoslasher, TwoSlashOptions, TwoSlashReturn } from '@typescript/twoslash';
 import { ModelManager } from '@accordproject/concerto-core';
 import { TypeScriptCompilationContext } from './TypeScriptCompilationContext';
-import { DAYJS_BASE64, JSONPATH_BASE64 } from './runtime/declarations';
+import { DAYJS_BASE64, JSONPATH_BASE64, DECIMAL_JS_BASE64 } from './runtime/declarations';
 import * as lzstring from 'lz-string';
+import memfs from 'memfs';
+import webpack from 'webpack';
 
 /**
  * Compiles user Typescript code to JavaScript. This uses the '@typescript/twoslash'
@@ -38,48 +40,53 @@ import * as lzstring from 'lz-string';
 const TYPESCRIPT_URL = process.env.TYPESCRIPT_URL ? process.env.TYPESCRIPT_URL : 'https://cdn.jsdelivr.net/npm/typescript@4.9.4/+esm';
 
 // https://microsoft.github.io/monaco-editor/typedoc/enums/languages.typescript.ScriptTarget.html#ES2020
-    // enum ScriptTarget {
-    //     /** @deprecated */
-    //     ES3 = 0,
-    //     ES5 = 1,
-    //     ES2015 = 2,
-    //     ES2016 = 3,
-    //     ES2017 = 4,
-    //     ES2018 = 5,
-    //     ES2019 = 6,
-    //     ES2020 = 7,
-    //     ES2021 = 8,
-    //     ES2022 = 9,
-    //     ES2023 = 10,
-    //     ES2024 = 11,
-    //     ESNext = 99,
-    //     JSON = 100,
-    //     Latest = 99,
-    // }
+// enum ScriptTarget {
+//     /** @deprecated */
+//     ES3 = 0,
+//     ES5 = 1,
+//     ES2015 = 2,
+//     ES2016 = 3,
+//     ES2017 = 4,
+//     ES2018 = 5,
+//     ES2019 = 6,
+//     ES2020 = 7,
+//     ES2021 = 8,
+//     ES2022 = 9,
+//     ES2023 = 10,
+//     ES2024 = 11,
+//     ESNext = 99,
+//     JSON = 100,
+//     Latest = 99,
+// }
 
 const SCRIPT_TARGET = 9
 
-    // enum ModuleKind {
-    //     None = 0,
-    //     CommonJS = 1,
-    //     AMD = 2,
-    //     UMD = 3,
-    //     System = 4,
-    //     ES2015 = 5,
-    //     ES2020 = 6,
-    //     ES2022 = 7,
-    //     ESNext = 99,
-    //     Node16 = 100,
-    //     Node18 = 101,
-    //     NodeNext = 199,
-    //     Preserve = 200,
-    // }
+// enum ModuleKind {
+//     None = 0,
+//     CommonJS = 1,
+//     AMD = 2,
+//     UMD = 3,
+//     System = 4,
+//     ES2015 = 5,
+//     ES2020 = 6,
+//     ES2022 = 7,
+//     ESNext = 99,
+//     Node16 = 100,
+//     Node18 = 101,
+//     NodeNext = 199,
+//     Preserve = 200,
+// }
 
 const MODULE_KIND = 6;
 
+export type CompilerResult = {
+    code?: string;
+    errors: Array<string>;
+}
+
 export class TypeScriptToJavaScriptCompiler {
     context: string;
-    fsMap: Map<string,string>|undefined;
+    fsMap: Map<string, string> | undefined;
 
     ts: any;
     typescriptUrl: string;
@@ -90,14 +97,14 @@ export class TypeScriptToJavaScriptCompiler {
     }
 
     async initialize(typescriptUrl?: string) {
-        if(typescriptUrl) {
+        if (typescriptUrl) {
             this.typescriptUrl = typescriptUrl;
         }
-        if(typeof window === 'undefined') {
+        if (typeof window === 'undefined') {
             // node does not (yet) support http(s) imports
             // see: https://nodejs.org/api/esm.html#https-and-http-imports
-            this.ts = (await import ('typescript')).default;
-            if(!this.ts) {
+            this.ts = (await import('typescript')).default;
+            if (!this.ts) {
                 throw new Error('Failed to load typescript module');
             }
             this.fsMap = createDefaultMapFromNodeModules({
@@ -106,23 +113,24 @@ export class TypeScriptToJavaScriptCompiler {
         }
         else {
             this.ts = (await import(this.typescriptUrl)).default;
-            if(!this.ts) {
+            if (!this.ts) {
                 throw new Error('Failed to dynamically load typescript');
             }
             this.fsMap = await createDefaultMapFromCDN({ target: SCRIPT_TARGET }, this.ts.version, false, this.ts);
         }
         this.fsMap.set('/node_modules/@types/dayjs/index.d.ts', Buffer.from(DAYJS_BASE64, 'base64').toString());
         this.fsMap.set('/node_modules/@types/jsonpath/index.d.ts', Buffer.from(JSONPATH_BASE64, 'base64').toString());
+        this.fsMap.set('/node_modules/@types/decimal.js/index.d.ts', Buffer.from(DECIMAL_JS_BASE64, 'base64').toString());
     }
 
     compile(typescript: string): TwoSlashReturn {
-        if(!this.fsMap) {
+        if (!this.fsMap) {
             throw new Error('initialize must be awaited before compile is called.');
         }
-        const twoSlashCode =`
-${this.context}
-${typescript}
-`;
+        const twoSlashCode = `
+        ${this.context}
+        ${typescript}
+        `;
 
         const options: TwoSlashOptions = {
             fsMap: this.fsMap,
@@ -131,15 +139,87 @@ ${typescript}
                 target: SCRIPT_TARGET,
                 module: MODULE_KIND,
             },
-            lzstringModule:lzstring,
+            lzstringModule: lzstring,
             defaultOptions: {
                 showEmit: true,
                 noErrorValidation: true,
                 showEmittedFile: 'code.js'
             }
         };
-        // console.log(twoSlashCode);
         const result = twoslasher(twoSlashCode, 'ts', options);
+        return result;
+    }
+
+    async compileLogic(typescript: string): Promise<CompilerResult> {
+        const compiler = webpack({
+            entry: '/src/logic.ts',
+            experiments: {
+                outputModule: true
+            },
+            output: {
+                filename: 'logic.js',
+                path: '/dist',
+                library: {
+                    type: 'module',
+                },
+            },
+            module: {
+                rules: [
+                    {
+                        test: /\.ts$/,
+                        use: 'ts-loader',
+                        exclude: /node_modules/,
+                    },
+                ],
+            },
+            resolve: {
+                extensions: ['.ts', '.js'],
+            },
+        });
+
+        const vol = new memfs.Volume();
+        const myfs = memfs.createFsFromVolume(vol);
+        myfs.mkdirSync('/dist');
+        myfs.mkdirSync('/src');
+        myfs.writeFileSync('/src/logic.ts', typescript);
+        myfs.writeFileSync('/tsconfig.json', JSON.stringify({
+            "compilerOptions": {
+                "outDir": "./logic/",
+                "noImplicitAny": true,
+                "module": "es6",
+                "target": "es6",
+                "allowJs": true,
+                "moduleResolution": "node",
+                "allowSyntheticDefaultImports": true
+            }
+        }
+        ));
+
+        // @ts-expect-error types have diverged?
+        compiler.outputFileSystem = myfs;
+        // @ts-expect-error types have diverged?
+        compiler.inputFileSystem = myfs;
+
+        const runPromise = new Promise<CompilerResult>((resolve, reject) => {
+            compiler.run((err, stats) => {
+                if (err) {
+                    console.log(err);
+                    reject({ error: err });
+                }
+                else {
+                    console.log(stats);
+                    const content = myfs.readFileSync('/dist/logic.js');
+                    resolve({ code: content.toString(), errors: [] });
+                }
+                compiler.close((closeErr) => {
+                    console.log(closeErr?.message);
+                    reject({ error: closeErr });
+                });
+            });
+        });
+
+        const result = await runPromise;
+        console.log('done!')
         return result;
     }
 }

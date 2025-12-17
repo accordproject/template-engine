@@ -67,6 +67,7 @@ ${content}
 import * as TemplateModel from './${this.templateClass.getNamespace()}';
 import dayjs from 'dayjs';
 import jp from 'jsonpath';
+import {Decimal} from 'decimal.js';
 
 type GenerationOptions = {
     now?:string,

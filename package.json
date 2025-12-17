@@ -4,7 +4,7 @@
   "description": "Generation of AgreementMark from TemplateMark + JSON Data",
   "homepage": "https://github.com/accordproject",
   "engines": {
-    "node": ">=20",
+    "node": ">=22",
     "npm": ">=6"
   },
   "main": "dist/index.js",
@@ -48,11 +48,15 @@
     "@typescript/twoslash": "^3.2.9",
     "browser-or-node": "^3.0.0",
     "dayjs": "1.11.13",
+    "decimal.js": "^10.6.0",
     "jsonpath": "^1.1.1",
+    "memfs": "^4.51.1",
     "tar": "^7.4.3",
     "to-words": "^4.4.0",
     "traverse": "^0.6.11",
-    "typescript": "^5.8.2"
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.8.2",
+    "webpack": "^5.104.0"
   },
   "devDependencies": {
     "@accordproject/markdown-html": "0.16.25",

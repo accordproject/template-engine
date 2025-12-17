@@ -29,7 +29,10 @@
     // "moduleResolution": "NodeNext",                       /* Specify how TypeScript looks up a file from a given module specifier. */
     // "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
     "paths": {
-      "https://cdn.jsdelivr.net/npm/typescript@4.9.4/+esm": ["./node_modules/typescript"]
+      "https://cdn.jsdelivr.net/npm/typescript@4.9.4/+esm": ["./node_modules/typescript"],
+      "@accordproject/markdown-transform": ["./src/markdown-transform.d.ts"],
+      "@accordproject/markdown-template": ["./src/markdown-template.d.ts"],
+      "@accordproject/markdown-common": ["./src/markdown-common.d.ts"]
     },    
     // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
     // "typeRoots": [],                                  /* Specify multiple folders that act like `./node_modules/@types`. */

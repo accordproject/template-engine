@@ -17,8 +17,12 @@
 import child_process from 'child_process';
 import jp from 'jsonpath';
 import dayjs from 'dayjs';
+import duration from 'dayjs/plugin/duration';
 import { EventEmitter } from 'node:events';
 import path from 'path';
+import { Decimal } from 'decimal.js';
+
+dayjs.extend(duration);
 
 export type EvalOptions = {
     timeout: number // timeout in milliseconds for this eval request
@@ -93,7 +97,7 @@ export class JavaScriptEvaluator {
     workers: Array<ChildProcess>; // child processes
     queue: Array<WorkItem>; // queue of work to do
 
-    constructor(options: JavaScriptEvaluatorOptions = {waitInterval: 50, maxWorkers: 8, maxQueueDepth: 1000}) {
+    constructor(options: JavaScriptEvaluatorOptions = { waitInterval: 50, maxWorkers: 8, maxQueueDepth: 1000 }) {
         this.options = options;
         this.workers = [];
         this.queue = [];
@@ -107,15 +111,15 @@ export class JavaScriptEvaluator {
     async evalDangerously(request: EvalRequest): Promise<EvalResponse> {
         return new Promise((resolve, reject) => {
             try {
-                if(request.verbose) {
+                if (request.verbose) {
                     console.log(request.code);
                 }
                 const start = new Date().getTime();
                 let result = null;
                 // is this a simple JS function?
-                if(!request.templateLogic) {
-                    const fun = new Function(...['dayjs', 'jp', ...request.argumentNames], request.code);
-                    result = fun(...[dayjs, jp, ...request.arguments]);
+                if (!request.templateLogic) {
+                    const fun = new Function(...['dayjs', 'jp', 'Decimal', ...request.argumentNames], request.code);
+                    result = fun(...[dayjs, jp, Decimal, ...request.arguments]);
                     const end = new Date().getTime();
                     resolve({ result, elapsed: end - start });
                 }
@@ -167,7 +171,7 @@ export class JavaScriptEvaluator {
                 resolve,
                 reject
             };
-            if(this.queue.length >= this.options.maxQueueDepth) {
+            if (this.queue.length >= this.options.maxQueueDepth) {
                 reject({ maxQueueDepthExceeded: true, elapsed: 0 });
             }
             this.queue.push(workItem);
@@ -199,11 +203,11 @@ export class JavaScriptEvaluator {
                 });
         }
     }
-    private getWorkerPath() : string {
+    private getWorkerPath(): string {
         try {
             const thisPath = require.resolve('@accordproject/template-engine');
-            return path.join(thisPath,'..','worker.js');
-        } catch(err) { // eslint-disable-line @typescript-eslint/no-unused-vars
+            return path.join(thisPath, '..', 'worker.js');
+        } catch (err) { // eslint-disable-line @typescript-eslint/no-unused-vars
             // if we cannot load the module it likely means we are running
             // a unit test inside the module...
             return path.join(__dirname, '..', 'dist', 'worker.js');
