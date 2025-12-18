@@ -22,6 +22,11 @@ import { DAYJS_BASE64, JSONPATH_BASE64, DECIMAL_JS_BASE64 } from './runtime/decl
 import * as lzstring from 'lz-string';
 import memfs from 'memfs';
 import webpack from 'webpack';
+import * as fs from 'fs';
+import { ufs } from 'unionfs';
+import * as ts from "typescript";
+import { link } from 'linkfs';
+import path from 'path';
 
 /**
  * Compiles user Typescript code to JavaScript. This uses the '@typescript/twoslash'
@@ -84,15 +89,24 @@ export type CompilerResult = {
     errors: Array<string>;
 }
 
+export type TranspileOptions = {
+    verbose?: boolean;
+}
+
+function changeExtension(file: string, extension: string): string {
+    const basename = path.basename(file, path.extname(file))
+    return path.join(path.dirname(file), basename + extension)
+}
+
 export class TypeScriptToJavaScriptCompiler {
-    context: string;
+    context: TypeScriptCompilationContext;
     fsMap: Map<string, string> | undefined;
 
     ts: any;
     typescriptUrl: string;
 
     constructor(modelManager: ModelManager, templateConceptFqn?: string) {
-        this.context = new TypeScriptCompilationContext(modelManager, templateConceptFqn).getCompilationContext();
+        this.context = new TypeScriptCompilationContext(modelManager, templateConceptFqn);
         this.typescriptUrl = TYPESCRIPT_URL;
     }
 
@@ -123,12 +137,18 @@ export class TypeScriptToJavaScriptCompiler {
         this.fsMap.set('/node_modules/@types/decimal.js/index.d.ts', Buffer.from(DECIMAL_JS_BASE64, 'base64').toString());
     }
 
+    /**
+     * This performs JIT compilation of simple TS expressions to JS. It is used for the code
+     * blocks and condition nodes in TemplateMark
+     * @param typescript the TS expression to compile
+     * @returns compilation result
+     */
     compile(typescript: string): TwoSlashReturn {
         if (!this.fsMap) {
             throw new Error('initialize must be awaited before compile is called.');
         }
         const twoSlashCode = `
-        ${this.context}
+        ${this.context.getCompilationContext()}
         ${typescript}
         `;
 
@@ -150,55 +170,78 @@ export class TypeScriptToJavaScriptCompiler {
         return result;
     }
 
-    async compileLogic(typescript: string): Promise<CompilerResult> {
+    /**
+     * Transpiles the TS logic for a template to JS, along with
+     * its dependencies and webpacks into an ESM module. Note that
+     * transpilation will NOT catch type checking errors!
+     * WARNING: this method currently requires file system access
+     * and will fail in the browser.
+     * @param typescript the typescript logic to transpile to JS
+     * @returns a compiler result
+     */
+    async transpileLogic(typescript: string, options?: TranspileOptions): Promise<CompilerResult> {
         const compiler = webpack({
-            entry: '/src/logic.ts',
+            entry: '/logic/logic.js',
+            mode: 'production',
             experiments: {
                 outputModule: true
             },
             output: {
                 filename: 'logic.js',
-                path: '/dist',
+                path: '/logic',
                 library: {
                     type: 'module',
                 },
-            },
-            module: {
-                rules: [
-                    {
-                        test: /\.ts$/,
-                        use: 'ts-loader',
-                        exclude: /node_modules/,
-                    },
-                ],
-            },
-            resolve: {
-                extensions: ['.ts', '.js'],
             },
         });
 
         const vol = new memfs.Volume();
         const myfs = memfs.createFsFromVolume(vol);
-        myfs.mkdirSync('/dist');
+
+        myfs.mkdirSync('/logic');
+        myfs.mkdirSync('/logic/generated');
         myfs.mkdirSync('/src');
-        myfs.writeFileSync('/src/logic.ts', typescript);
-        myfs.writeFileSync('/tsconfig.json', JSON.stringify({
-            "compilerOptions": {
-                "outDir": "./logic/",
-                "noImplicitAny": true,
-                "module": "es6",
-                "target": "es6",
-                "allowJs": true,
-                "moduleResolution": "node",
-                "allowSyntheticDefaultImports": true
+        myfs.mkdirSync('/src/slc');
+
+        // WARNING - this will fail in the browser!
+        const slcTs = fs.readFileSync(path.resolve('./src/slc/SmartLegalContract.ts'), 'utf-8');
+        const slcJs = ts.transpileModule(slcTs, { compilerOptions: { module: ts.ModuleKind.ES2022 } });
+        myfs.writeFileSync(`/src/slc/SmartLegalContract.js`, slcJs.outputText);
+
+        const records = this.context.getTypeScriptFiles();
+        const fileNames = Object.keys(records);
+
+        fileNames.forEach((fileName) => {
+            const tsCode = records[fileName];
+            const jsCode = ts.transpileModule(tsCode, { compilerOptions: { module: ts.ModuleKind.ES2022 } });
+            if (jsCode.diagnostics && options?.verbose) {
+                console.log(jsCode.diagnostics.join());
             }
+            const newfile = changeExtension(fileName, '.js');
+            myfs.writeFileSync(`/logic/generated/${newfile}`, jsCode.outputText);
+        });
+
+        const jsCode = ts.transpileModule(typescript, { compilerOptions: { module: ts.ModuleKind.ES2022 } });
+        if (jsCode.diagnostics && options?.verbose) {
+            console.log(jsCode.diagnostics.join());
         }
-        ));
+        myfs.writeFileSync('/logic/logic.js', jsCode.outputText);
+        myfs.writeFileSync('/package.json', JSON.stringify({
+            "name": "template",
+            "version": "0.0.1"
+        }));
+
+        // /node_modules -> should be read from local fs, so we can
+        // read things like dayjs and decimal.js npm modules
+        // everything else is stored in memory
+        const lfs = link(fs, ['/node_modules', path.resolve('./node_modules')]);
+        // @ts-expect-error types have diverged?
+        const mergedFs = ufs.use(myfs).use(lfs);
 
         // @ts-expect-error types have diverged?
-        compiler.outputFileSystem = myfs;
+        compiler.outputFileSystem = mergedFs;
         // @ts-expect-error types have diverged?
-        compiler.inputFileSystem = myfs;
+        compiler.inputFileSystem = mergedFs;
 
         const runPromise = new Promise<CompilerResult>((resolve, reject) => {
             compiler.run((err, stats) => {
@@ -207,8 +250,10 @@ export class TypeScriptToJavaScriptCompiler {
                     reject({ error: err });
                 }
                 else {
-                    console.log(stats);
-                    const content = myfs.readFileSync('/dist/logic.js');
+                    if(options?.verbose) {
+                        console.log(stats?.toString());
+                    }
+                    const content = mergedFs.readFileSync('/logic/logic.js');
                     resolve({ code: content.toString(), errors: [] });
                 }
                 compiler.close((closeErr) => {
@@ -219,7 +264,6 @@ export class TypeScriptToJavaScriptCompiler {
         });
 
         const result = await runPromise;
-        console.log('done!')
         return result;
     }
 }

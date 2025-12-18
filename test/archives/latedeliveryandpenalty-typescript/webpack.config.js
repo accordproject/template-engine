@@ -2,6 +2,7 @@ const path = require('path');
 
 module.exports = {
     entry: './logic/logic.ts',
+    mode: 'production',
     experiments: {
         outputModule: true
     },
