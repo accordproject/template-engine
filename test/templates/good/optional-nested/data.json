@@ -1,0 +1,51 @@
+{
+    "$class": "org.example.ap2.mandate@1.1.1.TemplateData",
+    "name": "John Doe",
+    "address": {
+      "line1": "1 Main Street",
+      "city": "Boson",
+      "state": "MA",
+      "country": "USA"
+    },
+    "age": 42,
+    "salary": {
+      "$class": "org.accordproject.money@0.3.0.MonetaryAmount",
+      "doubleValue": 1500,
+      "currencyCode": "EUR"
+    },
+    "favoriteColors": [
+      "red",
+      "green",
+      "blue"
+    ],
+    "order": {
+      "createdAt": "2023-05-01",
+      "$class": "org.example.ap2.mandate@1.1.1.Order",
+      "orderLines": [
+        {
+          "$class": "org.example.ap2.mandate@1.1.1.OrderLine",
+          "sku": "ABC-123",
+          "quantity": 3,
+          "price": 29.99
+        },
+        {
+          "$class": "org.example.ap2.mandate@1.1.1.OrderLine",
+          "sku": "DEF-456",
+          "quantity": 5,
+          "price": 19.99
+        }
+      ]
+    },
+     "mandate": {
+      "$class": "org.example.ap2.mandate@1.1.1.AP2MandateData",
+      "mandateId": "mandate-2025-10-A2B-001",
+      "payee": {
+        "$class": "org.example.ap2.mandate@1.1.1.Merchant",
+        "idKey":"id2",
+        "pedUri":{
+          "$class":"org.example.ap2.mandate@1.1.1.PedUri", 
+          "uri":"http://someurl.com?a=1"
+        }     
+      }
+    }
+  }
