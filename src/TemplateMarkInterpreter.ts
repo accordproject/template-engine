@@ -575,12 +575,60 @@ export class TemplateMarkInterpreter {
         const serializer = new Serializer(factory, modelManager);
         try {
             serializer.fromJSON(templateMark);
-            return templateMark;
         }
         catch (err) {
             throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(templateMark, null, 2)}`);
         }
+
+        const errors: Array<{ propertyName: string, message: string }> = [];
+        const templateClass = this.templateClass;
+        const guardBlockPaths: Map<string, string> = new Map();
+
+        traverse(templateMark).forEach(function (node: any) {
+            if (!node || typeof node !== 'object' || !node.$class) return;
+
+            const currentPath = this.path.join('/');
+            if (OPTIONAL_DEFINITION_RE.test(node.$class) ||
+                CONDITIONAL_DEFINITION_RE.test(node.$class) ||
+                WITH_DEFINITION_RE.test(node.$class)) {
+                guardBlockPaths.set(node.name, currentPath);
+            }
+            if (VARIABLE_DEFINITION_RE.test(node.$class) ||
+                ENUM_VARIABLE_DEFINITION_RE.test(node.$class) ||
+                FORMATTED_VARIABLE_DEFINITION_RE.test(node.$class)) {
+                const propName = node.name;
+                if (propName && propName !== 'this') {
+                    try {
+                        const property = templateClass.getProperty(propName);
+                        if (property && property.isOptional()) {
+                            const guardPath = guardBlockPaths.get(propName);
+                            const isGuarded = guardPath !== undefined &&
+                                (currentPath === guardPath || currentPath.startsWith(guardPath + '/'));
+                            if (!isGuarded) {
+                                errors.push({
+                                    propertyName: propName,
+                                    message: `Optional property '${propName}' is used without a guard. Wrap it in {{#optional ${propName}}}...{{/optional}} or {{#if ${propName}}}...{{/if}}.`
+                                });
+                            }
+                        }
+                    } catch {
+                        // Property not found at root level, might be nested - skip
+                    }
+                }
+            }
+        });
+
+        if (errors.length > 0) {
+            const errorMessage = `Optional properties used without guards: ${errors.map(e => e.propertyName).join(', ')}`;
+            const error = new Error(errorMessage);
+            (error as any).errors = errors;
+            throw error;
+        }
+
+        return templateMark;
     }
+
+
 
     /**
      * Compiles the code nodes containing TS to code nodes containing JS.
