@@ -23,5 +23,13 @@ type Duration = {
  * @returns {string} the text (e.g., "2 days")
  */
 export default function durationDrafter(value: Duration): string {
-    return `${value.amount} ${value.unit}`;
+    // Validate input to avoid runtime errors
+    if (value == null || typeof value !== 'object') {
+        return '0 unknown';
+    }
+
+    const amount = typeof value.amount === 'number' ? value.amount : 0;
+    const unit = typeof value.unit === 'string' && value.unit ? value.unit : 'unknown';
+
+    return `${amount} ${unit}`;
 }
