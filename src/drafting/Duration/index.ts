@@ -18,18 +18,28 @@ type Duration = {
 };
 
 /**
+ * Type guard to check if a value is a valid Duration
+ */
+function isDuration(value: unknown): value is Duration {
+    return (
+        value != null &&
+        typeof value === 'object' &&
+        'amount' in value &&
+        'unit' in value &&
+        typeof (value as Duration).amount === 'number' &&
+        typeof (value as Duration).unit === 'string'
+    );
+}
+
+/**
  * Creates a drafter for Duration/Period types
- * @param {object} value the duration or period
+ * @param {unknown} value the duration or period (validated at runtime)
  * @returns {string} the text (e.g., "2 days")
  */
-export default function durationDrafter(value: Duration): string {
-    // Validate input to avoid runtime errors
-    if (value == null || typeof value !== 'object') {
+export default function durationDrafter(value: unknown): string {
+    if (!isDuration(value)) {
         return '0 unknown';
     }
 
-    const amount = typeof value.amount === 'number' ? value.amount : 0;
-    const unit = typeof value.unit === 'string' && value.unit ? value.unit : 'unknown';
-
-    return `${amount} ${unit}`;
+    return `${value.amount} ${value.unit}`;
 }
