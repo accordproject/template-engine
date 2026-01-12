@@ -7,6 +7,10 @@ on:
   release:
     types: [created]
 
+concurrency:
+  group: npm-publish-${{ github.event.release.tag_name }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
