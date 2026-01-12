@@ -2,6 +2,8 @@
 
 This is the [Accord Project](https://accordproject.org) template engine. Rich-text templates are defined in TemplateMark (either as markdown files, or JSON documents) and are then merged with JSON data to produce output documents. Templates may contain [TypeScript](https://www.typescriptlang.org) expressions.
 
+[![CNCF Sandbox Project](https://img.shields.io/badge/CNCF-Sandbox%20Project-blue?logo=linux-foundation&logoColor=white)](https://www.cncf.io/projects/accord-project/)
+
 ## Resources
 
 - [Getting Started Video](https://vimeo.com/manage/videos/845273411)
