@@ -495,7 +495,13 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
 
             // only include the children of a clause if its condition is true
             else if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
-                if (context.condition) {
+                // Implicit undefined check: skip clause block if scoped variable is undefined/null
+                const path = getJsonPath(templateMark, context, this.path);
+                const variableValues = jp.query(data, path, 1);
+                if (variableValues.length === 0 || variableValues[0] === undefined || variableValues[0] === null) {
+                    delete context.nodes;
+                    stopHere = true;
+                } else if (context.condition) {
                     checkCode(context.condition);
                     const result = !!userCodeResults[this.path.join('/')] as unknown as boolean;
                     if (!result) {
