@@ -40,7 +40,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@accordproject/cicero-core": "0.25.1-20250328175253",
-    "@accordproject/concerto-codegen": "3.30.6-20250327205534",
+    "@accordproject/concerto-codegen": "3.30.6",
     "@accordproject/concerto-core": "^3.20.4",
     "@accordproject/concerto-util": "^3.20.4",
     "@accordproject/markdown-common": "0.16.25",
@@ -49,7 +49,7 @@
     "browser-or-node": "^3.0.0",
     "dayjs": "1.11.13",
     "jsonpath": "^1.1.1",
-    "tar": "^7.4.3",
+    "tar": "^7.5.4",
     "to-words": "^4.4.0",
     "traverse": "^0.6.11",
     "typescript": "^5.8.2"
