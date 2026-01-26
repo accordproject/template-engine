@@ -51,4 +51,16 @@ describe('TemplateValidator', () => {
         const hasFormulaError = result.errors.some(e => e.type === 'invalid_formula');
         expect(hasFormulaError).toBe(true);
     });
+
+    test('works with debug mode enabled', async () => {
+        const template = 'Hello {{name}}!';
+        const data = { name: 'World', age: 30 };
+
+        const debugValidator = new TemplateValidator(modelManager, 'test@1.0.0.TemplateData', { debug: true });
+        await debugValidator.initialize();
+
+        const result = await debugValidator.validate(template, data);
+
+        expect(result.isValid).toBe(true);
+    });
 });
