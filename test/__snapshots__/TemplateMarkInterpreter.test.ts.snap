@@ -172,13 +172,31 @@ exports[`templatemark interpreter should generate clause-optional 1`] = `
           "$class": "org.accordproject.ciceromark@0.6.0.Clause",
           "elementType": "test@1.0.0.Address",
           "name": "address",
-        },
-        {
-          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
           "nodes": [
             {
-              "$class": "org.accordproject.commonmark@0.5.0.Text",
-              "text": "No more content.",
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Address: ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "String",
+                  "name": "street",
+                  "value": "null",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": ", ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "String",
+                  "name": "city",
+                  "value": "null",
+                },
+              ],
             },
           ],
         },
