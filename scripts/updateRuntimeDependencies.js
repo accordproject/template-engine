@@ -45,6 +45,7 @@ const HEADER = `/*
  * Package the TypeScript declarations for dayjs, jsonpath and SmartLegalContract
  * These are needed at runtime to compile user TypeScript code and template logic to JS
  * used for dynamic contract generation
+ * generated files are placed in src/runtime/ and imported where needed
  * used in the Smart Contract Runtime
  */
 const dayjs = readFileSync('./node_modules/dayjs/index.d.ts').toString(
