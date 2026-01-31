@@ -46,6 +46,7 @@ const HEADER = `/*
  * These are needed at runtime to compile user TypeScript code and template logic to JS
  * used for dynamic contract generation
  * used in the Smart Contract Runtime
+ * in base64 encoded format
  */
 const dayjs = readFileSync('./node_modules/dayjs/index.d.ts').toString(
   'base64'
