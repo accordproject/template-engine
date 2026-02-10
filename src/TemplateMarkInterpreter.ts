@@ -81,7 +81,7 @@ async function evaluateJavaScript(clauseLibrary: object, data: TemplateData, fn:
         throw new Error('JavaScript evaluation is disabled.');
     }
     if (!data || !fn) {
-        throw new Error(`Cannot evaluate JS ${fn} against ${data}`);
+        throw new Error(`Cannot evaluate JavaScript expression: missing template data or function source.`);
     }
     const functionArgNames = new Array<string>();
     functionArgNames.push('data');
