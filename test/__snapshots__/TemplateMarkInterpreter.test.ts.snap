@@ -3166,6 +3166,648 @@ exports[`templatemark interpreter should generate optional_comprehensive 1`] = `
 }
 `;
 
+exports[`templatemark interpreter should generate optional-nested 1`] = `
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": [
+    {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "1",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Optional Test",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.ciceromark@0.6.0.Clause",
+          "elementType": "org.example.ap2.mandate@1.1.1.AP2MandateData",
+          "name": "mandate",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.BlockQuote",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Strong",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "Mandate ID:",
+                        },
+                      ],
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " ",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "mandateId",
+                      "value": "mandate-2025-10-A2B-001",
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Heading",
+              "level": "2",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Parties",
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "idKey",
+                      "value": "id2",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+                      "elementType": "org.example.ap2.mandate@1.1.1.PedUri",
+                      "hasSome": true,
+                      "name": "pedUri",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "{{pedUri.uri}}uri",
+                        },
+                      ],
+                      "whenNone": [],
+                      "whenSome": [],
+                    },
+                  ],
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "idKey",
+                      "value": "id2",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "uri:",
+                        },
+                        {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "String",
+                          "name": "uri",
+                          "value": "http://someurl.com?a=1",
+                        },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+                      "elementType": "org.example.ap2.mandate@1.1.1.PedUri",
+                      "hasSome": true,
+                      "name": "pedUri",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "text",
+                        },
+                      ],
+                      "whenNone": [],
+                      "whenSome": [],
+                    },
+                  ],
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "idKey",
+                      "value": "id2",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+                      "elementType": "org.example.ap2.mandate@1.1.1.PedUri",
+                      "hasSome": true,
+                      "name": "pedUri",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "String",
+                          "name": "uri",
+                          "value": "http://someurl.com?a=1",
+                        },
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "uri",
+                        },
+                      ],
+                      "whenNone": [],
+                      "whenSome": [],
+                    },
+                  ],
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "idKey",
+                      "value": "id2",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+                      "elementType": "org.example.ap2.mandate@1.1.1.PedUri",
+                      "hasSome": true,
+                      "name": "pedUri",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "{{this.uri}}uri",
+                        },
+                      ],
+                      "whenNone": [],
+                      "whenSome": [],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Strong",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Payee:",
+                    },
+                  ],
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                      "dependencies": [],
+                      "name": "formula_7f77a1fc3bf46ee7bd9f1eee1c8967f3d0ccaeddc878a7673b584fdc4f00f042",
+                      "value": ""- PED: http://someurl.com?a=1"",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.BlockQuote",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "A general sample that uses a range of features",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "3",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Welcome ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "name",
+              "value": "John Doe",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "!",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Image",
+              "destination": "https://avatars.githubusercontent.com/u/29445438?s=64",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "AP Logo",
+                },
+              ],
+              "title": "",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.ciceromark@0.6.0.Clause",
+          "elementType": "org.example.ap2.mandate@1.1.1.Address",
+          "name": "address",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Heading",
+              "level": "4",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Address",
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.BlockQuote",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "line1",
+                      "value": "1 Main Street",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": ",",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Linebreak",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "city",
+                      "value": "Boson",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": ", ",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "state",
+                      "value": "MA",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": ",",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Linebreak",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "country",
+                      "value": "USA",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "You are ",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Emph",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "Integer",
+                          "name": "age",
+                          "value": "42",
+                        },
+                      ],
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " years old",
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Your monthly salary is ",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                      "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
+                      "format": "0,0.00 CCC",
+                      "name": "salary",
+                      "value": "1,500.00 EUR",
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Your favorite colours are ",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "red, green, and blue",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+        {
+          "$class": "org.accordproject.ciceromark@0.6.0.Clause",
+          "elementType": "org.example.ap2.mandate@1.1.1.Order",
+          "name": "order",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Heading",
+              "level": "2",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Orders",
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Your last order was placed ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                  "elementType": "DateTime",
+                  "format": "D MMMM YYYY",
+                  "name": "createdAt",
+                  "value": "1 May 2023",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": " (",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": [],
+                  "name": "formula_87067c9bed3b3c592c46445b8d60c223615c5dbc49d2ab1bacecb1e78350c991",
+                  "value": "-44",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": " days ago).",
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.List",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Item",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "Integer",
+                          "name": "quantity",
+                          "value": "3",
+                        },
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "x ",
+                        },
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Emph",
+                          "nodes": [
+                            {
+                              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                              "elementType": "String",
+                              "name": "sku",
+                              "value": "ABC-123",
+                            },
+                          ],
+                        },
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": " @ £",
+                        },
+                        {
+                          "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                          "elementType": "Double",
+                          "format": "0,0.00",
+                          "name": "price",
+                          "value": "29.99",
+                        },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Item",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "Integer",
+                          "name": "quantity",
+                          "value": "5",
+                        },
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "x ",
+                        },
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Emph",
+                          "nodes": [
+                            {
+                              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                              "elementType": "String",
+                              "name": "sku",
+                              "value": "DEF-456",
+                            },
+                          ],
+                        },
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": " @ £",
+                        },
+                        {
+                          "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                          "elementType": "Double",
+                          "format": "0,0.00",
+                          "name": "price",
+                          "value": "19.99",
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+              "tight": "true",
+              "type": "bullet",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Order total: ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": [],
+                  "name": "formula_a6c3eb22d929c718c1ff356e4980b97a736d405a04fbb541ba5db1728cb3a579",
+                  "value": ""£189.92"",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "3",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Verification",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Checking logic for top-level optionals:",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+              "elementType": "Integer",
+              "hasSome": true,
+              "name": "age",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Age is provided as ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "Integer",
+                  "name": "this",
+                  "value": "42",
+                },
+              ],
+              "whenNone": [],
+              "whenSome": [],
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Thank you.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
 exports[`templatemark interpreter should generate paragraph 1`] = `
 {
   "$class": "org.accordproject.commonmark@0.5.0.Document",
