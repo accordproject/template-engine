@@ -21,7 +21,7 @@
     "pretest": "npm-run-all licchk lint build",
     "lint": "eslint .",
     "licchk": "license-check-and-add",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest",
+    "test": "node --experimental-vm-modules node_modules/.bin/jest --coverage --coverageReporters=text-summary",
     "coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
     "test:watch": "jest --watchAll",
     "updateRuntimeDependencies": "node ./scripts/updateRuntimeDependencies"
@@ -136,6 +136,13 @@
     "collectCoverage": false,
     "collectCoverageFrom": [
       "src/**/*.ts"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "/dist/",
+      "/test/",
+      "/src/model-gen/",
+      "/src/slc/model-gen/"
     ]
   },
   "optionalDependencies": {
