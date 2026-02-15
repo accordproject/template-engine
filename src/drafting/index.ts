@@ -18,6 +18,7 @@ import booleanDrafter from './Boolean';
 import dateTimeDrafter from './DateTime';
 import doubleDrafter from './Double';
 import integerDrafter from './Integer';
+import durationDrafter from './Duration';
 import longDrafter from './Long';
 import monetaryAmountDrafter from './MonetaryAmount';
 import { DraftFormat } from './DraftFormat';
@@ -31,6 +32,8 @@ export function getDrafter(typeName: string) : ((value:any, format?:DraftFormat)
     case 'Integer': return integerDrafter;
     case 'Long': return longDrafter;
     case 'org.accordproject.money@0.3.0.MonetaryAmount': return monetaryAmountDrafter;
+    case 'org.accordproject.time@0.3.0.Duration': return durationDrafter;
+    case 'org.accordproject.time@0.3.0.Period': return durationDrafter;
     case 'String': return stringDrafter;
     default: return null;
     }
