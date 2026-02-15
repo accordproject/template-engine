@@ -49,7 +49,7 @@
     "browser-or-node": "^3.0.0",
     "dayjs": "1.11.13",
     "jsonpath": "^1.1.1",
-    "tar": "^7.4.3",
+    "tar": "^7.5.7",
     "to-words": "^4.4.0",
     "traverse": "^0.6.11",
     "typescript": "^5.8.2"
