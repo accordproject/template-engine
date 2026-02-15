@@ -340,6 +340,8 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
     // traverse the templatemark, creating an output agreementmark tree
     return traverse(templateMark).map(function (context: any) {
         let stopHere = false;
+        let removeNode = false;
+
         if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
             const nodeClass = context.$class as string;
 
@@ -444,7 +446,7 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                     const path = getJsonPath(templateMark, context, this.path);
                     const variableValues = jp.query(data, path, 1);
                     if (variableValues.length === 0) {
-                        throw new Error(`No values found for path '${path}' in data ${JSON.stringify(data)}.`);
+                        context.value = 'null'; // Fallback to 'null' string to prevent crash
                     }
                     else {
                         // convert the value to a string, optionally using the formatter
@@ -487,7 +489,7 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                         context.isTrue = false;
                     }
                 }
-                context.nodes = context.isTrue ? context.whenTrue : context.whenFalse;
+                context.nodes = context.isTrue ? context.whenTrue : (context.whenFalse || []);
                 delete context.condition;
                 delete context.dependencies;
                 delete context.functionName;
@@ -499,13 +501,13 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                 const path = getJsonPath(templateMark, context, this.path);
                 const variableValues = jp.query(data, path, 1);
                 if (variableValues.length === 0 || variableValues[0] === undefined || variableValues[0] === null) {
-                    delete context.nodes;
+                    removeNode = true;
                     stopHere = true;
                 } else if (context.condition) {
                     checkCode(context.condition);
                     const result = !!userCodeResults[this.path.join('/')] as unknown as boolean;
                     if (!result) {
-                        delete context.nodes;
+                        removeNode = true;
                         stopHere = true;
                     }
                 }
@@ -538,11 +540,16 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                 else {
                     context.hasSome = false;
                     context.whenSome = [];
-                    context.nodes = context.whenNone;
+                    context.nodes = context.whenNone || [];
                 }
             }
         }
-        this.update(context, stopHere);
+
+        if (removeNode) {
+            this.remove();
+        } else {
+            this.update(context, stopHere);
+        }
     });
 }
 
