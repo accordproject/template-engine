@@ -15,54 +15,54 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 
 // we duplicate these interfaces here to avoid imports into the runtime
-interface IConcept {
+export interface IConcept {
     $class: string;
  }
 
-interface ITransaction extends IConcept {
+export interface ITransaction extends IConcept {
     $timestamp: Date;
  }
 
-interface IEvent extends IConcept {
+export interface IEvent extends IConcept {
    $timestamp: Date;
 }
 
-interface IState {
+export interface IState {
     $identifier: string;
 }
 
-interface EngineResponse<S extends IState> {
+export interface EngineResponse<S extends IState> {
     state?: S;
     events?: Array<IEvent>
 }
 
-interface IRequest extends ITransaction {
+export interface IRequest extends ITransaction {
 }
 
-interface IResponse extends ITransaction {
+export interface IResponse extends ITransaction {
 }
 
-interface IAsset extends IConcept {
+export interface IAsset extends IConcept {
    $identifier: string;
 }
 
-interface IContract extends IAsset {
+export interface IContract extends IAsset {
    contractId: string;
 }
 
-interface IClause extends IAsset {
+export interface IClause extends IAsset {
    clauseId: string;
 }
 
-interface TriggerResponse<S extends IState = IState> extends EngineResponse<S> {
+export interface TriggerResponse<S extends IState = IState> extends EngineResponse<S> {
     result: IResponse;
 }
 
-interface InitResponse<S extends IState> extends EngineResponse<S> {}
+export interface InitResponse<S extends IState> extends EngineResponse<S> {}
 
-type TemplateData = IContract|IClause;
+export type TemplateData = IContract|IClause;
 
 export abstract class TemplateLogic<T extends TemplateData, S extends IState = IState> {
     abstract trigger(data: T, request: IRequest, state:S) : Promise<TriggerResponse<S>>;
-    init(data: T) : Promise<InitResponse<S>|undefined>;
+    abstract init(data: T) : Promise<InitResponse<S>|undefined>;
 }

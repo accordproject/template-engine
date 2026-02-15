@@ -4,7 +4,7 @@
   "description": "Generation of AgreementMark from TemplateMark + JSON Data",
   "homepage": "https://github.com/accordproject",
   "engines": {
-    "node": ">=20",
+    "node": ">=22",
     "npm": ">=6"
   },
   "main": "dist/index.js",
@@ -48,11 +48,17 @@
     "@typescript/twoslash": "^3.2.9",
     "browser-or-node": "^3.0.0",
     "dayjs": "1.11.13",
+    "decimal.js": "^10.6.0",
     "jsonpath": "^1.1.1",
+    "linkfs": "^2.1.0",
+    "memfs": "^4.51.1",
     "tar": "^7.4.3",
     "to-words": "^4.4.0",
     "traverse": "^0.6.11",
-    "typescript": "^5.8.2"
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.8.2",
+    "unionfs": "^4.6.0",
+    "webpack": "^5.104.0"
   },
   "devDependencies": {
     "@accordproject/markdown-html": "0.16.25",
@@ -62,6 +68,7 @@
     "@types/jsonpath": "^0.2.4",
     "@types/semver": "7.7.0",
     "@types/tar": "^6.1.13",
+    "@types/tmp": "^0.2.6",
     "@types/traverse": "^0.6.37",
     "@typescript-eslint/eslint-plugin": "^8.28.0",
     "@typescript-eslint/parser": "^8.28.0",
@@ -78,6 +85,7 @@
     "rollup-plugin-dts": "^6.2.1",
     "rollup-plugin-esbuild": "^6.2.1",
     "terser": "^5.39.0",
+    "tmp": "^0.2.5",
     "ts-jest": "^29.3.0",
     "ts-node": "^10.9.2",
     "typescript-eslint": "^8.28.0"
