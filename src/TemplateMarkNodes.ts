@@ -32,7 +32,7 @@ export const FOREACH_DEFINITION_RE = /^(org\.accordproject\.templatemark)@(.+)\.
 export type TemplateData = Record<string, unknown>;
 
 /**
- * TemplateMark nodes that implicity change the data access scope
+ * TemplateMark nodes that implicitly change the data access scope
  * by specifying the name of a property on the node.
  */
 export const NAVIGATION_NODES = [
