@@ -189,6 +189,135 @@ exports[`templatemark interpreter should generate clause-optional 1`] = `
 }
 `;
 
+exports[`templatemark interpreter should generate conditional-variables 1`] = `
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": [
+    {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Hello ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "name",
+              "value": "Alice",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": ".",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Conditional",
+              "isTrue": true,
+              "name": "age",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "You are ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "Integer",
+                  "name": "age",
+                  "value": "30",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": " years old.",
+                },
+              ],
+              "whenFalse": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Age unknown.",
+                },
+              ],
+              "whenTrue": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "You are ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "Integer",
+                  "name": "age",
+                  "value": "30",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": " years old.",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Conditional",
+              "isTrue": true,
+              "name": "isActive",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Active user: ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "String",
+                  "name": "name",
+                  "value": "Alice",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": ".",
+                },
+              ],
+              "whenFalse": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Inactive.",
+                },
+              ],
+              "whenTrue": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Active user: ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "String",
+                  "name": "name",
+                  "value": "Alice",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": ".",
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
 exports[`templatemark interpreter should generate formula-now 1`] = `
 {
   "$class": "org.accordproject.commonmark@0.5.0.Document",
@@ -2923,12 +3052,23 @@ exports[`templatemark interpreter should generate optional_comprehensive 1`] = `
                         {
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "Integer",
-                          "name": "this",
+                          "name": "age",
                           "value": "30",
                         },
                       ],
                       "whenNone": [],
-                      "whenSome": [],
+                      "whenSome": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "Age is ",
+                        },
+                        {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "Integer",
+                          "name": "age",
+                          "value": "30",
+                        },
+                      ],
                     },
                   ],
                 },
@@ -2990,12 +3130,23 @@ exports[`templatemark interpreter should generate optional_comprehensive 1`] = `
                         {
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "Boolean",
-                          "name": "this",
+                          "name": "active",
                           "value": "true",
                         },
                       ],
                       "whenNone": [],
-                      "whenSome": [],
+                      "whenSome": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "Status: ",
+                        },
+                        {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "Boolean",
+                          "name": "active",
+                          "value": "true",
+                        },
+                      ],
                     },
                   ],
                 },
@@ -3097,7 +3248,7 @@ exports[`templatemark interpreter should generate optional_comprehensive 1`] = `
                     {
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "Integer",
-                      "name": "this",
+                      "name": "age",
                       "value": "25",
                     },
                     {
@@ -3106,7 +3257,22 @@ exports[`templatemark interpreter should generate optional_comprehensive 1`] = `
                     },
                   ],
                   "whenNone": [],
-                  "whenSome": [],
+                  "whenSome": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "(",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Integer",
+                      "name": "age",
+                      "value": "25",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " years old)",
+                    },
+                  ],
                 },
               ],
               "whenNone": [],
@@ -3141,12 +3307,24 @@ exports[`templatemark interpreter should generate optional_comprehensive 1`] = `
                   "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
                   "elementType": "DateTime",
                   "format": "MMMM DD, YYYY",
-                  "name": "this",
+                  "name": "lastVisit",
                   "value": "December 01, 2023",
                 },
               ],
               "whenNone": [],
-              "whenSome": [],
+              "whenSome": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Last visit: ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+                  "elementType": "DateTime",
+                  "format": "MMMM DD, YYYY",
+                  "name": "lastVisit",
+                  "value": "December 01, 2023",
+                },
+              ],
             },
           ],
         },
@@ -3783,12 +3961,23 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                 {
                   "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                   "elementType": "Integer",
-                  "name": "this",
+                  "name": "age",
                   "value": "42",
                 },
               ],
               "whenNone": [],
-              "whenSome": [],
+              "whenSome": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Age is provided as ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "Integer",
+                  "name": "age",
+                  "value": "42",
+                },
+              ],
             },
           ],
         },
