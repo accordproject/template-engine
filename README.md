@@ -20,6 +20,30 @@ At a high-level the template engine converts a TemplateMark DOM to an AgreementM
 
 ![Template Interpreter](./assets/template-interpreter.png)
 
+## Execution Pipeline Overview
+
+Internally, the Template Engine evaluates templates through a structured execution pipeline:
+
+1. **Type Validation**  
+   The TemplateMark JSON document and the incoming agreement data are validated against their respective Concerto models to ensure structural and type correctness.
+
+2. **TypeScript Compilation**  
+   Embedded TypeScript expressions (such as conditionals, clauses, and formulae) are compiled into JavaScript using the `TemplateMarkToJavaScriptCompiler`.
+
+3. **User Code Evaluation**  
+   During agreement generation, compiled JavaScript expressions are evaluated using the `JavaScriptEvaluator`.  
+   The evaluator supports two execution strategies:
+   - `evalDangerously()` — Executes JavaScript directly within the current process.
+   - `evalChildProcess()` — Executes JavaScript in an isolated Node.js child process for improved safety and isolation.
+
+4. **AgreementMark Generation**  
+   The TemplateMark document is traversed, evaluated values are inserted into the document structure, and an AgreementMark JSON document is produced.
+
+5. **Output Validation**  
+   The generated AgreementMark document is validated before being returned.
+
+This layered architecture ensures type-safety, deterministic execution of template logic, and isolation during runtime evaluation.
+
 ## Hello World Template
 
 Let's create the simplest template imaginable, the infamous "hello world"!
