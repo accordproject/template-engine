@@ -18,6 +18,7 @@ exports[`hello world template should create agreementmark from a template and da
               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
               "elementType": "String",
               "name": "message",
+              "nodes": [],
               "value": "World",
             },
             {

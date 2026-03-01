@@ -18,6 +18,7 @@ exports[`template with custom template model should create agreementmark from a 
               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
               "elementType": "String",
               "name": "message",
+              "nodes": [],
               "value": "World",
             },
             {
@@ -33,6 +34,7 @@ exports[`template with custom template model should create agreementmark from a 
                 "NOT_DISCLOSED",
               ],
               "name": "gender",
+              "nodes": [],
               "value": "MALE",
             },
             {
