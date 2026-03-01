@@ -21,8 +21,8 @@
     "pretest": "npm-run-all licchk lint build",
     "lint": "eslint .",
     "licchk": "license-check-and-add",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest",
-    "coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+    "coverage": "jest --coverage",
     "test:watch": "jest --watchAll",
     "updateRuntimeDependencies": "node ./scripts/updateRuntimeDependencies"
   },
@@ -43,6 +43,7 @@
     "@accordproject/concerto-codegen": "3.30.6-20250327205534",
     "@accordproject/concerto-core": "^3.20.4",
     "@accordproject/concerto-util": "^3.20.4",
+    "@accordproject/concerto-vocabulary": "^3.25.7",
     "@accordproject/markdown-common": "0.16.25",
     "@accordproject/markdown-template": "0.16.25",
     "@typescript/twoslash": "^3.2.9",
@@ -78,7 +79,7 @@
     "rollup-plugin-dts": "^6.2.1",
     "rollup-plugin-esbuild": "^6.2.1",
     "terser": "^5.39.0",
-    "ts-jest": "^29.3.0",
+    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "typescript-eslint": "^8.28.0"
   },
@@ -131,7 +132,8 @@
     "testPathIgnorePatterns": [
       "<rootDir>/dist/",
       "/node_modules/",
-      "/scripts"
+      "/scripts",
+      "/concerto/"
     ],
     "collectCoverage": false,
     "collectCoverageFrom": [

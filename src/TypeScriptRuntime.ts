@@ -23,11 +23,15 @@ const DEBUG = false;
  * BEWARE - this type is duplicated in TypeScriptCompilationContext
  * for use by code generation
  */
+
+import { VocabularyManager } from '@accordproject/concerto-vocabulary';
+
 export type GenerationOptions = {
     now?: string,
-    locale?: string
-    disableJavaScriptEvaluation?: boolean
-    childProcessJavaScriptEvaluation?: boolean
+    locale?: string,
+    vocabularyManager?: VocabularyManager,
+    disableJavaScriptEvaluation?: boolean,
+    childProcessJavaScriptEvaluation?: boolean,
     timeout?: number
 }
 

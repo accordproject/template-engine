@@ -138,6 +138,7 @@ exports[`templatemark interpreter should generate clause 1`] = `
                   "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                   "elementType": "String",
                   "name": "street",
+                  "nodes": [],
                   "value": "1 Main Street",
                 },
               ],
@@ -207,6 +208,7 @@ exports[`templatemark interpreter should generate formula-now 1`] = `
               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
               "elementType": "String",
               "name": "message",
+              "nodes": [],
               "value": "World",
             },
             {
@@ -265,6 +267,7 @@ exports[`templatemark interpreter should generate full 1`] = `
               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
               "elementType": "String",
               "name": "firstName",
+              "nodes": [],
               "value": "Dan",
             },
             {
@@ -420,6 +423,7 @@ exports[`templatemark interpreter should generate full 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "String",
                           "name": "street",
+                          "nodes": [],
                           "value": "1 Main Street",
                         },
                       ],
@@ -440,6 +444,7 @@ exports[`templatemark interpreter should generate full 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "String",
                           "name": "city",
+                          "nodes": [],
                           "value": "Boston",
                         },
                       ],
@@ -460,6 +465,7 @@ exports[`templatemark interpreter should generate full 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "String",
                           "name": "zip",
+                          "nodes": [],
                           "value": "12345",
                         },
                       ],
@@ -492,6 +498,7 @@ exports[`templatemark interpreter should generate full 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "String",
                           "name": "city",
+                          "nodes": [],
                           "value": "Boston",
                         },
                       ],
@@ -581,6 +588,7 @@ exports[`templatemark interpreter should generate full 1`] = `
                   "elementType": "DateTime",
                   "format": "MM/DD/YYYY",
                   "name": "lastVisit",
+                  "nodes": [],
                   "value": "01/10/2023",
                 },
                 {
@@ -629,6 +637,7 @@ exports[`templatemark interpreter should generate full 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "String",
                           "name": "sku",
+                          "nodes": [],
                           "value": "WIDGET-2000",
                         },
                       ],
@@ -644,6 +653,7 @@ exports[`templatemark interpreter should generate full 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "Integer",
                           "name": "amount",
+                          "nodes": [],
                           "value": "10",
                         },
                       ],
@@ -665,6 +675,7 @@ exports[`templatemark interpreter should generate full 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "String",
                           "name": "sku",
+                          "nodes": [],
                           "value": "DOODAH-X",
                         },
                       ],
@@ -680,6 +691,7 @@ exports[`templatemark interpreter should generate full 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "Integer",
                           "name": "amount",
+                          "nodes": [],
                           "value": "3",
                         },
                       ],
@@ -877,6 +889,7 @@ exports[`templatemark interpreter should generate full 1`] = `
               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
               "elementType": "String",
               "name": "firstName",
+              "nodes": [],
               "value": "Dan",
             },
           ],
@@ -935,6 +948,7 @@ exports[`templatemark interpreter should generate full 1`] = `
               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
               "elementType": "String",
               "name": "firstName",
+              "nodes": [],
               "value": "Dan",
             },
           ],
@@ -1063,6 +1077,7 @@ exports[`templatemark interpreter should generate helloformula 1`] = `
               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
               "elementType": "String",
               "name": "message",
+              "nodes": [],
               "value": "World",
             },
             {
@@ -1111,6 +1126,7 @@ exports[`templatemark interpreter should generate helloworld 1`] = `
               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
               "elementType": "String",
               "name": "message",
+              "nodes": [],
               "value": "World",
             },
             {
@@ -1176,6 +1192,7 @@ exports[`templatemark interpreter should generate insurance_en 1`] = `
                       "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
                       "format": "0,0.00 K",
                       "name": "limit",
+                      "nodes": [],
                       "value": "1,500.00 €",
                     },
                     {
@@ -1190,6 +1207,7 @@ exports[`templatemark interpreter should generate insurance_en 1`] = `
                         "REPLACING",
                       ],
                       "name": "benefitType",
+                      "nodes": [],
                       "value": "REPAIRING",
                     },
                     {
@@ -1215,6 +1233,7 @@ exports[`templatemark interpreter should generate insurance_en 1`] = `
                       "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
                       "format": "0,0.00 K",
                       "name": "limit",
+                      "nodes": [],
                       "value": "500.00 €",
                     },
                     {
@@ -1229,6 +1248,7 @@ exports[`templatemark interpreter should generate insurance_en 1`] = `
                         "REPLACING",
                       ],
                       "name": "benefitType",
+                      "nodes": [],
                       "value": "REPLACING",
                     },
                     {
@@ -1300,6 +1320,7 @@ exports[`templatemark interpreter should generate insurance_fr 1`] = `
                       "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
                       "format": "0.0,00 K",
                       "name": "limit",
+                      "nodes": [],
                       "value": "1.500,00 €",
                     },
                     {
@@ -1314,6 +1335,7 @@ exports[`templatemark interpreter should generate insurance_fr 1`] = `
                         "REPLACING",
                       ],
                       "name": "benefitType",
+                      "nodes": [],
                       "value": "REPAIRING",
                     },
                     {
@@ -1339,6 +1361,7 @@ exports[`templatemark interpreter should generate insurance_fr 1`] = `
                       "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
                       "format": "0.0,00 K",
                       "name": "limit",
+                      "nodes": [],
                       "value": "500,00 €",
                     },
                     {
@@ -1353,6 +1376,7 @@ exports[`templatemark interpreter should generate insurance_fr 1`] = `
                         "REPLACING",
                       ],
                       "name": "benefitType",
+                      "nodes": [],
                       "value": "REPLACING",
                     },
                     {
@@ -1428,6 +1452,7 @@ exports[`templatemark interpreter should generate insurance-acquisitions 1`] = `
                       "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
                       "format": "0,0.00 CCC",
                       "name": "turnoverLimit",
+                      "nodes": [],
                       "value": "250,000.00 GBP",
                     },
                     {
@@ -1438,6 +1463,7 @@ exports[`templatemark interpreter should generate insurance-acquisitions 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "Integer",
                       "name": "turnoverPercentage",
+                      "nodes": [],
                       "value": "50",
                     },
                     {
@@ -1462,6 +1488,7 @@ exports[`templatemark interpreter should generate insurance-acquisitions 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "Integer",
                       "name": "newAcquisitionsDays",
+                      "nodes": [],
                       "value": "30",
                     },
                     {
@@ -1473,6 +1500,7 @@ exports[`templatemark interpreter should generate insurance-acquisitions 1`] = `
                       "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
                       "format": "0,0.00 CCC",
                       "name": "newAcquisitionsTurnover",
+                      "nodes": [],
                       "value": "250,000.00 GBP",
                     },
                     {
@@ -1483,6 +1511,7 @@ exports[`templatemark interpreter should generate insurance-acquisitions 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "Integer",
                       "name": "newAcquisitionsGroupTurnoverPercentage",
+                      "nodes": [],
                       "value": "15",
                     },
                     {
@@ -1507,6 +1536,7 @@ exports[`templatemark interpreter should generate insurance-acquisitions 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "Integer",
                       "name": "otherNewAcquisitionsDays",
+                      "nodes": [],
                       "value": "90",
                     },
                     {
@@ -1906,6 +1936,7 @@ exports[`templatemark interpreter should generate insurance-period 1`] = `
               "elementType": "DateTime",
               "format": "DD MMMM YYYY",
               "name": "from",
+              "nodes": [],
               "value": "23 May 2018",
             },
             {
@@ -1920,6 +1951,7 @@ exports[`templatemark interpreter should generate insurance-period 1`] = `
               "elementType": "DateTime",
               "format": "DD MMMM YYYY",
               "name": "to",
+              "nodes": [],
               "value": "01 January 2021",
             },
             {
@@ -1967,6 +1999,7 @@ exports[`templatemark interpreter should generate insurance-premium 1`] = `
               "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
               "format": "0,0.00 CCC",
               "name": "gross",
+              "nodes": [],
               "value": "75,000.00 GBP",
             },
             {
@@ -1981,6 +2014,7 @@ exports[`templatemark interpreter should generate insurance-premium 1`] = `
               "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
               "format": "0,0.00 CCC",
               "name": "lessCommission",
+              "nodes": [],
               "value": "5,000.00 GBP",
             },
             {
@@ -1995,6 +2029,7 @@ exports[`templatemark interpreter should generate insurance-premium 1`] = `
               "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
               "format": "0,0.00 CCC",
               "name": "netPremium",
+              "nodes": [],
               "value": "50,000.00 GBP",
             },
             {
@@ -2009,6 +2044,7 @@ exports[`templatemark interpreter should generate insurance-premium 1`] = `
               "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
               "format": "0,0.00 CCC",
               "name": "taxes",
+              "nodes": [],
               "value": "20,000.00 GBP",
             },
             {
@@ -2072,6 +2108,7 @@ exports[`templatemark interpreter should generate insurance-retroactive-date 1`]
                       "elementType": "DateTime",
                       "format": "DD MMMM YYYY",
                       "name": "dataProtectionExtension",
+                      "nodes": [],
                       "value": "23 May 2018",
                     },
                   ],
@@ -2093,6 +2130,7 @@ exports[`templatemark interpreter should generate insurance-retroactive-date 1`]
                       "elementType": "DateTime",
                       "format": "DD MMMM YYYY",
                       "name": "legionellaExtension",
+                      "nodes": [],
                       "value": "01 January 2021",
                     },
                   ],
@@ -2159,6 +2197,7 @@ exports[`templatemark interpreter should generate insurance-sub-limits-liability
                       "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
                       "format": "0,0.00 CCC",
                       "name": "corporateManslaughterMaximumLiability",
+                      "nodes": [],
                       "value": "500,000.00 GBP",
                     },
                     {
@@ -2187,6 +2226,7 @@ exports[`templatemark interpreter should generate insurance-sub-limits-liability
                       "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
                       "format": "0,0.00 CCC",
                       "name": "dataProtectionMaximumLiability",
+                      "nodes": [],
                       "value": "50,000.00 GBP",
                     },
                     {
@@ -2215,6 +2255,7 @@ exports[`templatemark interpreter should generate insurance-sub-limits-liability
                       "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
                       "format": "0,0.00 CCC",
                       "name": "legionellaMaximumLiability",
+                      "nodes": [],
                       "value": "500,000.00 GBP",
                     },
                     {
@@ -2243,6 +2284,7 @@ exports[`templatemark interpreter should generate insurance-sub-limits-liability
                       "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
                       "format": "0,0.00 CCC",
                       "name": "pollutionMaximumLiability",
+                      "nodes": [],
                       "value": "500,000.00 GBP",
                     },
                     {
@@ -3033,6 +3075,7 @@ exports[`templatemark interpreter should generate optional_comprehensive 1`] = `
                   "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                   "elementType": "String",
                   "name": "street",
+                  "nodes": [],
                   "value": "123 Main St",
                 },
                 {
@@ -3043,6 +3086,7 @@ exports[`templatemark interpreter should generate optional_comprehensive 1`] = `
                   "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                   "elementType": "String",
                   "name": "city",
+                  "nodes": [],
                   "value": "Boston",
                 },
               ],
@@ -3078,6 +3122,7 @@ exports[`templatemark interpreter should generate optional_comprehensive 1`] = `
                   "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                   "elementType": "String",
                   "name": "name",
+                  "nodes": [],
                   "value": "Alice",
                 },
                 {
@@ -3211,6 +3256,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "String",
                       "name": "mandateId",
+                      "nodes": [],
                       "value": "mandate-2025-10-A2B-001",
                     },
                   ],
@@ -3237,6 +3283,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "String",
                       "name": "idKey",
+                      "nodes": [],
                       "value": "id2",
                     },
                     {
@@ -3265,6 +3312,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "String",
                       "name": "idKey",
+                      "nodes": [],
                       "value": "id2",
                     },
                     {
@@ -3278,6 +3326,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "String",
                           "name": "uri",
+                          "nodes": [],
                           "value": "http://someurl.com?a=1",
                         },
                       ],
@@ -3316,6 +3365,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "String",
                       "name": "idKey",
+                      "nodes": [],
                       "value": "id2",
                     },
                     {
@@ -3328,6 +3378,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "String",
                           "name": "uri",
+                          "nodes": [],
                           "value": "http://someurl.com?a=1",
                         },
                         {
@@ -3350,6 +3401,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "String",
                       "name": "idKey",
+                      "nodes": [],
                       "value": "id2",
                     },
                     {
@@ -3429,6 +3481,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
               "elementType": "String",
               "name": "name",
+              "nodes": [],
               "value": "John Doe",
             },
             {
@@ -3478,6 +3531,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "String",
                       "name": "line1",
+                      "nodes": [],
                       "value": "1 Main Street",
                     },
                     {
@@ -3491,6 +3545,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "String",
                       "name": "city",
+                      "nodes": [],
                       "value": "Boson",
                     },
                     {
@@ -3501,6 +3556,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "String",
                       "name": "state",
+                      "nodes": [],
                       "value": "MA",
                     },
                     {
@@ -3514,6 +3570,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "String",
                       "name": "country",
+                      "nodes": [],
                       "value": "USA",
                     },
                   ],
@@ -3542,6 +3599,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "Integer",
                           "name": "age",
+                          "nodes": [],
                           "value": "42",
                         },
                       ],
@@ -3569,6 +3627,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                       "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
                       "format": "0,0.00 CCC",
                       "name": "salary",
+                      "nodes": [],
                       "value": "1,500.00 EUR",
                     },
                   ],
@@ -3624,6 +3683,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                   "elementType": "DateTime",
                   "format": "D MMMM YYYY",
                   "name": "createdAt",
+                  "nodes": [],
                   "value": "1 May 2023",
                 },
                 {
@@ -3655,6 +3715,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "Integer",
                           "name": "quantity",
+                          "nodes": [],
                           "value": "3",
                         },
                         {
@@ -3668,6 +3729,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                               "elementType": "String",
                               "name": "sku",
+                              "nodes": [],
                               "value": "ABC-123",
                             },
                           ],
@@ -3681,6 +3743,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                           "elementType": "Double",
                           "format": "0,0.00",
                           "name": "price",
+                          "nodes": [],
                           "value": "29.99",
                         },
                       ],
@@ -3697,6 +3760,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "Integer",
                           "name": "quantity",
+                          "nodes": [],
                           "value": "5",
                         },
                         {
@@ -3710,6 +3774,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                               "elementType": "String",
                               "name": "sku",
+                              "nodes": [],
                               "value": "DEF-456",
                             },
                           ],
@@ -3723,6 +3788,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                           "elementType": "Double",
                           "format": "0,0.00",
                           "name": "price",
+                          "nodes": [],
                           "value": "19.99",
                         },
                       ],
@@ -3850,6 +3916,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
               "elementType": "String",
               "name": "name",
+              "nodes": [],
               "value": "John Doe",
             },
             {
@@ -3899,6 +3966,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "String",
                       "name": "line1",
+                      "nodes": [],
                       "value": "1 Main Street",
                     },
                     {
@@ -3912,6 +3980,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "String",
                       "name": "city",
+                      "nodes": [],
                       "value": "Boson",
                     },
                     {
@@ -3922,6 +3991,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "String",
                       "name": "state",
+                      "nodes": [],
                       "value": "MA",
                     },
                     {
@@ -3935,6 +4005,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                       "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                       "elementType": "String",
                       "name": "country",
+                      "nodes": [],
                       "value": "USA",
                     },
                   ],
@@ -3963,6 +4034,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "Integer",
                           "name": "age",
+                          "nodes": [],
                           "value": "42",
                         },
                       ],
@@ -3976,6 +4048,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                       "elementType": "Integer",
                       "format": "text",
                       "name": "age",
+                      "nodes": [],
                       "value": "Forty Two",
                     },
                     {
@@ -4001,6 +4074,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                       "elementType": "org.accordproject.money@0.3.0.MonetaryAmount",
                       "format": "0,0.00 CCC",
                       "name": "salary",
+                      "nodes": [],
                       "value": "1,500.00 EUR",
                     },
                   ],
@@ -4056,6 +4130,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                   "elementType": "DateTime",
                   "format": "D MMMM YYYY",
                   "name": "createdAt",
+                  "nodes": [],
                   "value": "1 May 2023",
                 },
                 {
@@ -4087,6 +4162,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "Integer",
                           "name": "quantity",
+                          "nodes": [],
                           "value": "3",
                         },
                         {
@@ -4100,6 +4176,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                               "elementType": "String",
                               "name": "sku",
+                              "nodes": [],
                               "value": "ABC-123",
                             },
                           ],
@@ -4113,6 +4190,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                           "elementType": "Double",
                           "format": "0,0.00",
                           "name": "price",
+                          "nodes": [],
                           "value": "29.99",
                         },
                       ],
@@ -4129,6 +4207,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                           "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                           "elementType": "Integer",
                           "name": "quantity",
+                          "nodes": [],
                           "value": "5",
                         },
                         {
@@ -4142,6 +4221,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
                               "elementType": "String",
                               "name": "sku",
+                              "nodes": [],
                               "value": "DEF-456",
                             },
                           ],
@@ -4155,6 +4235,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                           "elementType": "Double",
                           "format": "0,0.00",
                           "name": "price",
+                          "nodes": [],
                           "value": "19.99",
                         },
                       ],

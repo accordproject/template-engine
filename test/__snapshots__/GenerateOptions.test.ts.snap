@@ -18,6 +18,7 @@ exports[`template generation options should evaluate a formula with childProcess
               "$class": "org.accordproject.ciceromark@0.6.0.Variable",
               "elementType": "String",
               "name": "message",
+              "nodes": [],
               "value": "World",
             },
             {
