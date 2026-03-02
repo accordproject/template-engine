@@ -3634,7 +3634,7 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                   "$class": "org.accordproject.ciceromark@0.6.0.Formula",
                   "dependencies": [],
                   "name": "formula_87067c9bed3b3c592c46445b8d60c223615c5dbc49d2ab1bacecb1e78350c991",
-                  "value": "-44",
+                  "value": "-45",
                 },
                 {
                   "$class": "org.accordproject.commonmark@0.5.0.Text",
