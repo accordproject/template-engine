@@ -19,7 +19,7 @@
       "blue"
     ],
     "order": {
-      "createdAt": "2023-05-01",
+      "createdAt": "2023-05-01T00:00:00.000Z",
       "$class": "org.example.ap2.mandate@1.1.1.Order",
       "orderLines": [
         {
