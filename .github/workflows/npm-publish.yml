@@ -32,7 +32,13 @@ jobs:
       - run: npm ci
       - run: npm run build --if-present
 
+      - name: tag
+        id: tag
+        run: |
+          node ./scripts/tag.js ${{ github.event.release.tag_name }}
+
+
       - name: publish
         run: |
-          npm version --no-git-tag-version --yes --exact ${{ steps.timestamp.outputs.stamp }}
+          npm version --no-git-tag-version --yes --exact ${{ github.event.release.tag_name }}
           npm publish --access public --provenance ${{ steps.tag.outputs.tag }} 2>&1
