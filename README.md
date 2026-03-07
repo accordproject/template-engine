@@ -125,9 +125,9 @@ TemplateMark JSON is a well-defined file format, meaning that powerful template 
 
 We encourage community and commercial innovation in this area!
 
-### 3. Logic FULL
+### 3. Full Logic Support
 
-Unlike some templating systems which prohibit, or minmize, logic in templates, Accord Project templates fully embrace templates that may contain sophisticated logic: conditional logic to determine what text to include, or even calculations, for example to calculate the monthly payments for a mortgage based on the term of the mortgage, the amount and the interest rate.
+Unlike some templating systems which prohibit, or minimize, logic in templates, Accord Project templates fully embrace templates that may contain sophisticated logic: conditional logic to determine what text to include, or even calculations, for example to calculate the monthly payments for a mortgage based on the term of the mortgage, the amount and the interest rate.
 
 ### 4. Type-safety
 

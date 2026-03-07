@@ -495,10 +495,11 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
 
             // only include the children of a clause if its condition is true
             else if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
-                // Implicit undefined check: skip clause block if scoped variable is undefined/null
+                // Implicit undefined check: skip clause block if scoped variable is undefined/null.
+                // Skip this check for the root template clause (name === 'top') since its data IS the root object.
                 const path = getJsonPath(templateMark, context, this.path);
                 const variableValues = jp.query(data, path, 1);
-                if (variableValues.length === 0 || variableValues[0] === undefined || variableValues[0] === null) {
+                if (context.name !== 'top' && (variableValues.length === 0 || variableValues[0] === undefined || variableValues[0] === null)) {
                     delete context.nodes;
                     stopHere = true;
                 } else if (context.condition) {
