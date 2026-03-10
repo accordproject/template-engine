@@ -8,6 +8,10 @@ on:
 permissions:
   id-token: write  # Required for OIDC / npmjs publish
 
+concurrency:
+  group: npm-publish-${{ github.event.release.tag_name }}
+  cancel-in-progress: true
+
 jobs:
   publish:
     name: Publish to npm
