@@ -1,38 +1,44 @@
-# This workflow will run tests using node and then publish a package to GitHub Packages when a release is created
-# For more information see: https://docs.github.com/en/actions/publishing-packages/publishing-nodejs-packages
-
-name: Node.js Package
+name: Publish
 
 on:
   release:
-    types: [created]
+    types:
+      - published
+
+permissions:
+  id-token: write  # Required for OIDC / npmjs publish
 
 jobs:
-  build:
+  publish:
+    name: Publish to npm
+    if: ${{ github.repository_owner == 'accordproject' }}
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 20
-      - run: npm ci
-      - run: npm test
+    environment: production
 
-  publish-npm:
-    needs: build
-    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: git checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
-          registry-url: https://registry.npmjs.org/
-      - name: build and publish
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      # Ensure npm 11.5.1 or later for trusted publishing
+      - run: npm install -g npm@latest
+
+      - run: npm ci
+      - run: npm run build --if-present
+
+      - name: tag
+        id: tag
         run: |
-          npm ci
-          npm run build
-          npm config set //registry.npmjs.org/:_authToken ${{ secrets.NPM_TOKEN }}
-          npm version --no-git-tag-version --yes --exact ${{ steps.timestamp.outputs.stamp }}
-          npm publish --access public ${{ steps.tag.outputs.tag }} 2>&1
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+          node ./scripts/tag.js ${{ github.event.release.tag_name }}
+
+
+      - name: publish
+        run: |
+          npm version --no-git-tag-version --yes --exact ${{ github.event.release.tag_name }}
+          npm publish --access public --provenance ${{ steps.tag.outputs.tag }} 2>&1
