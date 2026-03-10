@@ -1,0 +1,8 @@
+namespace test@1.0.0
+
+@template
+concept TemplateData {
+    o Integer age optional
+    o String name
+    o Boolean isActive optional
+}
