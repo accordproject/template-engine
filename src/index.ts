@@ -18,3 +18,8 @@ export { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 export { TemplateArchiveProcessor } from './TemplateArchiveProcessor';
 export { TemplateLogic }
 export * from './utils';
+
+// Export validation and error handling utilities
+export { ValidationEngine, type ValidationError, type ValidationResult } from './ValidationEngine';
+export { TemplateEngineError, ErrorHandler } from './ErrorHandler';
+export { DebugLogger, LogLevel, type DebugEvent } from './DebugLogger';
