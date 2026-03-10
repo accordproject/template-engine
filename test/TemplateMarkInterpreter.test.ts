@@ -100,10 +100,10 @@ describe('templatemark interpreter', () => {
 
     badTemplates.forEach(function (template) {
         test(`should fail to generate ${template.name}`, async () => {
-            const templatenName = path.parse(template.name).name;
-            const model = readFileSync(`${BAD_TEMPLATES_ROOT}/${templatenName}/model.cto`, 'utf-8');
-            const templateMarkup = readFileSync(`${BAD_TEMPLATES_ROOT}/${templatenName}/template.md`, 'utf-8');
-            const data = JSON.parse(readFileSync(`${BAD_TEMPLATES_ROOT}/${templatenName}/data.json`, 'utf-8'));
+            const templateName = path.parse(template.name).name;
+            const model = readFileSync(`${BAD_TEMPLATES_ROOT}/${templateName}/model.cto`, 'utf-8');
+            const templateMarkup = readFileSync(`${BAD_TEMPLATES_ROOT}/${templateName}/template.md`, 'utf-8');
+            const data = JSON.parse(readFileSync(`${BAD_TEMPLATES_ROOT}/${templateName}/data.json`, 'utf-8'));
             const modelManager = new ModelManager({ strict: true });
             modelManager.addCTOModel(model);
             const engine = new TemplateMarkInterpreter(modelManager, CLAUSE_LIBRARY);
