@@ -111,13 +111,21 @@ export class TemplateArchiveProcessor {
                 const result = compiler.compile(code);
                 compiledCode[tsFile.getIdentifier()] = result;
             }
-            // console.log(compiledCode['logic/logic.ts'].code);
+            const entryPoint = Object.keys(compiledCode).find(
+                key => key.startsWith('logic/') && 
+                !key.includes('generated/') && 
+                key.endsWith('.ts') &&
+                compiledCode[key].code !== undefined
+            );
+            if(!entryPoint) {
+                throw new Error('Could not find compiled logic entry point');
+            }
             const evaluator = new JavaScriptEvaluator();
             const evalResponse = await evaluator.evalDangerously( {
                 templateLogic: true,
                 verbose: false,
                 functionName: 'trigger',
-                code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
+                code: compiledCode[entryPoint].code,
                 argumentNames: ['data', 'request', 'state'],
                 arguments: [data, request, state, currentTime, utcOffset]
             });
@@ -160,13 +168,21 @@ export class TemplateArchiveProcessor {
                 const result = compiler.compile(code);
                 compiledCode[tsFile.getIdentifier()] = result;
             }
-            // console.log(compiledCode['logic/logic.ts'].code);
+            const entryPoint = Object.keys(compiledCode).find(
+                key => key.startsWith('logic/') && 
+                !key.includes('generated/') && 
+                key.endsWith('.ts') &&
+                compiledCode[key].code !== undefined
+            );
+            if(!entryPoint) {
+                throw new Error('Could not find compiled logic entry point');
+            }
             const evaluator = new JavaScriptEvaluator();
             const evalResponse = await evaluator.evalDangerously( {
                 templateLogic: true,
                 verbose: false,
                 functionName: 'init',
-                code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
+                code: compiledCode[entryPoint].code,
                 argumentNames: ['data'],
                 arguments: [data, currentTime, utcOffset]
             });
