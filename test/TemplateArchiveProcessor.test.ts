@@ -100,4 +100,58 @@ describe('template archive processor', () => {
         // the events should have been emitted
         expect(payload.events[0].penaltyCalculated).toBe(true);
     });
+
+    test('should find entry point with non-standard logic filename', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const compiledCode: Record<string, any> = {
+            'logic/mycontract.ts': { code: 'compiled js code' },
+            'logic/README.md': { code: undefined },
+            'logic/generated/types.ts': { code: 'generated code' },
+        };
+        const entryPoint = Object.keys(compiledCode).find(
+            key => key.startsWith('logic/') &&
+            key.split('/').length === 2 &&
+            !key.includes('generated/') &&
+            key.endsWith('.ts') &&
+            compiledCode[key].code !== undefined
+        );
+        expect(entryPoint).toBe('logic/mycontract.ts');
+    });
+
+    test('should not select generated files or non-ts files as entry point', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const compiledCode: Record<string, any> = {
+            'logic/README.md': { code: undefined },
+            'logic/generated/io.clause.latedeliveryandpenalty@0.1.0.ts': { code: 'generated code' },
+            'logic/generated/concerto.ts': { code: 'generated code' },
+            'logic/mycontract.ts': { code: 'compiled js code' },
+        };
+        const entryPoint = Object.keys(compiledCode).find(
+            key => key.startsWith('logic/') &&
+            key.split('/').length === 2 &&
+            !key.includes('generated/') &&
+            key.endsWith('.ts') &&
+            compiledCode[key].code !== undefined
+        );
+        // should skip README.md and all generated/ files
+        expect(entryPoint).toBe('logic/mycontract.ts');
+        expect(entryPoint).not.toContain('generated');
+        expect(entryPoint).not.toBe('logic/README.md');
+    });
+
+    test('should throw when no valid entry point exists', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const compiledCode: Record<string, any> = {
+            'logic/README.md': { code: undefined },
+            'logic/generated/types.ts': { code: 'generated code' },
+        };
+        const entryPoint = Object.keys(compiledCode).find(
+            key => key.startsWith('logic/') &&
+            key.split('/').length === 2 &&
+            !key.includes('generated/') &&
+            key.endsWith('.ts') &&
+            compiledCode[key].code !== undefined
+        );
+        expect(entryPoint).toBeUndefined();
+    });
 });
