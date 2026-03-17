@@ -82,26 +82,9 @@ exports[`templatemark interpreter should fail to generate formula-no-method 1`] 
 ]
 `;
 
-exports[`templatemark interpreter should fail to generate formula-optional-noguard 1`] = `
-[
-  {
-    "code": " return message.length ",
-    "errors": [
-      {
-        "category": 1,
-        "character": 10,
-        "code": 18048,
-        "id": "err-18048-475-7",
-        "length": 7,
-        "line": 82,
-        "renderedMessage": "'message' is possibly 'undefined'.",
-        "start": 1793,
-      },
-    ],
-    "nodeId": "formula_a3e0e90a2ad3601e1b208a0581e1ce6dfc5aab302d20cb2a0488d78e236096f7",
-  },
-]
-`;
+exports[`templatemark interpreter should fail to generate formula-optional-noguard 1`] = `[Error: Optional properties used without guards: message]`;
+
+exports[`templatemark interpreter should fail to generate optional-noguard 1`] = `[Error: Optional properties used without guards: nickname]`;
 
 exports[`templatemark interpreter should fail to generate template-missing-field 1`] = `[TemplateException: Unknown property: missing File text/grammar.tem.md line -1 column -1]`;
 

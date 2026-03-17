@@ -23,7 +23,7 @@ concept Order {
 concept TemplateData {
     o String name
     o Address address
-    o Integer age optional
+    o Integer age
     o MonetaryAmount salary
     o String[] favoriteColors
     o Order order
