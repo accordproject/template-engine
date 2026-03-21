@@ -54,6 +54,25 @@ export class TemplateArchiveProcessor {
     }
 
     /**
+     * Resolves the logic entry point from compiled code
+     * @param {Record<string, TwoSlashReturn>} compiledCode - the compiled code map
+     * @returns {string} the entry point key
+     */
+    private resolveLogicEntryPoint(compiledCode: Record<string, TwoSlashReturn>): string {
+        const entryPoint = Object.keys(compiledCode).find(
+            key => key.startsWith('logic/') &&
+            key.split('/').length === 2 &&
+            !key.includes('generated/') &&
+            key.endsWith('.ts') &&
+            compiledCode[key].code !== undefined
+        );
+        if (!entryPoint) {
+            throw new Error('Could not find compiled logic entry point');
+        }
+        return entryPoint;
+    }
+
+    /**
      * Drafts a template by merging it with data
      * @param {any} data the data to merge with the template
      * @param {string} format the output format
@@ -111,13 +130,13 @@ export class TemplateArchiveProcessor {
                 const result = compiler.compile(code);
                 compiledCode[tsFile.getIdentifier()] = result;
             }
-            // console.log(compiledCode['logic/logic.ts'].code);
+            const entryPoint = this.resolveLogicEntryPoint(compiledCode);
             const evaluator = new JavaScriptEvaluator();
             const evalResponse = await evaluator.evalDangerously( {
                 templateLogic: true,
                 verbose: false,
                 functionName: 'trigger',
-                code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
+                code: compiledCode[entryPoint].code,
                 argumentNames: ['data', 'request', 'state'],
                 arguments: [data, request, state, currentTime, utcOffset]
             });
@@ -160,13 +179,13 @@ export class TemplateArchiveProcessor {
                 const result = compiler.compile(code);
                 compiledCode[tsFile.getIdentifier()] = result;
             }
-            // console.log(compiledCode['logic/logic.ts'].code);
+            const entryPoint = this.resolveLogicEntryPoint(compiledCode);
             const evaluator = new JavaScriptEvaluator();
             const evalResponse = await evaluator.evalDangerously( {
                 templateLogic: true,
                 verbose: false,
                 functionName: 'init',
-                code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
+                code: compiledCode[entryPoint].code,
                 argumentNames: ['data'],
                 arguments: [data, currentTime, utcOffset]
             });
