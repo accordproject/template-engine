@@ -53,7 +53,7 @@ Order total: {{% return '£' + order.orderLines.map(ol => ol.price * ol.quantity
 
 ### Verification
 Checking logic for top-level optionals:
-{{#optional age}}Age is provided as {{this}}{{else}}Age is hidden{{/optional}}
+{{#optional age}}Age is provided as {{age}}{{else}}Age is hidden{{/optional}}
 
 
 
