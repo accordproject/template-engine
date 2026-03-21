@@ -12,18 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-'use strict';
-
-const semver = require('semver');
+import semver from "semver";
 const targetVersion = process.argv[2];
-
 if (!semver.valid(targetVersion)) {
     console.error(`Error: the version "${targetVersion}" is invalid!`);
     process.exit(1);
 }
-
 const prerelease = semver.prerelease(targetVersion);
-const tag = prerelease ? 'unstable' : 'latest';
-
+const tag = prerelease ? "unstable" : "latest";
 console.log(`::set-output name=tag::--tag=${tag}`);
