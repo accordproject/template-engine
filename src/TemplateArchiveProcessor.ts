@@ -87,7 +87,7 @@ export class TemplateArchiveProcessor {
      * @param {object} request - the request to send to the template logic
      * @param {object} state - the current state of the template
      * @param {[string]} currentTime - the current time, defaults to now
-     * @param {[number]} utcOffset - the UTC offer, defaults to zero
+     * @param {[number]} utcOffset - the UTC offset, defaults to zero
      * @returns {Promise} the response and any events
      */
     async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number): Promise<TriggerResponse> {
@@ -112,6 +112,8 @@ export class TemplateArchiveProcessor {
                 compiledCode[tsFile.getIdentifier()] = result;
             }
             // console.log(compiledCode['logic/logic.ts'].code);
+            const resolvedTime = currentTime ?? new Date().toISOString();
+            const resolvedOffset = utcOffset ?? 0;
             const evaluator = new JavaScriptEvaluator();
             const evalResponse = await evaluator.evalDangerously( {
                 templateLogic: true,
@@ -119,7 +121,7 @@ export class TemplateArchiveProcessor {
                 functionName: 'trigger',
                 code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
                 argumentNames: ['data', 'request', 'state'],
-                arguments: [data, request, state, currentTime, utcOffset]
+                arguments: [data, request, state, resolvedTime, resolvedOffset]
             });
             if(evalResponse.result) {
                 return evalResponse.result;
@@ -136,8 +138,8 @@ export class TemplateArchiveProcessor {
     /**
      * Init the logic of a template
      * @param {[string]} currentTime - the current time, defaults to now
-     * @param {[number]} utcOffset - the UTC offer, defaults to zero
-     * @returns {Promise} the response and any events
+     * @param {[number]} utcOffset - the UTC offset, defaults to zero
+     * @returns {Promise<InitResponse>} the new state
      */
     async init(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
         const logicManager = this.template.getLogicManager();
@@ -161,6 +163,8 @@ export class TemplateArchiveProcessor {
                 compiledCode[tsFile.getIdentifier()] = result;
             }
             // console.log(compiledCode['logic/logic.ts'].code);
+            const resolvedTime = currentTime ?? new Date().toISOString();
+            const resolvedOffset = utcOffset ?? 0;
             const evaluator = new JavaScriptEvaluator();
             const evalResponse = await evaluator.evalDangerously( {
                 templateLogic: true,
@@ -168,7 +172,7 @@ export class TemplateArchiveProcessor {
                 functionName: 'init',
                 code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
                 argumentNames: ['data'],
-                arguments: [data, currentTime, utcOffset]
+                arguments: [data, resolvedTime, resolvedOffset]
             });
             if(evalResponse.result) {
                 return evalResponse.result;
