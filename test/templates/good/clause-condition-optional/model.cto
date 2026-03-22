@@ -1,0 +1,14 @@
+namespace test@1.0.0
+
+concept Address {
+    o String line1
+    o String city
+    o String state
+    o String country
+}
+
+@template
+concept Customer {
+    o String name
+    o Address address optional
+}

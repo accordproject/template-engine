@@ -469,8 +469,9 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
             // with the result of evaluating the JS code or a boolean property
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
-                    const result = userCodeResults[this.path.join('/')];
-                    context.isTrue = !!result as unknown as boolean;
+                    const resultStr = userCodeResults[this.path.join('/')];
+                    // Parse the JSON-stringified result to get the actual boolean value
+                    context.isTrue = JSON.parse(resultStr) as boolean;
                 }
                 else {
                     const path = getJsonPath(templateMark, context, this.path);
@@ -495,21 +496,29 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
 
             // only include the children of a clause if its condition is true
             else if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
-                // Implicit undefined check: skip clause block if scoped variable is undefined/null.
-                // Skip this check for the root template clause (name === 'top') since its data IS the root object.
                 const path = getJsonPath(templateMark, context, this.path);
                 const variableValues = jp.query(data, path, 1);
-                if (context.name !== 'top' && (variableValues.length === 0 || variableValues[0] === undefined || variableValues[0] === null)) {
-                    delete context.nodes;
-                    stopHere = true;
-                } else if (context.condition) {
+
+                // If there's an explicit condition, evaluate it first (takes precedence over implicit check).
+                // This allows conditions like "return address!==undefined" to work correctly when
+                // the optional field is missing - the condition controls whether to render the clause.
+                if (context.condition) {
                     checkCode(context.condition);
-                    const result = !!userCodeResults[this.path.join('/')] as unknown as boolean;
+                    // Parse the JSON-stringified result to get the actual boolean value
+                    const resultStr = userCodeResults[this.path.join('/')];
+                    const result = JSON.parse(resultStr) as boolean;
                     if (!result) {
                         delete context.nodes;
                         stopHere = true;
                     }
                 }
+                // Otherwise, apply implicit undefined check: skip clause block if scoped variable is undefined/null.
+                // Skip this check for the root template clause (name === 'top') since its data IS the root object.
+                else if (context.name !== 'top' && (variableValues.length === 0 || variableValues[0] === undefined || variableValues[0] === null)) {
+                    delete context.nodes;
+                    stopHere = true;
+                }
+
                 delete context.condition;
                 delete context.functionName;
             }
