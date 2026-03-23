@@ -469,9 +469,19 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
             // with the result of evaluating the JS code or a boolean property
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
-                    const resultStr = userCodeResults[this.path.join('/')];
-                    // Parse the JSON-stringified result to get the actual boolean value
-                    context.isTrue = JSON.parse(resultStr) as boolean;
+                    const key = this.path.join('/');
+                    const resultStr = userCodeResults[key];
+                    if (resultStr === undefined || resultStr === null) {
+                        // Treat missing result as false (e.g., condition didn't return a value)
+                        context.isTrue = false;
+                    } else {
+                        try {
+                            // Parse the JSON-stringified result to get the actual boolean value
+                            context.isTrue = !!JSON.parse(resultStr);
+                        } catch (err) {
+                            throw new Error(`Invalid JSON boolean result for condition '${key}': ${String(err)}`);
+                        }
+                    }
                 }
                 else {
                     const path = getJsonPath(templateMark, context, this.path);
@@ -504,9 +514,20 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                 // the optional field is missing - the condition controls whether to render the clause.
                 if (context.condition) {
                     checkCode(context.condition);
-                    // Parse the JSON-stringified result to get the actual boolean value
-                    const resultStr = userCodeResults[this.path.join('/')];
-                    const result = JSON.parse(resultStr) as boolean;
+                    const key = this.path.join('/');
+                    const resultStr = userCodeResults[key];
+                    let result = false;
+                    if (resultStr === undefined || resultStr === null) {
+                        // Treat missing result as false (e.g., condition didn't return a value)
+                        result = false;
+                    } else {
+                        try {
+                            // Parse the JSON-stringified result to get the actual boolean value
+                            result = !!JSON.parse(resultStr);
+                        } catch (err) {
+                            throw new Error(`Invalid JSON boolean result for condition '${key}': ${String(err)}`);
+                        }
+                    }
                     if (!result) {
                         delete context.nodes;
                         stopHere = true;
