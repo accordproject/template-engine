@@ -2132,7 +2132,7 @@ exports[`templatemark interpreter should generate insurance-sub-limits-liability
                   "nodes": [
                     {
                       "$class": "org.accordproject.commonmark@0.5.0.Text",
-                      "text": "The maximum liability of the Insurer under Corporate Manslaughter and Corporate Homicide Act 2007 – Defence Costs extension C6 shall not exceed:",
+                      "text": "The maximum liability of the Insurer under Corporate Manslaughter and Corporate Homicide Act 2007 – Defense Costs extension C6 shall not exceed:",
                     },
                     {
                       "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
@@ -3998,7 +3998,7 @@ exports[`templatemark interpreter should generate playground 1`] = `
                   "nodes": [
                     {
                       "$class": "org.accordproject.commonmark@0.5.0.Text",
-                      "text": "Your favorite colours are ",
+                      "text": "Your favorite colors are ",
                     },
                     {
                       "$class": "org.accordproject.commonmark@0.5.0.Text",

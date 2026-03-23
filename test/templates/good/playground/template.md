@@ -11,7 +11,7 @@
 
 - You are *{{age}}* ({{age as "text"}}) years old
 - Your monthly salary is {{salary as "0,0.00 CCC"}}
-- Your favorite colours are {{#join favoriteColors}}
+- Your favorite colors are {{#join favoriteColors}}
 
 {{#clause order}}
 ## Orders
