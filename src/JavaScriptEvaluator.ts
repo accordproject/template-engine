@@ -135,17 +135,19 @@ export class JavaScriptEvaluator {
                             resolve({ result, elapsed: end - start });
                         })
                         .catch(err => {
-                            console.log(err);
+                            console.error(err);
                             reject({
-                                message: err.message
+                                message: err.message,
+                                stack: err.stack,
                             });
                         });
                 }
             }
             catch (err: any) {
-                console.log(err);
+                console.error(err);
                 reject({
-                    message: err.message
+                    message: err.message,
+                    stack: err.stack,
                 });
             }
         });
@@ -220,7 +222,7 @@ export class JavaScriptEvaluator {
             const workerPath = this.getWorkerPath();
             // console.debug(`Worker path: ${workerPath}`);
             const worker = child_process.fork(workerPath, { timeout: options.timeout, env: {} });
-            if (!worker.pid) {
+            if (worker.pid === undefined || worker.pid === null) {
                 throw new Error('Failed to fork child process');
             }
             this.workers.push(worker);
@@ -229,7 +231,7 @@ export class JavaScriptEvaluator {
             worker.on('error', (err: any) => {
                 this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
                 const end = new Date().getTime();
-                reject({ message: err.message, elapsed: end - start });
+                reject({ message: err.message, stack: err.stack, elapsed: end - start });
             });
             worker.on('message', (msg: any) => {
                 result = msg;
