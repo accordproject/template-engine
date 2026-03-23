@@ -134,6 +134,230 @@ exports[`templatemark interpreter should generate clause 1`] = `
 }
 `;
 
+exports[`templatemark interpreter should generate clause-condition-false 1`] = `
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": [
+    {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Test Clause with Condition Always False",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Hello ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "name",
+              "value": "Jane Doe",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "!",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.ciceromark@0.6.0.Clause",
+          "elementType": "test@1.0.0.Address",
+          "name": "address",
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "This clause should NOT be rendered because condition returns false.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate clause-condition-optional 1`] = `
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": [
+    {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Test Clause with Condition - Optional Field Missing",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Hello ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "name",
+              "value": "John Doe",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "!",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.ciceromark@0.6.0.Clause",
+          "elementType": "test@1.0.0.Address",
+          "name": "address",
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Thank you for being our customer.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate clause-condition-optional-present 1`] = `
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": [
+    {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Test Clause with Condition - Optional Field Present",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Hello ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "name",
+              "value": "Jane Doe",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "!",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.ciceromark@0.6.0.Clause",
+          "elementType": "test@1.0.0.Address",
+          "name": "address",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Heading",
+              "level": "3",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "Your Address",
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "String",
+                  "name": "line1",
+                  "value": "123 Main Street",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": ", ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "String",
+                  "name": "city",
+                  "value": "Boston",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": ", ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "String",
+                  "name": "state",
+                  "value": "MA",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": ", ",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "String",
+                  "name": "country",
+                  "value": "USA",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Thank you for being our customer.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
 exports[`templatemark interpreter should generate clause-optional 1`] = `
 {
   "$class": "org.accordproject.commonmark@0.5.0.Document",
