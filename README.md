@@ -33,8 +33,9 @@ Internally, the Template Engine evaluates templates through a structured executi
 3. **User Code Evaluation**  
    During agreement generation, compiled JavaScript expressions are evaluated using the `JavaScriptEvaluator`.  
    The evaluator supports two execution strategies:
-   - `evalDangerously()` — Executes JavaScript directly within the current process.
-   - `evalChildProcess()` — Executes JavaScript in an isolated Node.js child process for improved safety and isolation.
+   - `evalDangerously()` — Executes JavaScript directly within the current       process. 
+   This should only be used with trusted code or in a sandboxed environment (e.g., browser).
+   - `evalChildProcess()` — Executes JavaScript in an isolated Node.js child process for improved safety and isolation and is recommended for untrusted template content on the server.
 
 4. **AgreementMark Generation**  
    The TemplateMark document is traversed, evaluated values are inserted into the document structure, and an AgreementMark JSON document is produced.
