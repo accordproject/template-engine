@@ -110,7 +110,13 @@ Wrapper around Groq API used for:
 - Retry handling
 - Configurable parameters (temperature, tokens, etc.)
 
-## Running the Example
+## Installation and running the example 
+Inside the repository root: 
+```bash
+npm install
+npm run build
+```
+
 A sample template is provided in `late_delivery` folder:
 
 ```bash
