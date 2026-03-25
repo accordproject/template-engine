@@ -122,70 +122,6 @@ The executor automatically injects:
   - `events`
 - `$identifier` into:
   - `state`
-
-Additionally, object field ordering is standardized to match existing engine output:
-# LLM-Based Generic Executor for TemplateArchiveProcessor
-
-## Overview
-
-This contribution extends the `TemplateArchiveProcessor` to support a **generic LLM-based contract logic executor**.
-
-The goal is to enable execution of Accord Project templates **without requiring explicit TypeScript `logic.ts` files**, by delegating reasoning to a Large Language Model (LLM).
-
-This implementation introduces:
-
-- A fallback and force execution mode using an LLM
-- A Groq-based reasoning backend
-- A runtime-compatible output normalization layer
-- Minimal changes to existing execution flow to preserve backward compatibility
-
----
-
-## Key Features
-
-### 1. LLM Execution Modes
-
-The processor now supports three execution modes:
-
-| Mode       | Behavior |
-|------------|--------|
-| `disabled` | Only TypeScript logic is used (default behavior) |
-| `fallback` | Uses LLM only if no TypeScript logic is found |
-| `force`    | Always uses LLM, ignoring TypeScript logic |
-
----
-
-### 2. Generic Contract Execution via LLM
-
-The LLM executor:
-
-- Takes as input:
-  - Contract text
-  - Concerto model definitions
-  - Template data
-  - Current state
-  - Incoming request
-- Produces:
-  - `result` (response object)
-  - `state` (updated contract state)
-  - `events` (emitted events)
-
-This mimics the behavior of a typical `logic.ts` implementation.
-
----
-
-### 3. Runtime Output Normalization
-
-Since LLM outputs may omit runtime metadata, a normalization layer ensures compatibility with Accord runtime expectations.
-
-The executor automatically injects:
-
-- `$timestamp` into:
-  - `result`
-  - `events`
-- `$identifier` into:
-  - `state`
-
 Additionally, object field ordering is standardized to match existing engine output ie (result, events, state)
 
 ---
@@ -242,8 +178,10 @@ A sample template is provided in `late_delivery` folder:
 
 ```bash
 cd late_delivery/
-#Set API Key
+
+# Set API Key
 export GROQ_API_KEY="your_api_key_here"
-#Run the Example
+
+# Run the Example
 node run.js
 ```
