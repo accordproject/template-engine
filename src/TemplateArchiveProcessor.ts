@@ -33,11 +33,11 @@ export type TriggerResponse = {
     result: Response;
     state: State;
     events: Event[];
-}
+};
 
 export type InitResponse = {
     state: State;
-}
+};
 
 /**
  * A template archive processor: can draft content using the
@@ -70,14 +70,32 @@ export class TemplateArchiveProcessor {
         const engine = new TemplateMarkInterpreter(modelManager, {});
         const templateMarkTransformer = new TemplateMarkTransformer();
         const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate(
-            { content: this.template.getTemplate() }, modelManager, templateKind, { options });
+            { content: this.template.getTemplate() }, modelManager, templateKind, { options }
+        );
         const now = currentTime ? currentTime : new Date().toISOString();
         const ciceroMark = await engine.generate(templateMarkDom, data, { now });
-        const result = transform(ciceroMark.toJSON(), 'ciceromark', ['ciceromark_unquoted', format], null, options);
-        return result;
+        return transform(ciceroMark.toJSON(), 'ciceromark', ['ciceromark_unquoted', format], null, options);
     }
 
-    async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number, llmConfig?: LLMConfig): Promise<TriggerResponse> {
+    private getContractTextForLLM(): string {
+        const scriptManager = this.template.getScriptManager();
+        const logicScript = scriptManager.getScript('logic/logic.ts');
+        return logicScript ? logicScript.getContents() : '';
+    }
+
+    private getModelDefinitionsForLLM(): string {
+    const modelManager = this.template.getModelManager();
+    return modelManager.getModels().map((m: { getDefinitions: () => string }) => m.getDefinitions()).join('\n');
+}
+
+    async trigger(
+        data: any,
+        request: any,
+        state?: any,
+        currentTime?: string,
+        utcOffset?: number,
+        llmConfig?: LLMConfig
+    ): Promise<TriggerResponse> {
         const logicManager = this.template.getLogicManager();
         if (logicManager.getLanguage() === 'typescript') {
             const compiledCode: Record<string, TwoSlashReturn> = {};
@@ -94,8 +112,7 @@ export class TemplateArchiveProcessor {
                 const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
                 ${tsFile.getContents()}`;
 
-                const result = compiler.compile(code);
-                compiledCode[tsFile.getIdentifier()] = result;
+                compiledCode[tsFile.getIdentifier()] = compiler.compile(code);
             }
 
             const evaluator = new JavaScriptEvaluator();
@@ -111,18 +128,26 @@ export class TemplateArchiveProcessor {
             if (evalResponse.result) {
                 return evalResponse.result;
             }
-            throw new Error('Trigger failed with message: ' + evalResponse.message);
+            throw new Error(`Trigger failed with message: ${evalResponse.message}`);
         } else if (llmConfig) {
             const executor = new LLMExecutor();
-            const output = await executor.trigger();
+            const output = await executor.trigger(
+                {
+                    contractText: this.getContractTextForLLM(),
+                    state: (state ?? {}) as Record<string, unknown>,
+                    request: (request ?? {}) as Record<string, unknown>,
+                    modelDefinitions: this.getModelDefinitionsForLLM()
+                },
+                llmConfig
+            );
             return {
                 result: output.response,
                 state: output.state,
                 events: output.emit
             };
-        } else {
-            throw new Error('Only TypeScript is supported at this time');
         }
+
+        throw new Error('Only TypeScript is supported at this time');
     }
 
     async init(data: any, currentTime?: string, utcOffset?: number, llmConfig?: LLMConfig): Promise<InitResponse> {
@@ -142,8 +167,7 @@ export class TemplateArchiveProcessor {
                 const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
                 ${tsFile.getContents()}`;
 
-                const result = compiler.compile(code);
-                compiledCode[tsFile.getIdentifier()] = result;
+                compiledCode[tsFile.getIdentifier()] = compiler.compile(code);
             }
 
             const evaluator = new JavaScriptEvaluator();
@@ -159,15 +183,22 @@ export class TemplateArchiveProcessor {
             if (evalResponse.result) {
                 return evalResponse.result;
             }
-            throw new Error('Init failed with message: ' + evalResponse.message);
+            throw new Error(`Init failed with message: ${evalResponse.message}`);
         } else if (llmConfig) {
             const executor = new LLMExecutor();
-            const output = await executor.init();
+            const output = await executor.init(
+                {
+                    contractText: this.getContractTextForLLM(),
+                    request: (data ?? {}) as Record<string, unknown>,
+                    modelDefinitions: this.getModelDefinitionsForLLM()
+                },
+                llmConfig
+            );
             return {
                 state: output.state
             };
-        } else {
-            throw new Error('Only TypeScript is supported at this time');
         }
+
+        throw new Error('Only TypeScript is supported at this time');
     }
 }
