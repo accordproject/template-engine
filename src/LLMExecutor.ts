@@ -2,6 +2,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  */
 
+import { LLMProviderAdapter } from './LLMProviderAdapter';
+import { OpenAIAdapter } from './providers/OpenAIAdapter';
+
 export type LLMProvider = 'openai' | 'anthropic' | 'ollama';
 
 export interface LLMConfig {
@@ -50,6 +53,47 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export class LLMExecutor {
+    private readonly adapterOverride?: LLMProviderAdapter;
+
+    constructor(adapter?: LLMProviderAdapter) {
+        this.adapterOverride = adapter;
+    }
+
+    private getAdapter(config: LLMConfig): LLMProviderAdapter {
+        if (this.adapterOverride) {
+            return this.adapterOverride;
+        }
+        if (config.provider === 'openai') {
+            return new OpenAIAdapter();
+        }
+        throw new LLMExecutorError('PROVIDER_ERROR', `Unsupported provider: ${config.provider}`);
+    }
+
+    private buildTriggerPrompt(input: ExecutorInput): string {
+        return [
+            'You are executing contract logic.',
+            'Return only valid JSON with this exact shape:',
+            '{"response": {...}, "state": {...}, "emit": [{...}]}',
+            'No markdown. No prose.',
+            `Contract:\n${input.contractText}`,
+            input.modelDefinitions ? `Model Definitions:\n${input.modelDefinitions}` : '',
+            `Current State JSON:\n${JSON.stringify(input.state)}`,
+            `Request JSON:\n${JSON.stringify(input.request)}`
+        ].filter(Boolean).join('\n\n');
+    }
+
+    private buildInitPrompt(input: InitExecutorInput): string {
+        return [
+            'You are initializing contract state.',
+            'Return only valid JSON with this exact shape:',
+            '{"state": {...}}',
+            'No markdown. No prose.',
+            `Contract:\n${input.contractText}`,
+            input.modelDefinitions ? `Model Definitions:\n${input.modelDefinitions}` : '',
+            `Init Request JSON:\n${JSON.stringify(input.request)}`
+        ].filter(Boolean).join('\n\n');
+    }
+
     parseModelJson(text: string): unknown {
         try {
             return JSON.parse(text);
@@ -93,15 +137,27 @@ export class LLMExecutor {
         };
     }
 
-    async trigger(_input?: ExecutorInput, _config?: LLMConfig): Promise<ExecutorOutput> {
-        void _input;
-        void _config;
-        throw new LLMExecutorError('PROVIDER_ERROR', 'LLMExecutor trigger provider call not implemented yet');
+    async trigger(input?: ExecutorInput, config?: LLMConfig): Promise<ExecutorOutput> {
+        if (!input || !config) {
+            throw new LLMExecutorError('PROVIDER_ERROR', 'Missing input/config for trigger');
+        }
+
+        const adapter = this.getAdapter(config);
+        const prompt = this.buildTriggerPrompt(input);
+        const raw = await adapter.completeJson(prompt, config);
+        const parsed = this.parseModelJson(raw);
+        return this.assertTriggerShape(parsed);
     }
 
-    async init(_input?: InitExecutorInput, _config?: LLMConfig): Promise<InitOutput> {
-        void _input;
-        void _config;
-        throw new LLMExecutorError('PROVIDER_ERROR', 'LLMExecutor init provider call not implemented yet');
+    async init(input?: InitExecutorInput, config?: LLMConfig): Promise<InitOutput> {
+        if (!input || !config) {
+            throw new LLMExecutorError('PROVIDER_ERROR', 'Missing input/config for init');
+        }
+
+        const adapter = this.getAdapter(config);
+        const prompt = this.buildInitPrompt(input);
+        const raw = await adapter.completeJson(prompt, config);
+        const parsed = this.parseModelJson(raw);
+        return this.assertInitShape(parsed);
     }
 }
