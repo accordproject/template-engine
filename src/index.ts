@@ -17,4 +17,5 @@ import type { TemplateLogic } from './slc/SmartLegalContract.d.ts';
 export { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 export { TemplateArchiveProcessor } from './TemplateArchiveProcessor';
 export { TemplateLogic }
+export * from './LLMExecutor';
 export * from './utils';
