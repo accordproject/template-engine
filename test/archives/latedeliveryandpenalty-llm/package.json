@@ -1,0 +1,15 @@
+{
+    "name": "latedeliveryandpenalty-llm",
+    "version": "0.0.1",
+    "description": "Late Delivery and Penalty template using LLM-based logic execution instead of explicit TypeScript logic.",
+    "accordproject": {
+        "runtime": "llm",
+        "template": "clause",
+        "cicero": "^0.25.0",
+        "llm": {
+            "provider": "openai",
+            "model": "gpt-4o",
+            "temperature": 0.0
+        }
+    }
+}
