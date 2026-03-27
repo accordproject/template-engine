@@ -12,11 +12,12 @@
  * limitations under the License.
  */
 
-import type { TemplateLogic } from './slc/SmartLegalContract.d.ts';
-
-export { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
-export { TemplateArchiveProcessor } from './TemplateArchiveProcessor';
-export { TemplateLogic }
-export * from './utils';
-export { LLMLogicExecutor, createLLMProvider, resolveConfig, PromptBuilder, ResponseParser } from './llm';
-export type { LLMConfig, LLMProvider, LLMMessage, LLMProviderResponse } from './llm';
+export type { LLMConfig } from './LLMConfig';
+export { resolveConfig } from './LLMConfig';
+export type { LLMProvider, LLMMessage, LLMProviderResponse } from './LLMProvider';
+export { createLLMProvider } from './LLMProvider';
+export { LLMLogicExecutor } from './LLMLogicExecutor';
+export { PromptBuilder } from './PromptBuilder';
+export { ResponseParser } from './ResponseParser';
+export { OpenAIProvider } from './providers/OpenAIProvider';
+export { AnthropicProvider } from './providers/AnthropicProvider';
