@@ -105,7 +105,11 @@ export class TemplateMarkToJavaScriptCompiler {
             return compiled;
         }
         else {
-            throw errors;
+            const messages = errors.map(e => {
+                const errorList = e.errors.map(d => `${d.renderedMessage} (line ${d.line}, col ${d.character})`);
+                return `In '${e.nodeId}': ${errorList.join(', ')}`;
+            });
+            throw new Error(messages.join('\n'));
         }
     }
 }
