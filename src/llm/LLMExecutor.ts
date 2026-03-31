@@ -202,85 +202,33 @@ export class LLMExecutor {
             state: normalizedState
         };
     }
-    // private normalizeInitResponse(response: any, data: any): InitResponse {
-    //     if (response.state && typeof response.state === 'object') {
-    //         const stateObj = response.state as Record<string, any>;
-    //         if (!stateObj.$identifier) {
-    //             stateObj.$identifier =
-    //                 data?.$identifier ||
-    //                 data?.clauseId ||
-    //                 data?.contractId ||
-    //                 'state-1';
-    //         }
-    //     }
-    //     return response as InitResponse;
-    // }
 
-    // private normalizeTriggerResponse(
-    //     response: any,
-    //     data: any,
-    //     currentTime?: string
-    // ): TriggerResponse {
-    //     const now = currentTime || new Date().toISOString();
-
-    //     if (response.result && typeof response.result === 'object') {
-    //         const resultObj = response.result as Record<string, any>;
-    //         if (!resultObj.$timestamp) {
-    //             resultObj.$timestamp = now;
-    //         }
-    //     }
-
-    //     if (Array.isArray(response.events)) {
-    //         response.events = response.events.map((event: any) => {
-    //             if (event && typeof event === 'object' && !event.$timestamp) {
-    //                 event.$timestamp = now;
-    //             }
-    //             return event;
-    //         });
-    //     } else {
-    //         response.events = [];
-    //     }
-
-    //     if (response.state && typeof response.state === 'object') {
-    //         const stateObj = response.state as Record<string, any>;
-    //         if (!stateObj.$identifier) {
-    //             stateObj.$identifier =
-    //                 data?.$identifier ||
-    //                 data?.clauseId ||
-    //                 data?.contractId ||
-    //                 'state-1';
-    //         }
-    //     }
-
-    //     return response as TriggerResponse;
-    // }
 
     async init(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
         console.log("[LLMExecutor] INIT called");
         const context = this.buildSharedContext();
 
         const systemPrompt = `
-You are a generic Accord Project contract runtime executor.
-You will receive:
-- contract text
-- Concerto model definitions
-- template data
+        You are a generic Accord Project contract runtime executor.
+        You will receive:
+        - contract text
+        - Concerto model definitions
+        - template data
 
-Task:
-Compute the initial state of the contract.
+        Task:
+        Compute the initial state of the contract.
 
-Rules:
-- Return ONLY valid JSON
-- No markdown
-- No explanation
-- Output exactly:
-{
-  "state": { ... }
-}
-- The state must match the contract's state model
-- Preserve "$class" when inferable
-- Runtime metadata like "$identifier" may be added by the runtime
-`;
+        Rules:
+        - Return ONLY valid JSON
+        - No markdown
+        - No explanation
+        - Output exactly:
+        {
+        "state": { ... }
+        }
+        - The state must match the contract's state model
+        - Preserve "$class" when inferable
+        `;
 
         const userPrompt = JSON.stringify({
             operation: 'init',
