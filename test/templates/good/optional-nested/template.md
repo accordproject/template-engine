@@ -1,5 +1,5 @@
-# Optional Test
-
+# Optional Test                                                                 
+                                                                                
 {{#clause mandate}}
 > **Mandate ID:** {{mandateId}}
 
@@ -36,7 +36,7 @@
  {{country}}  
  {{/clause}}
 
-- You are *{{age}}* years old
+- You are *{{#optional age}}{{this}}{{/optional}}* years old
 - Your monthly salary is {{salary as "0,0.00 CCC"}}
 - Your favorite colours are {{#join favoriteColors}}
 
