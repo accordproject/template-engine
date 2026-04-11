@@ -1,5 +1,4 @@
-# Optional Test                                                                 
-                                                                                
+# Optional Test
 {{#clause mandate}}
 > **Mandate ID:** {{mandateId}}
 
