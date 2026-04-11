@@ -1,184 +1,219 @@
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Template } from '@accordproject/cicero-core';
 import { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { transform } from '@accordproject/markdown-transform';
 import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler';
-import Script from '@accordproject/cicero-core/types/src/script';
-import { TwoSlashReturn } from '@typescript/twoslash';
+import type Script from '@accordproject/cicero-core/types/src/script';
+import type { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { SMART_LEGAL_CONTRACT_BASE64 } from './runtime/declarations';
 
-export type State = object;
-export type Response = object;
-export type Event = object;
+export type State = Record<string, unknown>;
+export type Response = Record<string, unknown>;
+export type Event = Record<string, unknown>;
 
-export type TriggerResponse = {
+export interface TriggerResponse {
     result: Response;
     state: State;
     events: Event[];
 }
 
-export type InitResponse = {
+export interface InitResponse {
     state: State;
 }
 
+export interface CompileOptions {
+    compiledTemplate?: Record<string, TwoSlashReturn>;
+    currentTime?: string;
+    utcOffset?: number;
+}
+
+export interface DraftOptions {
+    currentTime?: string;
+    [key: string]: unknown;
+}
+
+interface TemplateData {
+    [key: string]: unknown;
+}
+
+interface TemplateRequest {
+    [key: string]: unknown;
+}
+
 /**
- * A template archive processor: can draft content using the
- * templatemark for the archive and trigger the logic of the archive
+ * A template archive processor with compilation caching
  */
 export class TemplateArchiveProcessor {
-    template: Template;
+    private template: Template;
+    private static compilationCache = new Map<string, Record<string, TwoSlashReturn>>();
+    private compilationCacheKey: string;
+    private isInitialized = false;
 
-    /**
-     * Creates a template archive processor
-     * @param {Template} template - the template to be used by the processor
-     */
     constructor(template: Template) {
         this.template = template;
+        this.compilationCacheKey = this.generateCompilationCacheKey();
     }
 
-    /**
-     * Drafts a template by merging it with data
-     * @param {any} data the data to merge with the template
-     * @param {string} format the output format
-     * @param {any} options merge options
-     * @param {[string]} currentTime the current value for 'now'
-     * @returns {Promise} the drafted content
-     */
-    async draft(data: any, format: string, options: any, currentTime?: string): Promise<any> {
-        // Setup
+    private generateCompilationCacheKey(): string {
+        const metadata = this.template.getMetadata();
+        const identifier = this.template.getIdentifier();
+        const version = metadata.getVersion();
+        
+        const logicManager = this.template.getLogicManager();
+        const scripts = logicManager.getScriptManager().getScriptsForTarget('typescript');
+        const scriptContents = scripts.map((script: Script) => script.getContents()).join('');
+        
+        return `${identifier}@${version}:${Buffer.from(scriptContents).toString('base64').substring(0, 32)}`;
+    }
+
+    private async compileTemplate(): Promise<Record<string, TwoSlashReturn>> {
+        if (TemplateArchiveProcessor.compilationCache.has(this.compilationCacheKey)) {
+            return TemplateArchiveProcessor.compilationCache.get(this.compilationCacheKey)!;
+        }
+
+        const logicManager = this.template.getLogicManager();
+        if (logicManager.getLanguage() !== 'typescript') {
+            throw new Error('Only TypeScript is supported at this time');
+        }
+
+        const compiledCode: Record<string, TwoSlashReturn> = {};
+        const tsFiles: Script[] = logicManager.getScriptManager().getScriptsForTarget('typescript');
+        
+        const compiler = new TypeScriptToJavaScriptCompiler(
+            this.template.getModelManager(),
+            this.template.getTemplateModel().getFullyQualifiedName()
+        );
+        
+        await compiler.initialize();
+        const runtimeDefinitions = Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString();
+
+        for (const tsFile of tsFiles) {
+            const code = `${runtimeDefinitions}\n${tsFile.getContents()}`;
+            const result = compiler.compile(code);
+            compiledCode[tsFile.getIdentifier()] = result;
+        }
+
+        TemplateArchiveProcessor.compilationCache.set(this.compilationCacheKey, compiledCode);
+        return compiledCode;
+    }
+
+    private async executeLogic(
+        functionName: 'init' | 'trigger',
+        data: TemplateData,
+        request?: TemplateRequest,
+        state?: State,
+        currentTime?: string,
+        utcOffset?: number
+    ): Promise<InitResponse | TriggerResponse> {
+        const compiledCode = await this.compileTemplate();
+        const mainLogic = compiledCode['logic/logic.ts'];
+        
+        if (!mainLogic) {
+            throw new Error('Main logic file not found');
+        }
+
+        const evaluator = new JavaScriptEvaluator();
+        
+        const args = functionName === 'init' 
+            ? [data, currentTime, utcOffset]
+            : [data, request, state, currentTime, utcOffset];
+        
+        const argNames = functionName === 'init' 
+            ? ['data', 'currentTime', 'utcOffset']
+            : ['data', 'request', 'state', 'currentTime', 'utcOffset'];
+
+        const evalResponse = await evaluator.evalDangerously({
+            templateLogic: true,
+            verbose: false,
+            functionName,
+            code: mainLogic.code,
+            argumentNames: argNames,
+            arguments: args
+        });
+
+        if (evalResponse.result) {
+            return evalResponse.result as InitResponse | TriggerResponse;
+        } else {
+            throw new Error(`${functionName.charAt(0).toUpperCase() + functionName.slice(1)} failed: ${evalResponse.message || 'Unknown error'}`);
+        }
+    }
+
+    async draft(
+        data: TemplateData, 
+        format: string, 
+        options: DraftOptions = {}, 
+        currentTime?: string
+    ): Promise<string> {
         const metadata = this.template.getMetadata();
         const templateKind = metadata.getTemplateType() !== 0 ? 'clause' : 'contract';
 
-        // Get the data
         const modelManager = this.template.getModelManager();
         const engine = new TemplateMarkInterpreter(modelManager, {});
         const templateMarkTransformer = new TemplateMarkTransformer();
+        
         const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate(
-            { content: this.template.getTemplate() }, modelManager, templateKind, {options});
-        const now = currentTime ? currentTime : new Date().toISOString();
-        // console.log(JSON.stringify(templateMarkDom, null, 2));
+            { content: this.template.getTemplate() }, 
+            modelManager, 
+            templateKind, 
+            { options: options as any }
+        );
+        
+        const now = currentTime || new Date().toISOString();
         const ciceroMark = await engine.generate(templateMarkDom, data, { now });
-        // console.log(JSON.stringify(ciceroMark));
-        const result = transform(ciceroMark.toJSON(), 'ciceromark', ['ciceromark_unquoted', format], null, options);
-        // console.log(result);
-        return result;
-
+        
+        return transform(
+            ciceroMark.toJSON(), 
+            'ciceromark', 
+            ['ciceromark_unquoted', format], 
+            null, 
+            options
+        );
     }
 
-    /**
-     * Trigger the logic of a template
-     * @param {object} request - the request to send to the template logic
-     * @param {object} state - the current state of the template
-     * @param {[string]} currentTime - the current time, defaults to now
-     * @param {[number]} utcOffset - the UTC offer, defaults to zero
-     * @returns {Promise} the response and any events
-     */
-    async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number): Promise<TriggerResponse> {
-        const logicManager = this.template.getLogicManager();
-        if(logicManager.getLanguage() === 'typescript') {
-            const compiledCode:Record<string, TwoSlashReturn> = {};
-            const tsFiles:Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
-            for(let n=0; n < tsFiles.length; n++) {
-                const tsFile = tsFiles[n];
-                // console.log(`Compiling ${tsFile.getIdentifier()}`);
-
-                const compiler = new TypeScriptToJavaScriptCompiler(this.template.getModelManager(),
-                    this.template.getTemplateModel().getFullyQualifiedName());
-
-                await compiler.initialize();
-
-                // add the runtime type definitions to all ts files??
-                const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
-                ${tsFile.getContents()}`
-
-                const result = compiler.compile(code);
-                compiledCode[tsFile.getIdentifier()] = result;
-            }
-            // console.log(compiledCode['logic/logic.ts'].code);
-            const evaluator = new JavaScriptEvaluator();
-            const evalResponse = await evaluator.evalDangerously( {
-                templateLogic: true,
-                verbose: false,
-                functionName: 'trigger',
-                code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
-                argumentNames: ['data', 'request', 'state'],
-                arguments: [data, request, state, currentTime, utcOffset]
-            });
-            if(evalResponse.result) {
-                return evalResponse.result;
-            }
-            else {
-                throw new Error('Trigger failed with message: ' + evalResponse.message);
-            }
+    async init(
+        data: TemplateData, 
+        currentTime?: string, 
+        utcOffset?: number,
+        options: CompileOptions = {}
+    ): Promise<InitResponse> {
+        if (options.compiledTemplate) {
+            TemplateArchiveProcessor.compilationCache.set(this.compilationCacheKey, options.compiledTemplate);
         }
-        else {
-            throw new Error('Only TypeScript is supported at this time');
-        }
+        
+        const result = await this.executeLogic('init', data, undefined, undefined, currentTime, utcOffset);
+        return result as InitResponse;
     }
 
-    /**
-     * Init the logic of a template
-     * @param {[string]} currentTime - the current time, defaults to now
-     * @param {[number]} utcOffset - the UTC offer, defaults to zero
-     * @returns {Promise} the response and any events
-     */
-    async init(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
-        const logicManager = this.template.getLogicManager();
-        if(logicManager.getLanguage() === 'typescript') {
-            const compiledCode:Record<string, TwoSlashReturn> = {};
-            const tsFiles:Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
-            for(let n=0; n < tsFiles.length; n++) {
-                const tsFile = tsFiles[n];
-                // console.log(`Compiling ${tsFile.getIdentifier()}`);
-
-                const compiler = new TypeScriptToJavaScriptCompiler(this.template.getModelManager(),
-                    this.template.getTemplateModel().getFullyQualifiedName());
-
-                await compiler.initialize();
-
-                // add the runtime type definitions to all ts files??
-                const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
-                ${tsFile.getContents()}`
-
-                const result = compiler.compile(code);
-                compiledCode[tsFile.getIdentifier()] = result;
-            }
-            // console.log(compiledCode['logic/logic.ts'].code);
-            const evaluator = new JavaScriptEvaluator();
-            const evalResponse = await evaluator.evalDangerously( {
-                templateLogic: true,
-                verbose: false,
-                functionName: 'init',
-                code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
-                argumentNames: ['data'],
-                arguments: [data, currentTime, utcOffset]
-            });
-            if(evalResponse.result) {
-                return evalResponse.result;
-            }
-            else {
-                throw new Error('Init failed with message: ' + evalResponse.message);
-            }
+    async trigger(
+        data: TemplateData, 
+        request: TemplateRequest, 
+        state?: State, 
+        currentTime?: string, 
+        utcOffset?: number,
+        options: CompileOptions = {}
+    ): Promise<TriggerResponse> {
+        if (options.compiledTemplate) {
+            TemplateArchiveProcessor.compilationCache.set(this.compilationCacheKey, options.compiledTemplate);
         }
-        else {
-            throw new Error('Only TypeScript is supported at this time');
-        }
+        
+        const result = await this.executeLogic('trigger', data, request, state, currentTime, utcOffset);
+        return result as TriggerResponse;
+    }
+
+    async compile(): Promise<Record<string, TwoSlashReturn>> {
+        return this.compileTemplate();
+    }
+
+    getCachedCompilation(): Record<string, TwoSlashReturn> | undefined {
+        return TemplateArchiveProcessor.compilationCache.get(this.compilationCacheKey);
+    }
+
+    clearCache(): void {
+        TemplateArchiveProcessor.compilationCache.delete(this.compilationCacheKey);
+    }
+
+    static clearAllCaches(): void {
+        TemplateArchiveProcessor.compilationCache.clear();
     }
 }
