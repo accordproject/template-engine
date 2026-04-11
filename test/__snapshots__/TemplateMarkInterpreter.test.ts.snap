@@ -3522,10 +3522,20 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
                       "$class": "org.accordproject.commonmark@0.5.0.Emph",
                       "nodes": [
                         {
-                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "$class": "org.accordproject.ciceromark@0.6.0.Optional",
                           "elementType": "Integer",
+                          "hasSome": true,
                           "name": "age",
-                          "value": "42",
+                          "nodes": [
+                            {
+                              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                              "elementType": "Integer",
+                              "name": "this",
+                              "value": "42",
+                            },
+                          ],
+                          "whenNone": [],
+                          "whenSome": [],
                         },
                       ],
                     },
