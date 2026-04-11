@@ -3506,47 +3506,42 @@ exports[`templatemark interpreter should generate optional-nested 1`] = `
           ],
         },
         {
-          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
           "nodes": [
             {
-              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+              "elementType": "Integer",
+              "hasSome": true,
+              "name": "age",
               "nodes": [
                 {
-                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "- You are ",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Emph",
                   "nodes": [
                     {
-                      "$class": "org.accordproject.commonmark@0.5.0.Text",
-                      "text": "You are ",
-                    },
-                    {
-                      "$class": "org.accordproject.commonmark@0.5.0.Emph",
-                      "nodes": [
-                        {
-                          "$class": "org.accordproject.ciceromark@0.6.0.Optional",
-                          "elementType": "Integer",
-                          "hasSome": true,
-                          "name": "age",
-                          "nodes": [
-                            {
-                              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
-                              "elementType": "Integer",
-                              "name": "this",
-                              "value": "42",
-                            },
-                          ],
-                          "whenNone": [],
-                          "whenSome": [],
-                        },
-                      ],
-                    },
-                    {
-                      "$class": "org.accordproject.commonmark@0.5.0.Text",
-                      "text": " years old",
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Integer",
+                      "name": "this",
+                      "value": "42",
                     },
                   ],
                 },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": " years old",
+                },
               ],
+              "whenNone": [],
+              "whenSome": [],
             },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": [
             {
               "$class": "org.accordproject.commonmark@0.5.0.Item",
               "nodes": [
