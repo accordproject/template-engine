@@ -127,7 +127,7 @@ This AgreementMark JSON document can then be passed to the `@accordproject/markd
 
 The Hello World example just scratches the surface of what can be accomplished! TemplateMark can define optional sections, conditional sections, TypeScript formulae/calculations and even reference external data.
 
-Refer to the [full](https://github.com/accordproject/template-engine/tree/main/test/templates/full) example for details. 
+Refer to the [full](https://github.com/accordproject/template-engine/tree/main/test/templates/good/full) example for details. 
 
 > More detailed syntax documentation is to come!
 Read the existing documentation at: https://docs.accordproject.org/docs/markup-templatemark.html
