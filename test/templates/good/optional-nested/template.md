@@ -35,7 +35,7 @@
  {{country}}  
  {{/clause}}
 
-- You are *{{#optional age}}{{this}}{{/optional}}* years old
+{{#optional age}}- You are *{{this}}* years old{{/optional}}
 - Your monthly salary is {{salary as "0,0.00 CCC"}}
 - Your favorite colours are {{#join favoriteColors}}
 
