@@ -21,8 +21,8 @@
     "pretest": "npm-run-all licchk lint build",
     "lint": "eslint .",
     "licchk": "license-check-and-add",
-    "test": "node --experimental-vm-modules node_modules/.bin/jest --coverage --coverageReporters=text-summary",
-    "coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
+    "test": "node --experimental-vm-modules node_modules/jest-cli/bin/jest.js --coverage --coverageReporters=text-summary",
+    "coverage": "node --experimental-vm-modules node_modules/jest-cli/bin/jest.js --coverage",
     "test:watch": "jest --watchAll",
     "updateRuntimeDependencies": "node ./scripts/updateRuntimeDependencies"
   },
