@@ -23,6 +23,8 @@ import Script from '@accordproject/cicero-core/types/src/script';
 import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { SMART_LEGAL_CONTRACT_BASE64 } from './runtime/declarations';
+import { LLMConfig } from './llm/LLMConfig';
+import { LLMLogicExecutor } from './llm/LLMLogicExecutor';
 
 export type State = object;
 export type Response = object;
@@ -44,13 +46,16 @@ export type InitResponse = {
  */
 export class TemplateArchiveProcessor {
     template: Template;
+    llmConfig?: Partial<LLMConfig>;
 
     /**
      * Creates a template archive processor
      * @param {Template} template - the template to be used by the processor
+     * @param {Partial<LLMConfig>} [llmConfig] - optional LLM configuration for templates using LLM runtime
      */
-    constructor(template: Template) {
+    constructor(template: Template, llmConfig?: Partial<LLMConfig>) {
         this.template = template;
+        this.llmConfig = llmConfig;
     }
 
     /**
@@ -130,8 +135,12 @@ export class TemplateArchiveProcessor {
                 throw new Error('Trigger failed with message: ' + evalResponse.message);
             }
         }
+        else if(logicManager.getLanguage() === 'llm') {
+            const executor = new LLMLogicExecutor(this.template, this.llmConfig);
+            return executor.trigger(data, request, state, currentTime);
+        }
         else {
-            throw new Error('Only TypeScript is supported at this time');
+            throw new Error(`Unsupported runtime language: '${logicManager.getLanguage()}'. Supported: typescript, llm.`);
         }
     }
 
@@ -181,8 +190,12 @@ export class TemplateArchiveProcessor {
                 throw new Error('Init failed with message: ' + evalResponse.message);
             }
         }
+        else if(logicManager.getLanguage() === 'llm') {
+            const executor = new LLMLogicExecutor(this.template, this.llmConfig);
+            return executor.init(data, currentTime);
+        }
         else {
-            throw new Error('Only TypeScript is supported at this time');
+            throw new Error(`Unsupported runtime language: '${logicManager.getLanguage()}'. Supported: typescript, llm.`);
         }
     }
 }

@@ -12,11 +12,21 @@
  * limitations under the License.
  */
 
-import type { TemplateLogic } from './slc/SmartLegalContract.d.ts';
+concerto version "^3.0.0"
 
-export { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
-export { TemplateArchiveProcessor } from './TemplateArchiveProcessor';
-export { TemplateLogic }
-export * from './utils';
-export { LLMLogicExecutor, createLLMProvider, resolveConfig, PromptBuilder, ResponseParser } from './llm';
-export type { LLMConfig, LLMProvider, LLMMessage, LLMProviderResponse } from './llm';
+namespace org.accordproject.contract@0.2.0
+
+/**
+ * Contract Data
+ * -- Describes the structure of contracts and clauses
+ */
+
+/* A contract is a asset -- This contains the contract data */
+abstract asset Contract identified by contractId {
+  o String contractId
+}
+
+/* A clause is an asset -- This contains the clause data */
+abstract asset Clause identified by clauseId {
+  o String clauseId
+}
