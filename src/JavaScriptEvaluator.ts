@@ -47,6 +47,7 @@ export type EvalResponse = {
     timeout?: boolean // if true the promise is rejected due to timeout
     starvation?: boolean // if true the promise is rejected due to lack of child process
     message?: string; // if promise rejected due to a caught exception this will be set
+    stack?: string;
     elapsed?: number; // the elapsed time in ms to process the work item
     maxQueueDepthExceeded?: boolean // if true the promise is rejected because the queue is full
 }
@@ -136,19 +137,32 @@ export class JavaScriptEvaluator {
                         })
                         .catch(err => {
                             console.error(err);
-                            reject({
-                                message: err.message,
-                                stack: err.stack,
-                            });
+                            if(err instanceof Error){
+                                reject({
+                                    message: err.message,
+                                    stack: err.stack,
+                                });
+                            }else{
+                                reject({
+                                    message: String(err),
+                                });
+                            }
+                            
                         });
                 }
             }
             catch (err: any) {
                 console.error(err);
-                reject({
-                    message: err.message,
-                    stack: err.stack,
-                });
+                if(err instanceof Error){
+                    reject({
+                        message: err.message,
+                        stack: err.stack,
+                    });
+                }else{
+                    reject({
+                        message: String(err),
+                    })
+                }
             }
         });
     }
@@ -171,6 +185,7 @@ export class JavaScriptEvaluator {
             };
             if(this.queue.length >= this.options.maxQueueDepth) {
                 reject({ maxQueueDepthExceeded: true, elapsed: 0 });
+                return;
             }
             this.queue.push(workItem);
             this.processQueue(options);
@@ -228,10 +243,22 @@ export class JavaScriptEvaluator {
             this.workers.push(worker);
             work.pid = worker.pid;
             let result: any;
-            worker.on('error', (err: any) => {
+            worker.on('error', (err: any) => {       
                 this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
                 const end = new Date().getTime();
-                reject({ message: err.message, stack: err.stack, elapsed: end - start });
+                
+                if (err instanceof Error) {
+                    reject({
+                        message: err.message,
+                        stack: err.stack,
+                        elapsed: end - start
+                    });
+                }else{
+                    reject({
+                        message: String(err),
+                        elapsed: end - start
+                    });
+                }
             });
             worker.on('message', (msg: any) => {
                 result = msg;
