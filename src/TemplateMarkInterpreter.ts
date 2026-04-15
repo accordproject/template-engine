@@ -604,14 +604,14 @@ export class TemplateMarkInterpreter {
      * @throws {Error} if the templateMark document is invalid
      */
     checkTypes(templateMark: object): object {
-        const modelManager = new ModelManager({ strict: true });
+        const modelManager = new ModelManager();
         modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
         modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
         modelManager.addCTOModel(TemplateMarkModel.MODEL, 'templatemark.cto');
         const factory = new Factory(modelManager);
-        const serializer = new Serializer(factory, modelManager);
+        const serializer = new Serializer(factory, modelManager,{});
         try {
-            serializer.fromJSON(templateMark);
+            serializer.fromJSON(templateMark, { validate: true, acceptResourcesForRelationships: false });
         }
         catch (err) {
             throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(templateMark, null, 2)}`);
@@ -701,14 +701,14 @@ export class TemplateMarkInterpreter {
     }
 
     validateCiceroMark(ciceroMark: object): object {
-        const modelManager = new ModelManager({ strict: true });
+        const modelManager = new ModelManager();
         modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
         modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
         modelManager.addCTOModel(CiceroMarkModel.MODEL, 'ciceromark.cto');
         const factory = new Factory(modelManager);
-        const serializer = new Serializer(factory, modelManager);
+        const serializer = new Serializer(factory, modelManager, {});
         try {
-            return serializer.fromJSON(ciceroMark);
+            return serializer.fromJSON(ciceroMark, { validate: true, acceptResourcesForRelationships: false });
         }
         catch (err) {
             throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(ciceroMark, null, 2)}`);
@@ -718,7 +718,7 @@ export class TemplateMarkInterpreter {
     async generate(templateMark: object, data: TemplateData, options?: GenerationOptions): Promise<any> {
         const factory = new Factory(this.modelManager);
         const serializer = new Serializer(factory, this.modelManager);
-        const templateData = serializer.fromJSON(data);
+        const templateData = serializer.fromJSON(data, { validate: true, acceptResourcesForRelationships: false });
         if (templateData.getFullyQualifiedType() !== this.templateClass.getFullyQualifiedName()) {
             throw new Error(`Template data must be of type '${this.templateClass.getFullyQualifiedName()}'.`);
         }
