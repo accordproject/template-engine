@@ -574,7 +574,7 @@ export class TemplateMarkInterpreter {
      * @throws {Error} if the templateMark document is invalid
      */
     checkTypes(templateMark: object): object {
-        const modelManager = new ModelManager({ strict: true });
+        const modelManager = new ModelManager();
         modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
         modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
         modelManager.addCTOModel(TemplateMarkModel.MODEL, 'templatemark.cto');
@@ -671,12 +671,12 @@ export class TemplateMarkInterpreter {
     }
 
     validateCiceroMark(ciceroMark: object): object {
-        const modelManager = new ModelManager({ strict: true });
+        const modelManager = new ModelManager();
         modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
         modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
         modelManager.addCTOModel(CiceroMarkModel.MODEL, 'ciceromark.cto');
         const factory = new Factory(modelManager);
-        const serializer = new Serializer(factory, modelManager);
+        const serializer = new Serializer(factory, modelManager,);
         try {
             return serializer.fromJSON(ciceroMark);
         }
