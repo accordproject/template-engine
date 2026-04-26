@@ -160,7 +160,7 @@ function getJsonPath(rootData: any, currentNode: any, paths: string[]): string {
         }
     }
 
-    if (currentNode.name !== "this" && currentNode.name !== "top") {
+    if (currentNode.name !== 'this' && currentNode.name !== 'top') {
         withPath.push(`['${currentNode.name}']`);
     }
 

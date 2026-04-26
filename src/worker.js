@@ -35,16 +35,12 @@ process.on('message', (msg) => {
         const fun = new Function(...argNames, code);
         const result = fun(...args);
         process.send({ result }, () => {
-            setTimeout(() => {
-                process.exit();
-            }, 50);
+            process.exit();
         });
     } catch (err) {
         // console.log(`worker: ${err} ${msg.code}`);
         process.send({ message: err.toString() }, () => {
-            setTimeout(() => {
-                process.exit(1);
-            }, 50);
+            process.exit(1);
         });
     }
 });
