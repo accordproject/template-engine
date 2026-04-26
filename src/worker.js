@@ -34,11 +34,13 @@ process.on('message', (msg) => {
         const args = [dayjs,jp,...msg.arguments];
         const fun = new Function(...argNames, code);
         const result = fun(...args);
-        process.send({ result });
-        process.exit();
+        process.send({ result }, () => {
+            process.exit();
+        });
     } catch (err) {
         // console.log(`worker: ${err} ${msg.code}`);
-        process.send({ message: err.toString() });
-        process.exit(1);
+        process.send({ message: err.toString() }, () => {
+            process.exit(1);
+        });
     }
 });
