@@ -1,86 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`templatemark interpreter should fail to generate formula-invalid 1`] = `
-[
-  {
-    "code": " THIS IS GARBAGE ",
-    "errors": [
-      {
-        "category": 1,
-        "character": 3,
-        "code": 2304,
-        "id": "err-2304-468-4",
-        "length": 4,
-        "line": 82,
-        "renderedMessage": "Cannot find name 'THIS'.",
-        "start": 1785,
-      },
-      {
-        "category": 1,
-        "character": 8,
-        "code": 2304,
-        "id": "err-2304-473-2",
-        "length": 2,
-        "line": 82,
-        "renderedMessage": "Cannot find name 'IS'.",
-        "start": 1790,
-      },
-      {
-        "category": 1,
-        "character": 11,
-        "code": 2304,
-        "id": "err-2304-476-7",
-        "length": 7,
-        "line": 82,
-        "renderedMessage": "Cannot find name 'GARBAGE'.",
-        "start": 1793,
-      },
-      {
-        "category": 1,
-        "character": 3,
-        "code": 1435,
-        "id": "err-1435-468-4",
-        "length": 4,
-        "line": 82,
-        "renderedMessage": "Unknown keyword or identifier. Did you mean 'this'?",
-        "start": 1785,
-      },
-      {
-        "category": 1,
-        "character": 8,
-        "code": 1434,
-        "id": "err-1434-473-2",
-        "length": 2,
-        "line": 82,
-        "renderedMessage": "Unexpected keyword or identifier.",
-        "start": 1790,
-      },
-    ],
-    "nodeId": "formula_adef0feb9fc1b6e7513409c93d86aa4d9999d35608e1aaeecc07dca99bc591c8",
-  },
-]
-`;
+exports[`templatemark interpreter should fail to generate formula-invalid 1`] = `[Error: In 'formula_adef0feb9fc1b6e7513409c93d86aa4d9999d35608e1aaeecc07dca99bc591c8': Cannot find name 'THIS'. (line 82, col 3), Cannot find name 'IS'. (line 82, col 8), Cannot find name 'GARBAGE'. (line 82, col 11), Unknown keyword or identifier. Did you mean 'this'? (line 82, col 3), Unexpected keyword or identifier. (line 82, col 8)]`;
 
-exports[`templatemark interpreter should fail to generate formula-no-method 1`] = `
-[
-  {
-    "code": " return message.missing() ",
-    "errors": [
-      {
-        "category": 1,
-        "character": 18,
-        "code": 2339,
-        "id": "err-2339-483-7",
-        "length": 7,
-        "line": 82,
-        "renderedMessage": "Property 'missing' does not exist on type 'string'.",
-        "start": 1800,
-      },
-    ],
-    "nodeId": "formula_4ef52e3adc6e5334e0925838eed0e51a372091d9b3a4499537ccf82fce5b1b25",
-  },
-]
-`;
+exports[`templatemark interpreter should fail to generate formula-no-method 1`] = `[Error: In 'formula_4ef52e3adc6e5334e0925838eed0e51a372091d9b3a4499537ccf82fce5b1b25': Property 'missing' does not exist on type 'string'. (line 82, col 18)]`;
 
 exports[`templatemark interpreter should fail to generate formula-optional-noguard 1`] = `[Error: Optional properties used without guards: message]`;
 
