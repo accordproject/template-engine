@@ -12,12 +12,8 @@
  * limitations under the License.
  */
 
-import type { TemplateLogic } from './slc/SmartLegalContract.d.ts';
+import type { LLMConfig } from './LLMExecutor';
 
-export { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
-export { TemplateArchiveProcessor } from './TemplateArchiveProcessor';
-export type { TemplateLogic } from './slc/SmartLegalContract.d.ts';
-export * from './LLMExecutor';
-export * from './utils';
-export * from './LLMProviderAdapter';
-export * from './providers/OpenAIAdapter';
+export interface LLMProviderAdapter {
+    completeJson(prompt: string, config: LLMConfig): Promise<string>;
+}
