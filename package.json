@@ -1,6 +1,6 @@
 {
   "name": "@accordproject/template-engine",
-  "version": "2.7.1",
+  "version": "3.0.0",
   "description": "Generation of AgreementMark from TemplateMark + JSON Data",
   "homepage": "https://github.com/accordproject",
   "engines": {
@@ -40,9 +40,10 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@accordproject/cicero-core": "0.25.2",
-    "@accordproject/concerto-codegen": "3.32.1",
-    "@accordproject/concerto-core": "3.25.7",
-    "@accordproject/concerto-util":"3.25.7",
+    "@accordproject/concerto-codegen": "4.0.0",
+    "@accordproject/concerto-core": "4.0.2",
+    "@accordproject/concerto-util": "4.0.2",
+    "@accordproject/concerto-vocabulary": "4.0.2",
     "@accordproject/markdown-common": "0.17.2",
     "@accordproject/markdown-template": "0.17.2",
     "@typescript/twoslash": "^3.2.9",
