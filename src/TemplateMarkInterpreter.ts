@@ -579,9 +579,9 @@ export class TemplateMarkInterpreter {
         modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
         modelManager.addCTOModel(TemplateMarkModel.MODEL, 'templatemark.cto');
         const factory = new Factory(modelManager);
-        const serializer = new Serializer(factory, modelManager);
+        const serializer = new Serializer(factory, modelManager, {});
         try {
-            serializer.fromJSON(templateMark);
+            serializer.fromJSON(templateMark, {});
         }
         catch (err) {
             throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(templateMark, null, 2)}`);
@@ -676,9 +676,9 @@ export class TemplateMarkInterpreter {
         modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
         modelManager.addCTOModel(CiceroMarkModel.MODEL, 'ciceromark.cto');
         const factory = new Factory(modelManager);
-        const serializer = new Serializer(factory, modelManager,);
+        const serializer = new Serializer(factory, modelManager, {});
         try {
-            return serializer.fromJSON(ciceroMark);
+            return serializer.fromJSON(ciceroMark, {});
         }
         catch (err) {
             throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(ciceroMark, null, 2)}`);
@@ -687,8 +687,8 @@ export class TemplateMarkInterpreter {
 
     async generate(templateMark: object, data: TemplateData, options?: GenerationOptions): Promise<any> {
         const factory = new Factory(this.modelManager);
-        const serializer = new Serializer(factory, this.modelManager);
-        const templateData = serializer.fromJSON(data);
+        const serializer = new Serializer(factory, this.modelManager, {});
+        const templateData = serializer.fromJSON(data, {});
         if (templateData.getFullyQualifiedType() !== this.templateClass.getFullyQualifiedName()) {
             throw new Error(`Template data must be of type '${this.templateClass.getFullyQualifiedName()}'.`);
         }
