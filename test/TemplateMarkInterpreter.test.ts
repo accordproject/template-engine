@@ -69,7 +69,7 @@ describe('templatemark interpreter', () => {
              */
             const data = JSON.parse(readFileSync(`${GOOD_TEMPLATES_ROOT}/${templateName}/data.json`, 'utf-8'));
 
-            const modelManager = new ModelManager({ strict: true });
+            const modelManager = new ModelManager();
             modelManager.addCTOModel(model, undefined, true);
             await modelManager.updateExternalModels();
             const engine = new TemplateMarkInterpreter(modelManager, CLAUSE_LIBRARY);
@@ -104,7 +104,7 @@ describe('templatemark interpreter', () => {
             const model = readFileSync(`${BAD_TEMPLATES_ROOT}/${templateName}/model.cto`, 'utf-8');
             const templateMarkup = readFileSync(`${BAD_TEMPLATES_ROOT}/${templateName}/template.md`, 'utf-8');
             const data = JSON.parse(readFileSync(`${BAD_TEMPLATES_ROOT}/${templateName}/data.json`, 'utf-8'));
-            const modelManager = new ModelManager({ strict: true });
+            const modelManager = new ModelManager();
             modelManager.addCTOModel(model);
             const engine = new TemplateMarkInterpreter(modelManager, CLAUSE_LIBRARY);
 

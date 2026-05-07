@@ -27,7 +27,7 @@ describe('template with custom template model', () => {
             message: 'World',
             gender: 'MALE'
         };
-        const modelManager = new ModelManager({ strict: true });
+        const modelManager = new ModelManager();
         modelManager.addCTOModel(model);
         const engine = new TemplateMarkInterpreter(modelManager, {}, 'helloworld@1.0.0.TemplateData');
 

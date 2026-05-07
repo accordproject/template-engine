@@ -43,7 +43,7 @@ export class TypeScriptCompilationContext {
             fileWriter: writer
         };
         this.modelManager.accept(visitor, params);
-        writer.getFilesInMemory().forEach( (value, key) => {
+        writer.getFilesInMemory().forEach( (value: string, key: string) => {
             result[key] = value;
         });
         return result;
