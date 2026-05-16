@@ -20,6 +20,7 @@ import { templatemarkutil } from '@accordproject/markdown-template';
 
 import { existsSync, mkdirSync, rmSync } from 'fs';
 import traverse from 'traverse';
+import * as ts from 'typescript';
 
 export function ensureDirSync(path:string) {
     if(!existsSync(path)) {
@@ -47,65 +48,41 @@ export function writeFunctionToString(templateClass:ClassDeclaration, functionNa
     return result;
 }
 
-const RETURN_KEYWORD_RE = /\breturn\b/;
-
-/**
- * Linear, ReDoS-safe pass that drops string literals, line comments, and block
- * comments from JS/TS source. Used to scan for the `return` keyword without
- * false positives from quoted/commented occurrences.
- */
-function stripStringsAndComments(s: string): string {
-    let out = '';
-    const n = s.length;
-    let i = 0;
-    while (i < n) {
-        const c = s[i];
-        const next = i + 1 < n ? s[i + 1] : '';
-        if (c === '/' && next === '/') {
-            i += 2;
-            while (i < n && s[i] !== '\n') i++;
-            continue;
-        }
-        if (c === '/' && next === '*') {
-            i += 2;
-            while (i < n - 1 && !(s[i] === '*' && s[i + 1] === '/')) i++;
-            i = Math.min(n, i + 2);
-            continue;
-        }
-        if (c === '\'' || c === '"' || c === '`') {
-            const quote = c;
-            i++;
-            while (i < n && s[i] !== quote) {
-                if (s[i] === '\\' && i + 1 < n) {
-                    i += 2;
-                } else {
-                    i++;
-                }
-            }
-            i++;
-            continue;
-        }
-        out += c;
-        i++;
-    }
-    return out;
-}
-
 /**
  * Wraps user-supplied formula/condition code with `return` when the user did
  * not write an explicit `return`, so that an inline expression like
  * `{{% amount / 2.0 %}}` produces a value rather than an undefined result that
  * fails downstream validation.
+ *
+ * Uses the TypeScript AST to inspect only top-level statements, so a nested
+ * function/arrow that contains its own `return` does not confuse the outer
+ * detection (e.g. `[1,2,3].map(x => { return x*2 })[0]`).
  */
-function wrapExpressionWithReturn(code: string): string {
+export function wrapExpressionWithReturn(code: string): string {
     const trimmed = code.trim();
     if (trimmed.length === 0) {
         return trimmed;
     }
-    if (RETURN_KEYWORD_RE.test(stripStringsAndComments(trimmed))) {
+    const sourceFile = ts.createSourceFile('formula.ts', trimmed, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS);
+    const statements = sourceFile.statements;
+    if (statements.length === 0) {
         return trimmed;
     }
-    return `return ${trimmed.replace(/;\s*$/, '')};`;
+    for (const stmt of statements) {
+        if (ts.isReturnStatement(stmt)) {
+            return trimmed;
+        }
+    }
+    const last = statements[statements.length - 1];
+    if (!ts.isExpressionStatement(last)) {
+        return trimmed;
+    }
+    const prefix = statements
+        .slice(0, -1)
+        .map(s => s.getText(sourceFile))
+        .join('\n');
+    const expr = last.expression.getText(sourceFile);
+    return prefix.length > 0 ? `${prefix}\nreturn ${expr};` : `return ${expr};`;
 }
 
 export function nameUserCode(templateMarkDom: any) {
