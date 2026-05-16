@@ -1,0 +1,24 @@
+{
+  "$class": "io.clause.perishablegoods@0.1.0.TemplateModel",
+  "clauseId": "perishable-goods-001",
+  "shipment": "SHIP_001",
+  "importer": "DAN",
+  "grower": "PETER",
+  "unitPrice": {
+    "$class": "org.accordproject.money@0.3.0.MonetaryAmount",
+    "doubleValue": 1.5,
+    "currencyCode": "USD"
+  },
+  "unit": "KG",
+  "minUnits": 3000,
+  "maxUnits": 3500,
+  "product": "Grade I, Size 4, Zutano Mexican Avocados",
+  "sensorReadingFrequency": 1,
+  "duration": "hours",
+  "dueDate": "2027-07-02T00:00:00Z",
+  "minTemperature": 2,
+  "maxTemperature": 13,
+  "minHumidity": 70,
+  "maxHumidity": 90,
+  "penaltyFactor": 0.2
+}

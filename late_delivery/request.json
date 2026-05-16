@@ -1,0 +1,7 @@
+{
+    "$class": "io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyRequest",
+    "forceMajeure": false,
+    "agreedDelivery": "2017-12-01T03:24:00Z",
+    "deliveredAt": "2017-12-20T03:24:00Z",
+    "goodsValue": 200.00
+}
