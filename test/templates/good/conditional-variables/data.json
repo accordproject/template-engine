@@ -1,0 +1,6 @@
+{
+  "$class": "test@1.0.0.TemplateData",
+  "age": 30,
+  "name": "Alice",
+  "isActive": true
+}
