@@ -1,0 +1,11 @@
+namespace volumediscountulist@1.0.0
+
+concept VolumeDiscount {
+    o Double volumeAbove
+    o Double rate
+}
+
+@template
+concept TemplateData {
+    o VolumeDiscount[] volumeDiscounts
+}
