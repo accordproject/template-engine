@@ -95,6 +95,9 @@ export class TemplateArchiveProcessor {
         if(logicManager.getLanguage() === 'typescript') {
             const compiledCode:Record<string, TwoSlashReturn> = {};
             const tsFiles:Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
+            if (tsFiles.length === 0) {
+                throw new Error('No TypeScript logic files found in template');
+            }
             for(let n=0; n < tsFiles.length; n++) {
                 const tsFile = tsFiles[n];
                 // console.log(`Compiling ${tsFile.getIdentifier()}`);
@@ -146,6 +149,9 @@ export class TemplateArchiveProcessor {
         if(logicManager.getLanguage() === 'typescript') {
             const compiledCode:Record<string, TwoSlashReturn> = {};
             const tsFiles:Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
+            if (tsFiles.length === 0) {
+                throw new Error('No TypeScript logic files found in template');
+            }
             for(let n=0; n < tsFiles.length; n++) {
                 const tsFile = tsFiles[n];
                 // console.log(`Compiling ${tsFile.getIdentifier()}`);

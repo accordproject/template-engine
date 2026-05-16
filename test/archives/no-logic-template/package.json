@@ -1,0 +1,10 @@
+{
+  "name": "no-logic-template",
+  "version": "0.0.1",
+  "description": "Template intentionally without TypeScript logic",
+  "accordproject": {
+    "runtime": "typescript",
+    "template": "clause",
+    "cicero": "^0.25.0"
+  }
+}

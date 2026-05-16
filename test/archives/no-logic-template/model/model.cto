@@ -1,0 +1,6 @@
+namespace org.example
+
+@template
+asset TemplateModel {
+  o String name
+}
