@@ -4409,3 +4409,203 @@ exports[`templatemark interpreter should generate playground 1`] = `
   "xmlns": "http://commonmark.org/xml/1.0",
 }
 `;
+
+exports[`templatemark interpreter should generate volumediscountolist 1`] = `
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": [
+    {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Volume Discount Schedule",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "delimiter": "period",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Above ",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Double",
+                      "name": "volumeAbove",
+                      "value": "100.0",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " units: ",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Double",
+                      "name": "rate",
+                      "value": "5.0",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "% discount",
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Above ",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Double",
+                      "name": "volumeAbove",
+                      "value": "500.0",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " units: ",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Double",
+                      "name": "rate",
+                      "value": "10.0",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "% discount",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "start": "1",
+          "tight": "true",
+          "type": "ordered",
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate volumediscountulist 1`] = `
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": [
+    {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Heading",
+          "level": "2",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Volume Discount Schedule",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Above ",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Double",
+                      "name": "volumeAbove",
+                      "value": "100.0",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " units: ",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Double",
+                      "name": "rate",
+                      "value": "5.0",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "% discount",
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "Above ",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Double",
+                      "name": "volumeAbove",
+                      "value": "500.0",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": " units: ",
+                    },
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "Double",
+                      "name": "rate",
+                      "value": "10.0",
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "% discount",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;

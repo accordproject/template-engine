@@ -117,4 +117,99 @@ describe('templatemark interpreter', () => {
             await expect(f()).rejects.toMatchSnapshot();
         });
     });
+
+    // Regression for https://github.com/accordproject/template-engine/issues/145.
+    // When a {{#ulist}} / {{#olist}} body contains direct variable references with no
+    // leading list marker, the markdown parser produces a Paragraph (not a List/Item
+    // wrapping) under the ListBlockDefinition. The recursion must still descend into the
+    // per-iteration template and resolve those variables against each array element.
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    describe('issue #145: direct variable references inside ulist/olist', () => {
+        const MODEL = `namespace volumediscount@1.0.0
+concept VolumeDiscount {
+    o Double volumeAbove
+    o Double rate
+}
+@template
+concept TemplateData {
+    o VolumeDiscount[] volumeDiscounts
+}`;
+        const DATA = {
+            $class: 'volumediscount@1.0.0.TemplateData',
+            volumeDiscounts: [
+                { $class: 'volumediscount@1.0.0.VolumeDiscount', volumeAbove: 100, rate: 5 },
+                { $class: 'volumediscount@1.0.0.VolumeDiscount', volumeAbove: 500, rate: 10 },
+            ]
+        };
+
+        async function renderList(content: string): Promise<any> {
+            const modelManager = new ModelManager();
+            modelManager.addCTOModel(MODEL);
+            const engine = new TemplateMarkInterpreter(modelManager, {});
+            const templateMarkTransformer = new TemplateMarkTransformer();
+            const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate(
+                { content }, modelManager, 'clause', { verbose: false });
+            const ciceroMark = await engine.generate(templateMarkDom, DATA, { now: '2023-03-17T00:00:00.000Z' });
+            const json: any = ciceroMark.toJSON();
+            const found: any[] = [];
+            (function walk(n: any) {
+                if (!n) return;
+                if (n.$class === `${CommonMarkModel.NAMESPACE}.List`) found.push(n);
+                if (Array.isArray(n.nodes)) n.nodes.forEach(walk);
+            })(json);
+            return found[0];
+        }
+
+        // Asserts the rendered List has one Item per array element, each containing the
+        // variable's drafted value. Both ulist and olist hit the same code path.
+        async function expectVariablesResolved(content: string, listType: 'bullet' | 'ordered') {
+            const list = await renderList(content);
+            expect(list).toBeDefined();
+            expect(list.type).toBe(listType);
+            expect(list.nodes).toHaveLength(2);
+            const collectVariables = (item: any): Array<{ name: string, value: string }> => {
+                const out: Array<{ name: string, value: string }> = [];
+                (function walk(n: any) {
+                    if (!n) return;
+                    if (n.$class === 'org.accordproject.ciceromark@0.6.0.Variable') {
+                        out.push({ name: n.name, value: n.value });
+                    }
+                    if (Array.isArray(n.nodes)) n.nodes.forEach(walk);
+                })(item);
+                return out;
+            };
+            expect(collectVariables(list.nodes[0])).toEqual([
+                { name: 'volumeAbove', value: '100.0' },
+                { name: 'rate', value: '5.0' },
+            ]);
+            expect(collectVariables(list.nodes[1])).toEqual([
+                { name: 'volumeAbove', value: '500.0' },
+                { name: 'rate', value: '10.0' },
+            ]);
+        }
+
+        // Failure mode A: a VariableDefinition is the very first inline node, which
+        // triggered `getJsonPath` to throw `Paths must be supplied`.
+        test('ulist body starting with a variable does not throw and resolves values', async () => {
+            await expectVariablesResolved(
+                '{{#ulist volumeDiscounts}}\n{{volumeAbove}} units at {{rate}}%\n{{/ulist}}\n',
+                'bullet'
+            );
+        });
+
+        test('olist body starting with a variable does not throw and resolves values', async () => {
+            await expectVariablesResolved(
+                '{{#olist volumeDiscounts}}\n{{volumeAbove}} units at {{rate}}%\n{{/olist}}\n',
+                'ordered'
+            );
+        });
+
+        // Failure mode B: leading text means no throw, but Items were silently empty.
+        test('ulist body with leading text yields populated items', async () => {
+            await expectVariablesResolved(
+                '{{#ulist volumeDiscounts}}\nAbove {{volumeAbove}} units: {{rate}}% off\n{{/ulist}}\n',
+                'bullet'
+            );
+        });
+    });
 });
