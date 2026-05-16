@@ -40,11 +40,38 @@ export function writeFunctionToString(templateClass:ClassDeclaration, functionNa
     templateClass.getProperties().forEach((p: Property) => {
         result += `   const ${p.getName()} = data.${p.getName()};\n`;
     });
-    result += '   ' + code.trim() + '\n';
+    result += '   ' + wrapExpressionWithReturn(code) + '\n';
     result += '}\n';
     result += '\n';
 
     return result;
+}
+
+const RETURN_KEYWORD_RE = /\breturn\b/;
+const LINE_COMMENT_RE = /\/\/.*$/gm;
+const BLOCK_COMMENT_RE = /\/\*[\s\S]*?\*\//g;
+const STRING_LITERAL_RE = /(['"`])(?:\\.|(?!\1)[^\\])*\1/g;
+
+/**
+ * Wraps user-supplied formula/condition code with `return` when the user did
+ * not write an explicit `return`, so that an inline expression like
+ * `{{% amount / 2.0 %}}` produces a value rather than an undefined result that
+ * fails downstream validation. Strings and comments are stripped before the
+ * keyword scan to avoid false positives like a literal `'return foo'`.
+ */
+function wrapExpressionWithReturn(code: string): string {
+    const trimmed = code.trim();
+    if (trimmed.length === 0) {
+        return trimmed;
+    }
+    const sanitized = trimmed
+        .replace(BLOCK_COMMENT_RE, '')
+        .replace(LINE_COMMENT_RE, '')
+        .replace(STRING_LITERAL_RE, '""');
+    if (RETURN_KEYWORD_RE.test(sanitized)) {
+        return trimmed;
+    }
+    return `return ${trimmed.replace(/;\s*$/, '')};`;
 }
 
 export function nameUserCode(templateMarkDom: any) {
