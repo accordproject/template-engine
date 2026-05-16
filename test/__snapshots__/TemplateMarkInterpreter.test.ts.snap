@@ -17,43 +17,23 @@ exports[`templatemark interpreter should fail to generate formula-invalid 1`] = 
       },
       {
         "category": 1,
-        "character": 8,
+        "character": 0,
         "code": 2304,
         "id": "err-2304-473-2",
         "length": 2,
-        "line": 82,
+        "line": 83,
         "renderedMessage": "Cannot find name 'IS'.",
         "start": 1790,
       },
       {
         "category": 1,
-        "character": 11,
+        "character": 7,
         "code": 2304,
-        "id": "err-2304-476-7",
+        "id": "err-2304-483-7",
         "length": 7,
-        "line": 82,
+        "line": 84,
         "renderedMessage": "Cannot find name 'GARBAGE'.",
-        "start": 1793,
-      },
-      {
-        "category": 1,
-        "character": 3,
-        "code": 1435,
-        "id": "err-1435-468-4",
-        "length": 4,
-        "line": 82,
-        "renderedMessage": "Unknown keyword or identifier. Did you mean 'this'?",
-        "start": 1785,
-      },
-      {
-        "category": 1,
-        "character": 8,
-        "code": 1434,
-        "id": "err-1434-473-2",
-        "length": 2,
-        "line": 82,
-        "renderedMessage": "Unexpected keyword or identifier.",
-        "start": 1790,
+        "start": 1800,
       },
     ],
     "nodeId": "formula_adef0feb9fc1b6e7513409c93d86aa4d9999d35608e1aaeecc07dca99bc591c8",
@@ -1290,6 +1270,64 @@ exports[`templatemark interpreter should generate helloformula 1`] = `
             {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": " characters long.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate helloformula-implicit-return 1`] = `
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": [
+    {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Hello ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "message",
+              "value": "World",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "! Half of ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "Double",
+              "name": "importerLOCAmount",
+              "value": "1000.0",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": " is ",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Strong",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": [],
+                  "name": "formula_6a1c6cfe8791ac1da78736898d0ee7ead395e709aa1c4f3e890f2fff0b51497f",
+                  "value": "500",
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": ".",
             },
           ],
         },
