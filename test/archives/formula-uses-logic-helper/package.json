@@ -1,0 +1,10 @@
+{
+    "name": "formula-uses-logic-helper",
+    "version": "0.0.1",
+    "description": "Fixture for issue #147: a clause whose grammar contains a formula that calls a helper function defined in logic/logic.ts.",
+    "accordproject": {
+        "runtime": "typescript",
+        "template": "clause",
+        "cicero": "^0.26.0"
+    }
+}

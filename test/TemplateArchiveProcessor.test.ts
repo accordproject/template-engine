@@ -57,6 +57,33 @@ describe('template archive processor', () => {
         expect(payload.count).toBe(0);
     });
 
+    test('should draft a template whose formula calls a helper from logic/logic.ts (#147)', async () => {
+        const template = await Template.fromDirectory('test/archives/formula-uses-logic-helper', {offline: true});
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        const data = {
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
+            "forceMajeure": true,
+            "penaltyDuration": {
+                "$class": "org.accordproject.time@0.3.0.Duration",
+                "amount": 2,
+                "unit": "days"
+            },
+            "penaltyPercentage": 10.5,
+            "capPercentage": 55,
+            "termination": {
+                "$class": "org.accordproject.time@0.3.0.Duration",
+                "amount": 15,
+                "unit": "days"
+            },
+            "fractionalPart": "days",
+            "clauseId": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8",
+            "$identifier": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8"
+        };
+        const result = await templateArchiveProcessor.draft(data, 'markdown', {});
+        // calc(10.5) === 10.5 * 2.5 === 26.25
+        expect(result).toContain('penalty multiplier of 26.25');
+    });
+
     test('should trigger a template', async () => {
         const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
