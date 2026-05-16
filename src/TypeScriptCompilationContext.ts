@@ -27,10 +27,12 @@ export class TypeScriptCompilationContext {
 
     modelManager:ModelManager;
     templateClass:ClassDeclaration;
+    userLogicSymbols: string[];
 
-    constructor(modelManager:ModelManager,templateConceptFqn?: string) {
+    constructor(modelManager:ModelManager,templateConceptFqn?: string, userLogicSymbols: string[] = []) {
         this.modelManager = modelManager;
         this.templateClass = getTemplateClassDeclaration(this.modelManager, templateConceptFqn);
+        this.userLogicSymbols = userLogicSymbols;
     }
 
     getTypeScriptFiles() : Record<string,string> {
@@ -73,6 +75,16 @@ type GenerationOptions = {
     locale?:string
 }
 `;
+        // Ambient declarations for top-level symbols in the template's
+        // logic/logic.ts so formula expressions like {{% helperFn(...) %}}
+        // type-check. At runtime the formula evaluator prepends the
+        // compiled logic JS, so the same symbols resolve to real values.
+        if (this.userLogicSymbols.length > 0) {
+            result += '\n';
+            this.userLogicSymbols.forEach(name => {
+                result += `declare const ${name}: any;\n`;
+            });
+        }
         return result;
     }
 }
