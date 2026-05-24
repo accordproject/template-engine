@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } from 'fs';
+const { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync } = require('fs');
 
 function ensureDirSync(dirPath) {
   if (!existsSync(dirPath)) { mkdirSync(dirPath, { recursive: true }); }
