@@ -49,9 +49,9 @@ export class TemplateMarkToJavaScriptCompiler {
     compiler: TypeScriptToJavaScriptCompiler;
     templateClass: ClassDeclaration;
 
-    constructor(modelManager: ModelManager, templateConceptFqn?: string) {
+    constructor(modelManager: ModelManager, templateConceptFqn?: string, userLogicSymbols: string[] = []) {
         this.modelManager = modelManager;
-        this.compiler = new TypeScriptToJavaScriptCompiler(modelManager,templateConceptFqn);
+        this.compiler = new TypeScriptToJavaScriptCompiler(modelManager,templateConceptFqn,userLogicSymbols);
         this.templateClass = getTemplateClassDeclaration(modelManager,templateConceptFqn);
     }
 

@@ -84,8 +84,8 @@ export class TypeScriptToJavaScriptCompiler {
     ts: any;
     typescriptUrl: string;
 
-    constructor(modelManager: ModelManager, templateConceptFqn?: string) {
-        this.context = new TypeScriptCompilationContext(modelManager, templateConceptFqn).getCompilationContext();
+    constructor(modelManager: ModelManager, templateConceptFqn?: string, userLogicSymbols: string[] = []) {
+        this.context = new TypeScriptCompilationContext(modelManager, templateConceptFqn, userLogicSymbols).getCompilationContext();
         this.typescriptUrl = TYPESCRIPT_URL;
     }
 
