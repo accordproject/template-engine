@@ -4,6 +4,7 @@ import { TemplateMarkInterpreter } from '../src';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { readFileSync, readdirSync } from 'fs';
 import * as path from 'path';
+import { loadOfflineExternalModels } from './support/externalModels';
 
 const CLAUSE_LIBRARY = {
     'clauses': [
@@ -70,8 +71,8 @@ describe('templatemark interpreter', () => {
             const data = JSON.parse(readFileSync(`${GOOD_TEMPLATES_ROOT}/${templateName}/data.json`, 'utf-8'));
 
             const modelManager = new ModelManager();
+            loadOfflineExternalModels(modelManager);
             modelManager.addCTOModel(model, undefined, true);
-            await modelManager.updateExternalModels();
             const engine = new TemplateMarkInterpreter(modelManager, CLAUSE_LIBRARY);
 
             const templateMarkTransformer = new TemplateMarkTransformer();
