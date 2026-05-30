@@ -38,6 +38,34 @@ export type InitResponse = {
     state: State;
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null;
+}
+
+function validateTriggerResponse(result: unknown): asserts result is TriggerResponse {
+    if (!isObject(result)) {
+        throw new Error('Invalid trigger result: expected an object');
+    }
+    if (!isObject(result.result)) {
+        throw new Error('Invalid trigger result: missing result object');
+    }
+    if (!isObject(result.state)) {
+        throw new Error('Invalid trigger result: missing state object');
+    }
+    if (!Array.isArray(result.events)) {
+        throw new Error('Invalid trigger result: events must be an array');
+    }
+}
+
+function validateInitResponse(result: unknown): asserts result is InitResponse {
+    if (!isObject(result)) {
+        throw new Error('Invalid init result: expected an object');
+    }
+    if (!isObject(result.state)) {
+        throw new Error('Invalid init result: missing state object');
+    }
+}
+
 /**
  * A template archive processor: can draft content using the
  * templatemark for the archive and trigger the logic of the archive
@@ -124,7 +152,9 @@ export class TemplateArchiveProcessor {
                 arguments: [data, request, state, resolvedTime, resolvedOffset]
             });
             if(evalResponse.result) {
-                return evalResponse.result;
+                const executionResult = await evalResponse.result;
+                validateTriggerResponse(executionResult);
+                return executionResult;
             }
             else {
                 throw new Error('Trigger failed with message: ' + evalResponse.message);
@@ -175,7 +205,9 @@ export class TemplateArchiveProcessor {
                 arguments: [data, resolvedTime, resolvedOffset]
             });
             if(evalResponse.result) {
-                return evalResponse.result;
+                const executionResult = await evalResponse.result;
+                validateInitResponse(executionResult);
+                return executionResult;
             }
             else {
                 throw new Error('Init failed with message: ' + evalResponse.message);
