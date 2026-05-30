@@ -20,6 +20,7 @@ import { templatemarkutil } from '@accordproject/markdown-template';
 
 import { existsSync, mkdirSync, rmSync } from 'fs';
 import traverse from 'traverse';
+import * as ts from 'typescript';
 
 export function ensureDirSync(path:string) {
     if(!existsSync(path)) {
@@ -40,11 +41,48 @@ export function writeFunctionToString(templateClass:ClassDeclaration, functionNa
     templateClass.getProperties().forEach((p: Property) => {
         result += `   const ${p.getName()} = data.${p.getName()};\n`;
     });
-    result += '   ' + code.trim() + '\n';
+    result += '   ' + wrapExpressionWithReturn(code) + '\n';
     result += '}\n';
     result += '\n';
 
     return result;
+}
+
+/**
+ * Wraps user-supplied formula/condition code with `return` when the user did
+ * not write an explicit `return`, so that an inline expression like
+ * `{{% amount / 2.0 %}}` produces a value rather than an undefined result that
+ * fails downstream validation.
+ *
+ * Uses the TypeScript AST to inspect only top-level statements, so a nested
+ * function/arrow that contains its own `return` does not confuse the outer
+ * detection (e.g. `[1,2,3].map(x => { return x*2 })[0]`).
+ */
+export function wrapExpressionWithReturn(code: string): string {
+    const trimmed = code.trim();
+    if (trimmed.length === 0) {
+        return trimmed;
+    }
+    const sourceFile = ts.createSourceFile('formula.ts', trimmed, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS);
+    const statements = sourceFile.statements;
+    if (statements.length === 0) {
+        return trimmed;
+    }
+    for (const stmt of statements) {
+        if (ts.isReturnStatement(stmt)) {
+            return trimmed;
+        }
+    }
+    const last = statements[statements.length - 1];
+    if (!ts.isExpressionStatement(last)) {
+        return trimmed;
+    }
+    const prefix = statements
+        .slice(0, -1)
+        .map(s => s.getText(sourceFile))
+        .join('\n');
+    const expr = last.expression.getText(sourceFile);
+    return prefix.length > 0 ? `${prefix}\nreturn ${expr};` : `return ${expr};`;
 }
 
 export function nameUserCode(templateMarkDom: any) {
