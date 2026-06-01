@@ -44,6 +44,7 @@ export type InitResponse = {
  */
 export class TemplateArchiveProcessor {
     template: Template;
+    private compiledLogicCache?: Record<string, TwoSlashReturn>;
 
     /**
      * Creates a template archive processor
@@ -82,22 +83,22 @@ export class TemplateArchiveProcessor {
 
     }
 
+
     /**
-     * Trigger the logic of a template
-     * @param {object} request - the request to send to the template logic
-     * @param {object} state - the current state of the template
-     * @param {[string]} currentTime - the current time, defaults to now
-     * @param {[number]} utcOffset - the UTC offset, defaults to zero
-     * @returns {Promise} the response and any events
+     * Compile the logic of a template
+     * @returns {Promise<Record<string, TwoSlashReturn>>} the compiled code for each typescript file
      */
-    async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number): Promise<TriggerResponse> {
+    async compileLogic(): Promise<Record<string, TwoSlashReturn>> {
+        if (this.compiledLogicCache) {
+            return this.compiledLogicCache;
+        }
+
         const logicManager = this.template.getLogicManager();
         if(logicManager.getLanguage() === 'typescript') {
             const compiledCode:Record<string, TwoSlashReturn> = {};
             const tsFiles:Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
             for(let n=0; n < tsFiles.length; n++) {
                 const tsFile = tsFiles[n];
-                // console.log(`Compiling ${tsFile.getIdentifier()}`);
 
                 const compiler = new TypeScriptToJavaScriptCompiler(this.template.getModelManager(),
                     this.template.getTemplateModel().getFullyQualifiedName());
@@ -106,29 +107,13 @@ export class TemplateArchiveProcessor {
 
                 // add the runtime type definitions to all ts files??
                 const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
-                ${tsFile.getContents()}`
+                ${tsFile.getContents()}`;
 
                 const result = compiler.compile(code);
                 compiledCode[tsFile.getIdentifier()] = result;
             }
-            // console.log(compiledCode['logic/logic.ts'].code);
-            const resolvedTime = currentTime ?? new Date().toISOString();
-            const resolvedOffset = utcOffset ?? 0;
-            const evaluator = new JavaScriptEvaluator();
-            const evalResponse = await evaluator.evalDangerously( {
-                templateLogic: true,
-                verbose: false,
-                functionName: 'trigger',
-                code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
-                argumentNames: ['data', 'request', 'state'],
-                arguments: [data, request, state, resolvedTime, resolvedOffset]
-            });
-            if(evalResponse.result) {
-                return evalResponse.result;
-            }
-            else {
-                throw new Error('Trigger failed with message: ' + evalResponse.message);
-            }
+            this.compiledLogicCache = compiledCode;
+            return compiledCode;
         }
         else {
             throw new Error('Only TypeScript is supported at this time');
@@ -136,53 +121,69 @@ export class TemplateArchiveProcessor {
     }
 
     /**
-     * Init the logic of a template
+     * Trigger the logic of a template.
+     * WARNING: You must call compileLogic() before executing this method.
+     * @param {object} data - the data for the template
+     * @param {object} request - the request to send to the template logic
+     * @param {object} state - the current state of the template
      * @param {[string]} currentTime - the current time, defaults to now
      * @param {[number]} utcOffset - the UTC offset, defaults to zero
-     * @returns {Promise<InitResponse>} the new state
+     * @returns {Promise<TriggerResponse>} the response and any events
      */
-    async init(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
-        const logicManager = this.template.getLogicManager();
-        if(logicManager.getLanguage() === 'typescript') {
-            const compiledCode:Record<string, TwoSlashReturn> = {};
-            const tsFiles:Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
-            for(let n=0; n < tsFiles.length; n++) {
-                const tsFile = tsFiles[n];
-                // console.log(`Compiling ${tsFile.getIdentifier()}`);
-
-                const compiler = new TypeScriptToJavaScriptCompiler(this.template.getModelManager(),
-                    this.template.getTemplateModel().getFullyQualifiedName());
-
-                await compiler.initialize();
-
-                // add the runtime type definitions to all ts files??
-                const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
-                ${tsFile.getContents()}`
-
-                const result = compiler.compile(code);
-                compiledCode[tsFile.getIdentifier()] = result;
-            }
-            // console.log(compiledCode['logic/logic.ts'].code);
-            const resolvedTime = currentTime ?? new Date().toISOString();
-            const resolvedOffset = utcOffset ?? 0;
-            const evaluator = new JavaScriptEvaluator();
-            const evalResponse = await evaluator.evalDangerously( {
-                templateLogic: true,
-                verbose: false,
-                functionName: 'init',
-                code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
-                argumentNames: ['data'],
-                arguments: [data, resolvedTime, resolvedOffset]
-            });
-            if(evalResponse.result) {
-                return evalResponse.result;
-            }
-            else {
-                throw new Error('Init failed with message: ' + evalResponse.message);
-            }
+    async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number): Promise<TriggerResponse> {
+        if (!this.compiledLogicCache) {
+            throw new Error("Logic has not been compiled. You must call compileLogic() before executing init() or trigger().");
+        }
+        const compiledCode = this.compiledLogicCache;
+        const resolvedTime = currentTime ?? new Date().toISOString();
+        const resolvedOffset = utcOffset ?? 0;
+        const evaluator = new JavaScriptEvaluator();
+        const evalResponse = await evaluator.evalDangerously( {
+            templateLogic: true,
+            verbose: false,
+            functionName: 'trigger',
+            code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
+            argumentNames: ['data', 'request', 'state'],
+            arguments: [data, request, state, resolvedTime, resolvedOffset]
+        });
+        if(evalResponse.result) {
+            return evalResponse.result as TriggerResponse;
         }
         else {
-            throw new Error('Only TypeScript is supported at this time');
+            throw new Error('Trigger failed with message: ' + evalResponse.message);
+        }
+    }
+
+
+    /**
+     * Init the logic of a template.
+     * WARNING: You must call compileLogic() before executing this method.
+     * @param {object} data - the data for the template
+     * @param {[string]} currentTime - the current time, defaults to now
+     * @param {[number]} utcOffset - the UTC offset, defaults to zero
+     * @returns {Promise<InitResponse>} the response and any events
+     */
+    async init(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
+        if (!this.compiledLogicCache) {
+            throw new Error("Logic has not been compiled. You must call compileLogic() before executing init() or trigger().");
+        }
+        const compiledCode = this.compiledLogicCache;
+        const resolvedTime = currentTime ?? new Date().toISOString();
+        const resolvedOffset = utcOffset ?? 0;
+        const evaluator = new JavaScriptEvaluator();
+        const evalResponse = await evaluator.evalDangerously( {
+            templateLogic: true,
+            verbose: false,
+            functionName: 'init',
+            code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
+            argumentNames: ['data'],
+            arguments: [data, resolvedTime, resolvedOffset]
+        });
+        if(evalResponse.result) {
+            return evalResponse.result as InitResponse;
+        }
+        else {
+            throw new Error('Init failed with message: ' + evalResponse.message);
         }
     }
 }
