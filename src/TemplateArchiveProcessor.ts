@@ -161,7 +161,7 @@ export class TemplateArchiveProcessor {
      * @param {object} data - the data for the template
      * @param {[string]} currentTime - the current time, defaults to now
      * @param {[number]} utcOffset - the UTC offset, defaults to zero
-     * @returns {Promise<InitResponse>} the response and any events
+     * @returns {Promise<InitResponse>} the new state
      */
     async init(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
         if (!this.compiledLogicCache) {
