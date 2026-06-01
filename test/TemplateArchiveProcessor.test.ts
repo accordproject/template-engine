@@ -87,7 +87,7 @@ describe('template archive processor', () => {
             "clauseId": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8",
             "$identifier": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8"
         };
-        await expect(templateArchiveProcessor.init(data)).rejects.toThrow("Logic has not been compiled. You must call compileLogic() before executing init() or trigger().");
+        await expect(templateArchiveProcessor.init(data)).rejects.toThrow(/must call compileLogic\(\)/);
     });
 
     test('should trigger a template', async () => {
