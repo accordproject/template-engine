@@ -86,10 +86,11 @@ export class TemplateArchiveProcessor {
 
     /**
      * Compile the logic of a template
+     * @param {boolean} [useCache] - whether to cache the compiled logic for future use
      * @returns {Promise<Record<string, TwoSlashReturn>>} the compiled code for each typescript file
      */
-    async compileLogic(): Promise<Record<string, TwoSlashReturn>> {
-        if (this.compiledLogicCache) {
+    async compileLogic(useCache: boolean = false): Promise<Record<string, TwoSlashReturn>> {
+        if (useCache && this.compiledLogicCache) {
             return this.compiledLogicCache;
         }
 
@@ -112,7 +113,9 @@ export class TemplateArchiveProcessor {
                 const result = compiler.compile(code);
                 compiledCode[tsFile.getIdentifier()] = result;
             }
-            this.compiledLogicCache = compiledCode;
+            if (useCache) {
+                this.compiledLogicCache = compiledCode;
+            }
             return compiledCode;
         }
         else {
@@ -122,19 +125,16 @@ export class TemplateArchiveProcessor {
 
     /**
      * Trigger the logic of a template.
-     * WARNING: You must call compileLogic() before executing this method.
      * @param {object} data - the data for the template
      * @param {object} request - the request to send to the template logic
      * @param {object} state - the current state of the template
      * @param {[string]} currentTime - the current time, defaults to now
      * @param {[number]} utcOffset - the UTC offset, defaults to zero
+     * @param {boolean} [useCache] - whether to use the compiled logic cache
      * @returns {Promise<TriggerResponse>} the response and any events
      */
-    async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number): Promise<TriggerResponse> {
-        if (!this.compiledLogicCache) {
-            throw new Error("Logic has not been compiled. You must call compileLogic() before executing init() or trigger().");
-        }
-        const compiledCode = this.compiledLogicCache;
+    async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number, useCache?: boolean): Promise<TriggerResponse> {
+        const compiledCode = await this.compileLogic(useCache);
         const resolvedTime = currentTime ?? new Date().toISOString();
         const resolvedOffset = utcOffset ?? 0;
         const evaluator = new JavaScriptEvaluator();
@@ -157,17 +157,14 @@ export class TemplateArchiveProcessor {
 
     /**
      * Init the logic of a template.
-     * WARNING: You must call compileLogic() before executing this method.
      * @param {object} data - the data for the template
      * @param {[string]} currentTime - the current time, defaults to now
      * @param {[number]} utcOffset - the UTC offset, defaults to zero
+     * @param {boolean} [useCache] - whether to use the compiled logic cache
      * @returns {Promise<InitResponse>} the new state
      */
-    async init(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
-        if (!this.compiledLogicCache) {
-            throw new Error("Logic has not been compiled. You must call compileLogic() before executing init() or trigger().");
-        }
-        const compiledCode = this.compiledLogicCache;
+    async init(data: any, currentTime?: string, utcOffset?: number, useCache?: boolean): Promise<InitResponse> {
+        const compiledCode = await this.compileLogic(useCache);
         const resolvedTime = currentTime ?? new Date().toISOString();
         const resolvedOffset = utcOffset ?? 0;
         const evaluator = new JavaScriptEvaluator();
