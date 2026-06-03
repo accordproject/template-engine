@@ -1,5 +1,5 @@
 import {Template} from '@accordproject/cicero-core';
-import { TemplateArchiveProcessor } from '../src/TemplateArchiveProcessor';
+import { TemplateArchiveProcessor, InitResponse, TriggerResponse } from '../src/TemplateArchiveProcessor';
 
 describe('template archive processor', () => {
     test('should draft a template', async () => {
@@ -51,10 +51,17 @@ describe('template archive processor', () => {
             "clauseId": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8",
             "$identifier": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8"
         };
-        const response = await templateArchiveProcessor.init(data);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const payload:any = response.state;
+        const response: InitResponse = await templateArchiveProcessor.init(data);
+        const payload = response.state as { count?: number };
         expect(payload.count).toBe(0);
+    });
+
+    test('should compile logic', async () => {
+        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        const compiledCode = await templateArchiveProcessor.compileLogic();
+        expect(compiledCode['logic/logic.ts']).toBeDefined();
+        expect(compiledCode['logic/logic.ts'].code).toContain('LateDeliveryAndPenalty');
     });
 
     test('should trigger a template', async () => {
@@ -87,17 +94,18 @@ describe('template archive processor', () => {
         const stateResponse = await templateArchiveProcessor.init(data);
 
         // then we trigger the template
-        const response = await templateArchiveProcessor.trigger(data, request, stateResponse.state);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const payload:any = response;
+        const response: TriggerResponse = await templateArchiveProcessor.trigger(data, request, stateResponse.state);
 
         // we should have a result
-        expect(payload.result.penalty).toBe(2625);
+        const resultPayload = response.result as { penalty?: number };
+        expect(resultPayload.penalty).toBe(2625);
 
         // the state should have been updated
-        expect(payload.state.count).toBe(1);
+        const statePayload = response.state as { count?: number };
+        expect(statePayload.count).toBe(1);
 
         // the events should have been emitted
-        expect(payload.events[0].penaltyCalculated).toBe(true);
+        const eventPayload = response.events[0] as { penaltyCalculated?: boolean };
+        expect(eventPayload.penaltyCalculated).toBe(true);
     });
 });
