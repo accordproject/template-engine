@@ -86,11 +86,11 @@ export class TemplateArchiveProcessor {
 
     /**
      * Compile the logic of a template
-     * @param {boolean} [useCache] - whether to cache the compiled logic for future use
+     * @param {boolean} [enableCompiledLogicCache] - whether to cache the compiled logic for future use
      * @returns {Promise<Record<string, TwoSlashReturn>>} the compiled code for each typescript file
      */
-    async compileLogic(useCache: boolean = false): Promise<Record<string, TwoSlashReturn>> {
-        if (useCache && this.compiledLogicCache) {
+    async compileLogic(enableCompiledLogicCache: boolean = false): Promise<Record<string, TwoSlashReturn>> {
+        if (enableCompiledLogicCache && this.compiledLogicCache) {
             return this.compiledLogicCache;
         }
 
@@ -113,7 +113,7 @@ export class TemplateArchiveProcessor {
                 const result = compiler.compile(code);
                 compiledCode[tsFile.getIdentifier()] = result;
             }
-            if (useCache) {
+            if (enableCompiledLogicCache) {
                 this.compiledLogicCache = compiledCode;
             }
             return compiledCode;
@@ -130,11 +130,11 @@ export class TemplateArchiveProcessor {
      * @param {object} state - the current state of the template
      * @param {[string]} currentTime - the current time, defaults to now
      * @param {[number]} utcOffset - the UTC offset, defaults to zero
-     * @param {boolean} [useCache] - whether to use the compiled logic cache
+     * @param {boolean} [enableCompiledLogicCache] - whether to use the compiled logic cache
      * @returns {Promise<TriggerResponse>} the response and any events
      */
-    async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number, useCache?: boolean): Promise<TriggerResponse> {
-        const compiledCode = await this.compileLogic(useCache);
+    async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<TriggerResponse> {
+        const compiledCode = await this.compileLogic(enableCompiledLogicCache);
         const resolvedTime = currentTime ?? new Date().toISOString();
         const resolvedOffset = utcOffset ?? 0;
         const evaluator = new JavaScriptEvaluator();
@@ -160,11 +160,11 @@ export class TemplateArchiveProcessor {
      * @param {object} data - the data for the template
      * @param {[string]} currentTime - the current time, defaults to now
      * @param {[number]} utcOffset - the UTC offset, defaults to zero
-     * @param {boolean} [useCache] - whether to use the compiled logic cache
+     * @param {boolean} [enableCompiledLogicCache] - whether to use the compiled logic cache
      * @returns {Promise<InitResponse>} the new state
      */
-    async init(data: any, currentTime?: string, utcOffset?: number, useCache?: boolean): Promise<InitResponse> {
-        const compiledCode = await this.compileLogic(useCache);
+    async init(data: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<InitResponse> {
+        const compiledCode = await this.compileLogic(enableCompiledLogicCache);
         const resolvedTime = currentTime ?? new Date().toISOString();
         const resolvedOffset = utcOffset ?? 0;
         const evaluator = new JavaScriptEvaluator();
