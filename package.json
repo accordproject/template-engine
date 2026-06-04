@@ -4,7 +4,7 @@
   "description": "Generation of AgreementMark from TemplateMark + JSON Data",
   "homepage": "https://github.com/accordproject",
   "engines": {
-    "node": ">=20",
+    "node": ">=22",
     "npm": ">=6"
   },
   "main": "lib/index.js",
