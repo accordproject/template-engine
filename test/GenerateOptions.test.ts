@@ -9,7 +9,7 @@ describe('template generation options', () => {
             const model = readFileSync('./test/templates/good/helloformula/model.cto', 'utf-8');
             const template = readFileSync('./test/templates/good/helloformula/template.md', 'utf-8');
             const data = JSON.parse(readFileSync('./test/templates/good/helloformula/data.json', 'utf-8'));
-            const modelManager = new ModelManager({ strict: true });
+            const modelManager = new ModelManager();
             modelManager.addCTOModel(model);
             const engine = new TemplateMarkInterpreter(modelManager, {});
             const templateMarkTransformer = new TemplateMarkTransformer();
@@ -24,7 +24,7 @@ describe('template generation options', () => {
             const model = readFileSync('./test/templates/good/helloformula/model.cto', 'utf-8');
             const template = readFileSync('./test/templates/good/helloformula/template.md', 'utf-8');
             const data = JSON.parse(readFileSync('./test/templates/good/helloformula/data.json', 'utf-8'));
-            const modelManager = new ModelManager({ strict: true });
+            const modelManager = new ModelManager();
             modelManager.addCTOModel(model);
             const engine = new TemplateMarkInterpreter(modelManager, {});
             const templateMarkTransformer = new TemplateMarkTransformer();

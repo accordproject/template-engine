@@ -5,7 +5,7 @@
     "accordproject": {
         "runtime": "typescript",
         "template": "clause",
-        "cicero": "^0.25.0"
+        "cicero": "^1.0.0"
     },
     "devDependencies": {
         "ts-loader": "^9.5.4",

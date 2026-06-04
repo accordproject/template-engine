@@ -238,9 +238,7 @@ export class TypeScriptToJavaScriptCompiler {
         // @ts-expect-error types have diverged?
         const mergedFs = ufs.use(myfs).use(lfs);
 
-        // @ts-expect-error types have diverged?
         compiler.outputFileSystem = mergedFs;
-        // @ts-expect-error types have diverged?
         compiler.inputFileSystem = mergedFs;
 
         const runPromise = new Promise<CompilerResult>((resolve, reject) => {

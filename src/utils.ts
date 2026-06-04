@@ -60,7 +60,7 @@ export function nameUserCode(templateMarkDom: any) {
 export function getTemplateClassDeclaration(modelManager: ModelManager, templateConceptFqn?: string) : ClassDeclaration {
     const introspector = new Introspector(modelManager);
     try {
-        return templatemarkutil.findTemplateConcept(introspector, 'clause', templateConceptFqn);
+        return templatemarkutil.findTemplateConcept(introspector, 'clause', templateConceptFqn) as ClassDeclaration;
     }
     catch(err) {
         console.log(err);

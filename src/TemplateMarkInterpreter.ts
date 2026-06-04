@@ -19,7 +19,7 @@ import traverse from 'traverse';
 import { isBrowser } from 'browser-or-node';
 import os from 'os';
 
-import { ClassDeclaration, Factory, Introspector, ModelManager, Serializer } from '@accordproject/concerto-core';
+import { ClassDeclaration, Factory, Introspector, ModelManager, Property, Serializer } from '@accordproject/concerto-core';
 import { getDrafter } from './drafting';
 import { TemplateMarkModel, CommonMarkModel, CiceroMarkModel, ConcertoMetaModel } from '@accordproject/markdown-common';
 import { ModelUtil } from '@accordproject/concerto-core';
@@ -567,7 +567,7 @@ export class TemplateMarkInterpreter {
      * @throws {Error} if the templateMark document is invalid
      */
     checkTypes(templateMark: object): object {
-        const modelManager = new ModelManager({ strict: true });
+        const modelManager = new ModelManager();
         modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
         modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
         modelManager.addCTOModel(TemplateMarkModel.MODEL, 'templatemark.cto');
@@ -575,11 +575,57 @@ export class TemplateMarkInterpreter {
         const serializer = new Serializer(factory, modelManager);
         try {
             serializer.fromJSON(templateMark);
-            return templateMark;
         }
         catch (err) {
             throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(templateMark, null, 2)}`);
         }
+
+        // The names of the optional properties on the template model.
+        const optionalProperties = new Set<string>(
+            (this.templateClass.getProperties() as Property[])
+                .filter(prop => prop.isOptional())
+                .map(prop => prop.getName())
+        );
+
+        // Flag any optional variable that is used without an enclosing guard
+        // ({{#optional x}} or {{#if x}}). For each variable definition that
+        // references an optional property, walk up its ancestors: a guard makes
+        // it valid, while reaching the clause/contract boundary first means it
+        // is unguarded.
+        const paths = traverse(templateMark).paths();
+        for (const path of paths) {
+            const node = traverse(templateMark).get(path);
+            if (!node || typeof node.$class !== 'string') {
+                continue;
+            }
+            const nodeClass = node.$class;
+            const isVariable = VARIABLE_DEFINITION_RE.test(nodeClass) ||
+                ENUM_VARIABLE_DEFINITION_RE.test(nodeClass) ||
+                FORMATTED_VARIABLE_DEFINITION_RE.test(nodeClass);
+            if (!isVariable || !optionalProperties.has(node.name)) {
+                continue;
+            }
+            let isGuarded = false;
+            for (let i = path.length - 1; i >= 0; i--) {
+                const ancestor = traverse(templateMark).get(path.slice(0, i));
+                if (!ancestor || typeof ancestor.$class !== 'string') {
+                    continue;
+                }
+                const ancestorClass = ancestor.$class;
+                if (OPTIONAL_DEFINITION_RE.test(ancestorClass) || CONDITIONAL_DEFINITION_RE.test(ancestorClass)) {
+                    isGuarded = true;
+                    break;
+                }
+                if (CLAUSE_DEFINITION_RE.test(ancestorClass) || CONTRACT_DEFINITION_RE.test(ancestorClass)) {
+                    break;
+                }
+            }
+            if (!isGuarded) {
+                throw new Error(`Optional property '${node.name}' used in template without a guard (e.g., {{#optional ${node.name}}} or {{#if ${node.name}}}).`);
+            }
+        }
+
+        return templateMark;
     }
 
     /**
@@ -616,7 +662,7 @@ export class TemplateMarkInterpreter {
     }
 
     validateCiceroMark(ciceroMark: object): object {
-        const modelManager = new ModelManager({ strict: true });
+        const modelManager = new ModelManager();
         modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
         modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
         modelManager.addCTOModel(CiceroMarkModel.MODEL, 'ciceromark.cto');

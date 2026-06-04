@@ -18,7 +18,7 @@ import { Template } from '@accordproject/cicero-core';
 import { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { transform } from '@accordproject/markdown-transform';
-import Script from '@accordproject/cicero-core/types/src/script';
+import Script from '@accordproject/cicero-core/lib/script';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { CompilerResult, TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler';
 import * as fs from 'fs';
@@ -71,7 +71,7 @@ export class TemplateArchiveProcessor {
         const engine = new TemplateMarkInterpreter(modelManager, {});
         const templateMarkTransformer = new TemplateMarkTransformer();
         const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate(
-            { content: this.template.getTemplate() }, modelManager, templateKind, { options });
+            { content: this.template.getTemplate() }, modelManager, templateKind);
         const now = currentTime ? currentTime : new Date().toISOString();
         // console.log(JSON.stringify(templateMarkDom, null, 2));
         const ciceroMark = await engine.generate(templateMarkDom, data, { now });
