@@ -7,23 +7,29 @@
     "node": ">=20",
     "npm": ">=6"
   },
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "browser": "umd/template-engine.js",
   "files": [
-    "dist"
+    "lib",
+    "umd"
   ],
   "scripts": {
-    "clean": "rimraf dist",
+    "clean": "rimraf lib umd",
     "prebuild": "npm-run-all clean && npm run updateRuntimeDependencies",
-    "build": "rollup -c",
+    "build": "tsc -p tsconfig.build.json",
+    "webpack": "webpack --config webpack.config.js --mode production",
+    "build:dist": "npm run build && npm run webpack",
     "tsc-template": "tsc --strict --target ESNext --moduleResolution node --esModuleInterop ./output/full/usercode.ts",
     "minify": "terser ./output/full/usercode.js --compress ecma=2020 --output ./output/full/usercode-min.js",
+    "prepublishOnly": "npm run build:dist",
     "pretest": "npm-run-all licchk lint build",
     "lint": "eslint .",
     "licchk": "license-check-and-add",
     "test": "node --experimental-vm-modules node_modules/jest-cli/bin/jest.js --coverage --coverageReporters=text-summary",
     "coverage": "node --experimental-vm-modules node_modules/jest-cli/bin/jest.js --coverage",
     "test:watch": "jest --watchAll",
+    "test:e2e": "npm test -w template-engine-e2e",
     "updateRuntimeDependencies": "node ./scripts/updateRuntimeDependencies"
   },
   "repository": {
@@ -66,23 +72,31 @@
     "@types/traverse": "^0.6.37",
     "@typescript-eslint/eslint-plugin": "^8.28.0",
     "@typescript-eslint/parser": "^8.28.0",
-    "esbuild": "^0.25.1",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.0",
     "eslint": "^9.23.0",
+    "events": "^3.3.0",
     "globals": "^16.0.0",
     "jest": "^29.7.0",
     "license-check-and-add": "2.3.6",
     "mkdirp": "^3.0.1",
     "node-fetch": "^3.3.2",
     "npm-run-all2": "^8.0.4",
+    "path-browserify": "^1.0.1",
+    "process": "^0.11.10",
     "rimraf": "6.0.1",
-    "rollup": "^4.37.0",
-    "rollup-plugin-dts": "^6.2.1",
-    "rollup-plugin-esbuild": "^6.2.1",
+    "source-map-loader": "^5.0.0",
+    "stream-browserify": "^3.0.0",
     "terser": "^5.39.0",
     "ts-jest": "^29.3.0",
     "ts-node": "^10.9.2",
-    "typescript-eslint": "^8.28.0"
+    "typescript-eslint": "^8.28.0",
+    "webpack": "^5.104.0",
+    "webpack-cli": "^5.1.4"
   },
+  "workspaces": [
+    "e2e"
+  ],
   "license-check-and-add-config": {
     "folder": "./src",
     "license": "HEADER",
@@ -130,7 +144,8 @@
     "preset": "ts-jest",
     "testEnvironment": "node",
     "testPathIgnorePatterns": [
-      "<rootDir>/dist/",
+      "<rootDir>/lib/",
+      "<rootDir>/e2e/",
       "/node_modules/",
       "/scripts"
     ],
@@ -140,13 +155,10 @@
     ],
     "coveragePathIgnorePatterns": [
       "/node_modules/",
-      "/dist/",
+      "/lib/",
       "/test/",
       "/src/model-gen/",
       "/src/slc/model-gen/"
     ]
-  },
-  "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.38.0"
   }
 }

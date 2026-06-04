@@ -1,6 +1,8 @@
 node_modules
 coverage
 dist
+lib
+umd
 .DS_Store
 scripts/external/tmp/
 src/externalModels
