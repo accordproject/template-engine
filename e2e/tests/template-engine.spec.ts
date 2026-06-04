@@ -45,14 +45,11 @@ test.describe('@accordproject/template-engine UMD', () => {
         expect(api.transformer).toBe('function');
     });
 
-    // Parsing a template to TemplateMark and type-checking it are fully browser-safe
-    // (concerto + markdown-template + the interpreter's type/guard checks). A full
-    // generate() additionally compiles the template's TypeScript logic, which today uses
-    // the twoslash compiler and does not run in the browser bundle yet — that is tracked
-    // as a follow-up (unify the twoslash/webpack TS->JS compilers).
-    test('parses and type-checks a template in the browser', async ({ page }) => {
+    // Full browser flow: parse -> type-check -> compile the template's TypeScript logic to
+    // JS (twoslash, using the bundled TypeScript) -> evaluate, all in headless Chromium.
+    test('generates an agreement in the browser', async ({ page }) => {
         await inject(page);
-        const json = await page.evaluate(() => {
+        const json = await page.evaluate(async () => {
             const { ModelManager, TemplateMarkTransformer, TemplateMarkInterpreter } =
                 (window as any)['template-engine'];
             const MODEL = 'namespace test@1.0.0\n@template\nconcept TemplateData {\n  o String name\n}';
@@ -62,12 +59,13 @@ test.describe('@accordproject/template-engine UMD', () => {
             const templateMark = tmt.fromMarkdownTemplate(
                 { content: 'Hello {{name}}!' }, mm, 'contract', { verbose: false });
             const engine = new TemplateMarkInterpreter(mm, {});
-            const checked = engine.checkTypes(templateMark);
-            return JSON.stringify(checked);
+            const result = await engine.generate(
+                templateMark,
+                { $class: 'test@1.0.0.TemplateData', name: 'World' },
+                { now: '2023-03-17T00:00:00.000Z' });
+            return JSON.stringify(result.toJSON());
         });
-        // the {{name}} variable definition resolves to the String 'name' property
-        expect(json).toContain('VariableDefinition');
-        expect(json).toContain('"name":"name"');
-        expect(json).toContain('"elementType":"String"');
+        expect(json).toContain('Hello ');
+        expect(json).toContain('World');
     });
 });

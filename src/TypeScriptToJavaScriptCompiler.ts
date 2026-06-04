@@ -105,10 +105,14 @@ export class TypeScriptToJavaScriptCompiler {
             });
         }
         else {
-            this.ts = (await import(this.typescriptUrl)).default;
+            // Use the bundled typescript in the browser rather than a dynamic CDN module
+            // import: webpack cannot resolve the runtime CDN URL ('Cannot find module
+            // https://...'), and twoslash already pulls typescript into the browser bundle.
+            this.ts = (await import('typescript')).default;
             if(!this.ts) {
-                throw new Error('Failed to dynamically load typescript');
+                throw new Error('Failed to load typescript module');
             }
+            // lib.d.ts files are still fetched from the CDN at runtime (a browser fetch).
             this.fsMap = await createDefaultMapFromCDN({ target: SCRIPT_TARGET }, this.ts.version, false, this.ts);
         }
         this.fsMap.set('/node_modules/@types/dayjs/index.d.ts', Buffer.from(DAYJS_BASE64, 'base64').toString());
