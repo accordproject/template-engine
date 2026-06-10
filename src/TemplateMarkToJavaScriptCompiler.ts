@@ -105,7 +105,13 @@ export class TemplateMarkToJavaScriptCompiler {
             return compiled;
         }
         else {
-            throw errors;
+            const messages = errors.map(e => {
+                const tsErrors = e.errors.map((tsErr: any) => {
+                    return `  - ${tsErr.renderedMessage} (line: ${tsErr.line}, column: ${tsErr.character})`;
+                }).join('\n');
+                return `Node ID: ${e.nodeId}\n${tsErrors}`;
+            }).join('\n\n');
+            throw new Error(`Template compilation failed:\n${messages}`);
         }
     }
 }
