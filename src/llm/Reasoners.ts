@@ -14,19 +14,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
-import { GoogleGenAI, GenerateContentConfig } from '@google/genai';
-import { Mistral } from '@mistralai/mistralai';
 
 import {
   LLMProviderConfig,
   GroqProviderConfig,
   OpenAIProviderConfig,
   AnthropicProviderConfig,
-  GoogleProviderConfig,
-  MistralProviderConfig,
-  OpenRouterProviderConfig,
-  OllamaProviderConfig,
-  OpenAICompatibleProviderConfig,
 } from './LLMConfig';
 
 // ── Shared types ──────────────────────────────────────────────────────────────
@@ -39,7 +32,6 @@ export interface ChatMessage {
 export interface ReasonerResult {
   content: string;
 }
-
 
 export type JsonSchema = Record<string, unknown>;
 
@@ -103,7 +95,6 @@ export class GroqReasoner extends BaseReasoner {
         body.reasoning_effort = this.config.reasoningEffort;
       }
 
-      // Native structured output: Groq supports the OpenAI json_schema format
       if (schema) {
         body.response_format = {
           type: 'json_schema',
@@ -143,25 +134,19 @@ export class GroqReasoner extends BaseReasoner {
   }
 }
 
-abstract class OpenAICompatibleBase extends BaseReasoner {
-  protected readonly client: OpenAI;
-  protected readonly model: string;
-  protected readonly temperature: number;
-  protected readonly maxTokens: number;
-  protected readonly topP: number;
+export class OpenAIReasoner extends BaseReasoner {
+  private readonly client: OpenAI;
+  private readonly model: string;
+  private readonly temperature: number;
+  private readonly maxTokens: number;
+  private readonly topP: number;
 
-  constructor(
-    config: Pick<
-      LLMProviderConfig,
-      'model' | 'temperature' | 'maxTokens' | 'topP'
-    > & { apiKey?: string },
-    baseURL: string,
-    defaultApiKey = 'placeholder'
-  ) {
+  constructor(config: OpenAIProviderConfig) {
     super();
+    if (!config.apiKey) throw new Error('Missing apiKey for OpenAI provider');
     this.client = new OpenAI({
-      apiKey: config.apiKey || defaultApiKey,
-      baseURL
+      apiKey: config.apiKey,
+      baseURL: 'https://api.openai.com/v1'
     });
     this.model = config.model;
     this.temperature = config.temperature ?? 0;
@@ -212,35 +197,8 @@ abstract class OpenAICompatibleBase extends BaseReasoner {
     const response = await this.client.chat.completions.create(options);
 
     const content = response.choices[0]?.message?.content;
-    if (!content) throw new Error(`${this.constructor.name}: no content in response`);
+    if (!content) throw new Error('OpenAIReasoner: no content in response');
     return { content };
-  }
-}
-
-export class OpenAIReasoner extends OpenAICompatibleBase {
-  constructor(config: OpenAIProviderConfig) {
-    if (!config.apiKey) throw new Error('Missing apiKey for OpenAI provider');
-    super(config, 'https://api.openai.com/v1');
-  }
-}
-
-export class OpenRouterReasoner extends OpenAICompatibleBase {
-  constructor(config: OpenRouterProviderConfig) {
-    if (!config.apiKey) throw new Error('Missing apiKey for OpenRouter provider');
-    super(config, 'https://openrouter.ai/api/v1');
-  }
-}
-
-export class OllamaReasoner extends OpenAICompatibleBase {
-  constructor(config: OllamaProviderConfig) {
-    // Ollama doesn't need a real key
-    super(config, config.baseUrl ?? 'http://localhost:11434/v1', 'ollama');
-  }
-}
-
-export class OpenAICompatibleReasoner extends OpenAICompatibleBase {
-  constructor(config: OpenAICompatibleProviderConfig) {
-    super(config, config.baseUrl);
   }
 }
 
@@ -252,7 +210,7 @@ export class AnthropicReasoner extends BaseReasoner {
   constructor(config: AnthropicProviderConfig) {
     super();
     if (!config.apiKey) throw new Error('Missing apiKey for Anthropic provider');
-    this.client = new Anthropic({ apiKey: config.apiKey });
+    this.client = new Anthropic({ apiKey: config.apiKey});
     this.model = config.model;
     this.maxTokens = config.maxTokens ?? 4096;
   }
@@ -276,7 +234,6 @@ export class AnthropicReasoner extends BaseReasoner {
       messages: formattedMessages,
     };
 
-    // Native structured output: output_config.format (GA as of 2025)
     if (schema) {
       (params as any).output_config = {
         format: {
@@ -288,7 +245,6 @@ export class AnthropicReasoner extends BaseReasoner {
 
     const response = await this.client.messages.create(params);
 
-    // When structured output is used the model may return a refusal
     if (response.stop_reason === 'refusal') {
       throw new Error('Anthropic refused to produce structured output for this request');
     }
@@ -301,107 +257,6 @@ export class AnthropicReasoner extends BaseReasoner {
   }
 }
 
-export class GoogleReasoner extends BaseReasoner {
-  private readonly config: GoogleProviderConfig;
-
-  constructor(config: GoogleProviderConfig) {
-    super();
-    if (!config.apiKey) throw new Error('Missing apiKey for Google provider');
-    this.config = config;
-  }
-
-  async complete(messages: ChatMessage[], schema?: JsonSchema): Promise<ReasonerResult> {
-    const genAI = new GoogleGenAI({ apiKey: this.config.apiKey! });
-
-    const systemContent = messages
-      .filter(m => m.role === 'system')
-      .map(m => m.content)
-      .join('\n\n');
-
-    const geminiMessages = messages
-      .filter(m => m.role !== 'system')
-      .map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }],
-      }));
-
-    const lastMessage = geminiMessages.at(-1);
-    if (!lastMessage) throw new Error('Google: no user message to send');
-
-    const generationConfig: GenerateContentConfig = {
-      ...(this.config.maxTokens ? { maxOutputTokens: this.config.maxTokens } : {}),
-      ...(systemContent ? { systemInstruction: systemContent } : {}),
-    };
-
-    // Native structured output: responseMimeType + responseSchema
-    if (schema) {
-      generationConfig.responseMimeType = 'application/json';
-      generationConfig.responseSchema = schema as any;
-    }
-
-    const chat = genAI.chats.create({
-      model: this.config.model,
-      history: geminiMessages.slice(0, -1),
-      config: generationConfig,
-    });
-
-    const response = await chat.sendMessage({ message: lastMessage.parts[0].text });
-    const text = response.text;
-    if (!text) throw new Error('Google: no text in response');
-    return { content: text };
-  }
-}
-
-/* Mistral supports response_format: { type: "json_object" } — this guarantees
-valid JSON but does NOT enforce a specific schema. When a schema is passed
-we inject it as a prompt instruction alongside the json_object mode so the
-model understands the expected shape.*/
-
-export class MistralReasoner extends BaseReasoner {
-  private readonly config: MistralProviderConfig;
-
-  constructor(config: MistralProviderConfig) {
-    super();
-    if (!config.apiKey) throw new Error('Missing apiKey for Mistral provider');
-    this.config = config;
-  }
-
-  async complete(messages: ChatMessage[], schema?: JsonSchema): Promise<ReasonerResult> {
-    const mistral = new Mistral({ apiKey: this.config.apiKey });
-
-    let formatted = messages.map(m => ({ role: m.role, content: m.content }));
-    if (schema) {
-      const schemaInstruction = `You must respond with valid JSON that strictly follows this schema:\n${JSON.stringify(schema, null, 2)}\nReturn only the JSON object, no markdown, no explanation.`;
-
-      const systemIdx = formatted.findIndex(m => m.role === 'system');
-      if (systemIdx >= 0) {
-        formatted[systemIdx] = {
-          ...formatted[systemIdx],
-          content: `${formatted[systemIdx].content}\n\n${schemaInstruction}`,
-        };
-      } else {
-        formatted = [{ role: 'system', content: schemaInstruction }, ...formatted];
-      }
-    }
-
-    const response = await mistral.chat.complete({
-      model: this.config.model,
-      messages: formatted,
-      // json_object guarantees valid JSON even without schema enforcement
-      ...(schema ? { responseFormat: { type: 'json_object' } } : {}),
-      ...(this.config.maxTokens ? { maxTokens: this.config.maxTokens } : {}),
-      ...(this.config.temperature !== undefined ? { temperature: this.config.temperature } : {}),
-      ...(this.config.topP !== undefined ? { topP: this.config.topP } : {}),
-    });
-
-    const content = response.choices?.[0]?.message?.content;
-    if (!content || typeof content !== 'string') {
-      throw new Error('Mistral: no content in response');
-    }
-    return { content };
-  }
-}
-
 export function createReasoner(config: LLMProviderConfig): BaseReasoner {
   switch (config.provider) {
     case 'groq':
@@ -410,16 +265,6 @@ export function createReasoner(config: LLMProviderConfig): BaseReasoner {
       return new OpenAIReasoner(config);
     case 'anthropic':
       return new AnthropicReasoner(config);
-    case 'google':
-      return new GoogleReasoner(config);
-    case 'mistral':
-      return new MistralReasoner(config);
-    case 'openrouter':
-      return new OpenRouterReasoner(config);
-    case 'ollama':
-      return new OllamaReasoner(config);
-    case 'openai-compatible':
-      return new OpenAICompatibleReasoner(config);
     default: {
       // Exhaustiveness check — TS errors here if a provider case is missing
       const _exhaustive: never = config;
