@@ -39,38 +39,10 @@ export interface AnthropicProviderConfig extends BaseProviderConfig {
   provider: 'anthropic';
 }
 
-export interface GoogleProviderConfig extends BaseProviderConfig {
-  provider: 'google';
-}
-
-export interface MistralProviderConfig extends BaseProviderConfig {
-  provider: 'mistral';
-}
-
-export interface OpenRouterProviderConfig extends BaseProviderConfig {
-  provider: 'openrouter';
-}
-
-export interface OllamaProviderConfig extends BaseProviderConfig {
-  provider: 'ollama';
-  /** @default 'http://localhost:11434/v1' */
-  baseUrl?: string;
-}
-
-export interface OpenAICompatibleProviderConfig extends BaseProviderConfig {
-  provider: 'openai-compatible';
-  /** Required: the full base URL of the compatible endpoint */
-  baseUrl: string;
-}
 export type LLMProviderConfig =
   | GroqProviderConfig
   | OpenAIProviderConfig
-  | AnthropicProviderConfig
-  | GoogleProviderConfig
-  | MistralProviderConfig
-  | OpenRouterProviderConfig
-  | OllamaProviderConfig
-  | OpenAICompatibleProviderConfig;
+  | AnthropicProviderConfig;
 
 export interface LLMExecutorConfig {
   mode: LLMMode;
