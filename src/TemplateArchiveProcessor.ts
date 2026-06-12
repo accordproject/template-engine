@@ -83,11 +83,8 @@ export class TemplateArchiveProcessor {
         const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate(
             { content: this.template.getTemplate() }, modelManager, templateKind); // kept from file (no { options } arg)
         const now = currentTime ? currentTime : new Date().toISOString();
-        // console.log(JSON.stringify(templateMarkDom, null, 2));
         const ciceroMark = await engine.generate(templateMarkDom, data, { now });
-        // console.log(JSON.stringify(ciceroMark));
         const result = transform(ciceroMark.toJSON(), 'ciceromark', ['ciceromark_unquoted', format], null, options);
-        // console.log(result);
         return result;
     }
 
@@ -216,19 +213,13 @@ export class TemplateArchiveProcessor {
      * @returns {Promise<TriggerResponse>} the response and any events
      */
     async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<TriggerResponse> {
-        console.log(`\n[TemplateArchiveProcessor.trigger]`);
-        console.log(`Mode: ${this.llmConfig?.mode ?? 'disabled'}`);
-
         // FORCE mode — skip TS logic entirely
         if (this.llmConfig?.mode === 'force') {
-            console.log('Using LLM executor (FORCE mode)');
             return this.makeLLMExecutor().trigger(data, request, state, currentTime, utcOffset);
         }
 
         // TypeScript logic path (uses compileLogic cache if requested)
         if (this.hasTypeScriptLogic()) {
-            console.log('Using TypeScript logic executor');
-            // honour the cache flag via compileLogic — pre-warm if needed
             if (enableCompiledLogicCache) {
                 await this.compileLogic(true);
             }
@@ -237,11 +228,9 @@ export class TemplateArchiveProcessor {
 
         // Fallback to LLM
         if (this.shouldUseLLM()) {
-            console.log('Using LLM executor (FALLBACK mode)');
             return this.makeLLMExecutor().trigger(data, request, state, currentTime, utcOffset);
         }
 
-        console.log('No executor available');
         throw new Error('No TypeScript logic found and LLM fallback is disabled');
     }
 
@@ -254,19 +243,13 @@ export class TemplateArchiveProcessor {
      * @returns {Promise<InitResponse>} the new state
      */
     async init(data: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<InitResponse> {
-        console.log(`\n[TemplateArchiveProcessor.init]`);
-        console.log(`Mode: ${this.llmConfig?.mode ?? 'disabled'}`);
-
         // FORCE mode — skip TS logic entirely
         if (this.llmConfig?.mode === 'force') {
-            console.log('Using LLM executor (FORCE mode)');
             return this.makeLLMExecutor().init(data, currentTime, utcOffset);
         }
 
         // TypeScript logic path (uses compileLogic cache if requested)
         if (this.hasTypeScriptLogic()) {
-            console.log('Using TypeScript logic executor');
-            // honour the cache flag via compileLogic — pre-warm if needed
             if (enableCompiledLogicCache) {
                 await this.compileLogic(true);
             }
@@ -275,11 +258,9 @@ export class TemplateArchiveProcessor {
 
         // Fallback to LLM
         if (this.shouldUseLLM()) {
-            console.log('Using LLM executor (FALLBACK mode)');
             return this.makeLLMExecutor().init(data, currentTime, utcOffset);
         }
 
-        console.log('No executor available');
         throw new Error('No TypeScript logic found and LLM fallback is disabled');
     }
 }
