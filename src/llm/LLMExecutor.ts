@@ -15,44 +15,12 @@
 import { Template } from '@accordproject/cicero-core';
 import { BaseReasoner, ChatMessage, JsonSchema, createReasoner } from './Reasoners';
 import { LLMExecutorConfig } from './LLMConfig';
- 
-let _schemaCache: { definitions: Record<string, any> } | null = null;
-let _schemaPath = ''; // empty = not set yet
- 
-/**
- * Set the path to schema.json before constructing any LLMExecutor.
- * Accepts an absolute path or a path relative to process.cwd().
- *
- * @example
- *   setSchemaPath('./schema.json');              // next to run.js
- *   setSchemaPath('/abs/path/to/schema.json');   // absolute
- */
-export function setSchemaPath(p: string): void {
-  _schemaPath = p;
-  _schemaCache = null; // invalidate cache so next getSchema() re-loads
-}
- 
-function getSchema(): { definitions: Record<string, any> } {
-  if (_schemaCache) return _schemaCache;
- 
-  if (!_schemaPath) {
-    throw new Error(
-      '[LLMExecutor] No schema path configured. ' +
-      'Call setSchemaPath("/path/to/schema.json") before using LLMExecutor.'
-    );
-  }
- 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const nodePath = require('path') as typeof import('path');
-  const resolved = nodePath.isAbsolute(_schemaPath)
-    ? _schemaPath
-    : nodePath.resolve(process.cwd(), _schemaPath);
- 
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
-  _schemaCache = require(resolved) as { definitions: Record<string, any> };
-  return _schemaCache;
-}
- 
+import {
+  getRootTypes,
+  isStatelessTemplate,
+  treeShakeModel,
+} from './ModelManagerSchema';
+
 export type TriggerResponse = {
   result: object;
   state: object;
@@ -114,61 +82,100 @@ function deepResolve(
   return node;
 }
  
-function resolveDefinition(key: string): Record<string, unknown> {
-  const definitions = getSchema().definitions as Record<string, any>;
-  const def = definitions[key];
-  if (!def) throw new Error(`Schema definition not found: ${key}`);
+// Strips JSON-Schema keywords that strict structured-output APIs reject and
+// pins the Concerto `$class` discriminator to a `const` so the model emits the
+// correct fully-qualified type name.
+const UNSUPPORTED_KEYWORDS = new Set([
+  'pattern',
+  'format',
+  'minLength',
+  'maxLength',
+  'minimum',
+  'maximum',
+  'exclusiveMinimum',
+  'exclusiveMaximum',
+  'multipleOf',
+]);
+
+function cleanForStructuredOutput(node: any): any {
+  if (Array.isArray(node)) {
+    return node.map(cleanForStructuredOutput);
+  }
+  if (node && typeof node === 'object') {
+    const out: Record<string, any> = {};
+    for (const [k, v] of Object.entries(node)) {
+      if (UNSUPPORTED_KEYWORDS.has(k)) continue;
+      if (k === 'default') continue; // model defaults aren't allowed in strict mode
+      if (k === 'properties' && v && typeof v === 'object') {
+        const props: Record<string, any> = {};
+        for (const [propKey, propVal] of Object.entries(v as Record<string, any>)) {
+          // Pin the Concerto type discriminator to its exact FQN.
+          if (propKey === '$class' && propVal && (propVal as any).default) {
+            props[propKey] = { type: 'string', const: (propVal as any).default };
+          } else {
+            props[propKey] = cleanForStructuredOutput(propVal);
+          }
+        }
+        out[k] = props;
+        continue;
+      }
+      out[k] = cleanForStructuredOutput(v);
+    }
+    return out;
+  }
+  return node;
+}
+
+/**
+ * Fully resolves a single tree-shaken type into a self-contained, strict
+ * JSON Schema: inlines every `$ref`, forces `additionalProperties: false`, and
+ * strips provider-unsupported keywords.
+ */
+function resolveTypeSchema(
+  definitions: Record<string, any>,
+  fqn: string
+): Record<string, unknown> {
+  const def = definitions[fqn];
+  if (!def) throw new Error(`Type not found in tree-shaken model: ${fqn}`);
   const resolved = deepResolve(def, definitions);
-  return enforceAdditionalPropertiesFalse(resolved);
+  return cleanForStructuredOutput(enforceAdditionalPropertiesFalse(resolved));
 }
- 
+
 /**
- * Picks the first matching key from the definitions map whose name ends with
- * one of the supplied suffixes (e.g. "State", "Response", "Event").
- * When `excludeRuntimeBase` is true, keys that are the bare Accord Project
- * runtime base class (org.accordproject.runtime@<version>.<Suffix>) are
- * skipped — they carry no useful schema shape.
+ * Resolve a set of type FQNs into a single schema: the lone type when there is
+ * one, or an `anyOf` across all of them when a template has several (e.g. two
+ * response types, or several event types). Returns null when the set is empty.
  */
-function findDefinitionBySuffix(suffix: string, excludeRuntimeBase = false): Record<string, unknown> | null {
-  const definitions = getSchema().definitions as Record<string, any>;
-  const runtimeBaseRe = /^org\.accordproject\.runtime@[\d.]+\./;
-  const key = Object.keys(definitions).find(
-    k => k.endsWith(suffix) && !(excludeRuntimeBase && runtimeBaseRe.test(k))
-  );
-  return key ? resolveDefinition(key) : null;
+function resolveUnionSchema(
+  definitions: Record<string, any>,
+  fqns: string[]
+): Record<string, unknown> | null {
+  if (fqns.length === 0) return null;
+  if (fqns.length === 1) return resolveTypeSchema(definitions, fqns[0]);
+  return { anyOf: fqns.map(fqn => resolveTypeSchema(definitions, fqn)) };
 }
- 
-/**
- * Returns true when the schema defines NO custom State type beyond the base
- * `org.accordproject.runtime@*.State`.  A stateless template has no state
- * to initialise or carry across calls — init returns `{}` and trigger omits
- * the `state` key entirely.
- *
- * Detection rule: scan `definitions` for any key that ends with "State" but
- * is NOT the bare runtime base class (`org.accordproject.runtime@*.State`).
- * If none exists the template is stateless.
- */
-function isStateless(): boolean {
-  const definitions = getSchema().definitions as Record<string, any>;
-  const customState = Object.keys(definitions).find(
-    k =>
-      k.endsWith('State') &&
-      !/^org\.accordproject\.runtime@[\d.]+\.State$/.test(k)
-  );
-  return !customState;
+
+/** Attach a description; only stamp `additionalProperties:false` on plain object
+ *  schemas — never on an `anyOf` wrapper (its branches already carry it, and a
+ *  bare `additionalProperties` alongside `anyOf` is rejected by strict mode). */
+function withSchemaDescription(
+  def: Record<string, unknown>,
+  description: string
+): Record<string, unknown> {
+  if ('anyOf' in def) return { ...def, description };
+  return { ...def, description, additionalProperties: false };
 }
- 
-// Schema builders 
+
+// Schema builders
 function buildStateSchema(
   full: boolean,
   stateDef: Record<string, unknown> | null
 ): Record<string, unknown> {
   if (full && stateDef) {
-    return {
-      ...stateDef,
-      description: 'The contract state. Must match the Concerto state model.',
-      additionalProperties: false,
-    };
+    return withSchemaDescription(
+      stateDef,
+      'The contract state. Must match the Concerto state model.'
+    );
   }
   return {
     type: 'object',
@@ -183,11 +190,10 @@ function buildResultSchema(
   resultDef: Record<string, unknown> | null
 ): Record<string, unknown> {
   if (full && resultDef) {
-    return {
-      ...resultDef,
-      description: 'The response object. Must match the Concerto response model.',
-      additionalProperties: false,
-    };
+    return withSchemaDescription(
+      resultDef,
+      'The response object. Must match the Concerto response model.'
+    );
   }
   return {
     type: 'object',
@@ -196,13 +202,18 @@ function buildResultSchema(
     properties: {},
   };
 }
- 
+
 function buildEventItemSchema(
   full: boolean,
-  eventDef: Record<string, unknown> | null
+  eventDefs: Record<string, unknown>[] | null
 ): Record<string, unknown> {
-  if (full && eventDef) {
-    return { ...eventDef, additionalProperties: false };
+  if (full && eventDefs && eventDefs.length === 1) {
+    return eventDefs[0];
+  }
+  if (full && eventDefs && eventDefs.length > 1) {
+    // A template may emit more than one kind of event — each array item must
+    // match one of them.
+    return { anyOf: eventDefs };
   }
   return { type: 'object', additionalProperties: false, properties: {} };
 }
@@ -242,14 +253,14 @@ function buildTriggerSchema(
   full: boolean,
   resultDef: Record<string, unknown> | null,
   stateDef: Record<string, unknown> | null,
-  eventDef: Record<string, unknown> | null,
+  eventDefs: Record<string, unknown>[] | null,
   stateless = false
 ): JsonSchema {
   const properties: Record<string, unknown> = {
     result: buildResultSchema(full, resultDef),
     events: {
       type: 'array',
-      items: buildEventItemSchema(full, eventDef),
+      items: buildEventItemSchema(full, eventDefs),
       description: 'Emitted events.',
     },
   };
@@ -305,32 +316,15 @@ function assertTriggerShape(value: any, stateless = false): asserts value is Tri
     throw new Error('Invalid trigger response: events must be an array');
 }
 
-/**
- * Injects Accord Project runtime metadata fields (`$timestamp`, `$identifier`)
- * into the parsed LLM response object **in-place**, returning the same object.
- *
- * Placement rules (mirrors canonical Cicero engine output):
- * - `result`          → `$timestamp` inserted immediately after `$class`
- * - `state`           → `$identifier` inserted immediately after `$class`
- *                       (only when the template is stateful and state has a
- *                       `$class` field; skipped for stateless `{}` states)
- * - each item in `events` (non-empty array only)
- *                     → `$timestamp` inserted immediately after `$class`
- *
- * @param response   The parsed init or trigger response object to mutate.
- * @param timestamp  ISO-8601 string to use as `$timestamp`; defaults to now.
- * @param data       The original contract data object passed to init/trigger.
- *                   Used to resolve `$identifier` for state objects via the
- *                   priority chain:
- *                     state.$identifier → data.$identifier →
- *                     data.clauseId → data.contractId → 'state-1'
- */
+// Injects Accord Project runtime metadata (`$timestamp` on result/events,
+// `$identifier` on state) immediately after `$class`, mirroring canonical
+// Cicero engine output. `$identifier` resolves via:
+//   state.$identifier → data.$identifier → data.clauseId → data.contractId → 'state-1'
 function injectRuntimeMetadata<T extends { state?: any; result?: any; events?: any[] }>(
   response: T,
   timestamp: string = new Date().toISOString(),
   data?: any
 ): T {
-  
   const rawState = response.state;
   const identifier: string =
     rawState?.$identifier ||
@@ -395,28 +389,53 @@ export class LLMExecutor {
 
   /** Schema instances are per-executor so the object reference is stable for
    *  Anthropic's 24-hour grammar cache (same object = cache hit).
-   *  For full-schema providers the defs are resolved here (after setSchemaPath
-   *  has been called), so getSchema() is safe to call at this point. */
+   *  For full-schema providers the defs are derived from the template's own
+   *  ModelManager via tree-shaking — no external schema.json required. */
   private readonly initSchema: JsonSchema;
   private readonly triggerSchema: JsonSchema;
+
+  /** The tree-shaken .cto model files (request/response/state/event + their
+   *  dependencies only). Falls back to the full model for non-schema providers. */
+  private readonly contextModelFiles: { name: string; content: string }[];
 
   constructor(template: Template, config: LLMExecutorConfig) {
     this.template = template;
     this.config = config;
     this.reasoner = createReasoner(config.provider);
     this.fullSchema = usesFullSchema(config);
-    this.stateless  = isStateless();
+    this.stateless  = isStatelessTemplate(template);
+
+    // Resolve the exact request/response/state/event type names the template
+    // declares (reliable — derived from the runtime base classes they extend,
+    // not from their names), then tree-shake the ModelManager to just those
+    // types and their dependencies. This reduced model set is sent as context
+    // for ALL providers, keeping the prompt small (important for providers with
+    // tight token-per-minute limits, e.g. Groq's free tier).
+    const roots = getRootTypes(template);
+    const rootFqns = [
+      ...roots.requests,
+      ...roots.responses,
+      ...roots.states,
+      ...roots.events,
+    ];
+
+    const { definitions, modelFiles } = rootFqns.length
+      ? treeShakeModel(template, rootFqns)
+      : { definitions: {} as Record<string, any>, modelFiles: [] };
+
+    this.contextModelFiles = modelFiles;
 
     if (this.fullSchema) {
-      // Resolve defs now — setSchemaPath() must have been called by the caller
-      // before constructing this executor.
-      const stateDef  = findDefinitionBySuffix('State');
-      const resultDef = findDefinitionBySuffix('Response');
-      const eventDef  = findDefinitionBySuffix('Event');
+      // result/state may be a single type or an anyOf across several.
+      const stateDef  = resolveUnionSchema(definitions, roots.states);
+      const resultDef = resolveUnionSchema(definitions, roots.responses);
+      const eventDefs = roots.events.map(fqn => resolveTypeSchema(definitions, fqn));
+
       this.initSchema    = buildInitSchema(true, stateDef, this.stateless);
-      this.triggerSchema = buildTriggerSchema(true, resultDef, stateDef, eventDef, this.stateless);
+      this.triggerSchema = buildTriggerSchema(true, resultDef, stateDef, eventDefs, this.stateless);
     } else {
-      // Non-native-schema providers: build per-executor so stateless flag applies.
+      // Non-native-schema providers don't enforce a schema, but still get the
+      // tree-shaken model files as context (set above).
       this.initSchema    = buildInitSchema(false, null, this.stateless);
       this.triggerSchema = buildTriggerSchema(false, null, null, null, this.stateless);
     }
@@ -447,11 +466,15 @@ export class LLMExecutor {
       responseTypes: responseTypes.map((t: any) => t.getFullyQualifiedName?.() ?? String(t)),
       stateTypes: stateTypes.map((t: any) => t.getFullyQualifiedName?.() ?? String(t)),
       emitTypes: emitTypes.map((t: any) => t.getFullyQualifiedName?.() ?? String(t)),
+      // For native-schema providers send only the tree-shaken models; otherwise
+      // fall back to the full model set.
       modelFiles:
-        modelManager?.getModelFiles?.().map((mf: any) => ({
-          name: mf.getName?.() ?? 'unknown.cto',
-          content: mf.getDefinitions?.() ?? '',
-        })) ?? [],
+        this.contextModelFiles.length > 0
+          ? this.contextModelFiles
+          : modelManager?.getModelFiles?.().map((mf: any) => ({
+              name: mf.getName?.() ?? 'unknown.cto',
+              content: mf.getDefinitions?.() ?? '',
+            })) ?? [],
     };
   }
 

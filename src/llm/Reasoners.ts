@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import OpenAI from 'openai';
-import Anthropic from '@anthropic-ai/sdk';
+import type OpenAI from 'openai';
+import type Anthropic from '@anthropic-ai/sdk';
 
 import {
   LLMProviderConfig,
@@ -135,23 +135,38 @@ export class GroqReasoner extends BaseReasoner {
 }
 
 export class OpenAIReasoner extends BaseReasoner {
-  private readonly client: OpenAI;
+  private clientPromise?: Promise<OpenAI>;
+  private readonly apiKey: string;
   private readonly model: string;
-  private readonly temperature: number;
   private readonly maxTokens: number;
-  private readonly topP: number;
 
   constructor(config: OpenAIProviderConfig) {
     super();
     if (!config.apiKey) throw new Error('Missing apiKey for OpenAI provider');
-    this.client = new OpenAI({
-      apiKey: config.apiKey,
-      baseURL: 'https://api.openai.com/v1'
-    });
+    this.apiKey = config.apiKey;
     this.model = config.model;
-    this.temperature = config.temperature ?? 0;
     this.maxTokens = config.maxTokens ?? 4096;
-    this.topP = config.topP ?? 1;
+  }
+
+  // Lazily load the optional `openai` package on first use.
+  private getClient(): Promise<OpenAI> {
+    if (!this.clientPromise) {
+      this.clientPromise = (async () => {
+        let mod: typeof import('openai');
+        try {
+          mod = await import('openai');
+        } catch {
+          throw new Error(
+            "The 'openai' package is required to use the OpenAI provider. Install it with: npm install openai"
+          );
+        }
+        return new mod.default({
+          apiKey: this.apiKey,
+          baseURL: 'https://api.openai.com/v1',
+        });
+      })();
+    }
+    return this.clientPromise;
   }
 
   async complete(messages: ChatMessage[], schema?: JsonSchema): Promise<ReasonerResult> {
@@ -176,13 +191,10 @@ export class OpenAIReasoner extends BaseReasoner {
     const options: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming = {
       model: this.model,
       messages: formatted,
-      temperature: this.temperature,
-      max_tokens: this.maxTokens,
-      top_p: this.topP,
+      max_completion_tokens: this.maxTokens,
       stream: false,
     };
 
-    // Native structured output via json_schema response_format
     if (schema) {
       options.response_format = {
         type: 'json_schema',
@@ -194,7 +206,8 @@ export class OpenAIReasoner extends BaseReasoner {
       };
     }
 
-    const response = await this.client.chat.completions.create(options);
+    const client = await this.getClient();
+    const response = await client.chat.completions.create(options);
 
     const content = response.choices[0]?.message?.content;
     if (!content) throw new Error('OpenAIReasoner: no content in response');
@@ -203,16 +216,35 @@ export class OpenAIReasoner extends BaseReasoner {
 }
 
 export class AnthropicReasoner extends BaseReasoner {
-  private readonly client: Anthropic;
+  private clientPromise?: Promise<Anthropic>;
+  private readonly apiKey: string;
   private readonly model: string;
   private readonly maxTokens: number;
 
   constructor(config: AnthropicProviderConfig) {
     super();
     if (!config.apiKey) throw new Error('Missing apiKey for Anthropic provider');
-    this.client = new Anthropic({ apiKey: config.apiKey});
+    this.apiKey = config.apiKey;
     this.model = config.model;
     this.maxTokens = config.maxTokens ?? 4096;
+  }
+
+  // Lazily load the optional `@anthropic-ai/sdk` package on first use.
+  private getClient(): Promise<Anthropic> {
+    if (!this.clientPromise) {
+      this.clientPromise = (async () => {
+        let mod: typeof import('@anthropic-ai/sdk');
+        try {
+          mod = await import('@anthropic-ai/sdk');
+        } catch {
+          throw new Error(
+            "The '@anthropic-ai/sdk' package is required to use the Anthropic provider. Install it with: npm install @anthropic-ai/sdk"
+          );
+        }
+        return new mod.default({ apiKey: this.apiKey });
+      })();
+    }
+    return this.clientPromise;
   }
 
   async complete(messages: ChatMessage[], schema?: JsonSchema): Promise<ReasonerResult> {
@@ -235,7 +267,7 @@ export class AnthropicReasoner extends BaseReasoner {
     };
 
     if (schema) {
-      (params as any).output_config = {
+      params.output_config = {
         format: {
           type: 'json_schema',
           schema,
@@ -243,7 +275,8 @@ export class AnthropicReasoner extends BaseReasoner {
       };
     }
 
-    const response = await this.client.messages.create(params);
+    const client = await this.getClient();
+    const response = await client.messages.create(params);
 
     if (response.stop_reason === 'refusal') {
       throw new Error('Anthropic refused to produce structured output for this request');
