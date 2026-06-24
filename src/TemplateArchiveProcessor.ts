@@ -19,25 +19,28 @@ import { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { transform } from '@accordproject/markdown-transform';
 import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler';
-import Script from '@accordproject/cicero-core/lib/script'; // kept from file (not types/src/script)
+import Script from '@accordproject/cicero-core/lib/script';
 import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { SMART_LEGAL_CONTRACT_BASE64 } from './runtime/declarations';
-
-// LLM executor + config (added from pasted version)
 import { LLMExecutor } from './llm/LLMExecutor';
 import { LLMExecutorConfig } from './llm/LLMConfig';
 
+/** The contract state. */
 export type State = object;
+/** A response/result returned by the contract logic. */
 export type Response = object;
+/** An event emitted by the contract logic. */
 export type Event = object;
 
+/** The result of triggering a template: the response, updated state, and events. */
 export type TriggerResponse = {
     result: Response;
     state: State;
     events: Event[];
 }
 
+/** The result of initializing a template: the initial state. */
 export type InitResponse = {
     state: State;
 }
@@ -47,16 +50,22 @@ export type InitResponse = {
  * templatemark for the archive and trigger the logic of the archive
  */
 export class TemplateArchiveProcessor {
+    /** The template used by the processor. */
     template: Template;
-    private compiledLogicCache?: Record<string, TwoSlashReturn>; // kept from file
 
-    // optional LLM config (added from pasted version)
+    /** Cache of compiled logic, keyed by script identifier. */
+    private compiledLogicCache?: Record<string, TwoSlashReturn>;
+
+    /** Optional LLM fallback configuration. */
     llmConfig?: LLMExecutorConfig;
+
+    /** Lazily-created LLM executor reused across debug/init/trigger calls. */
+    private llmExecutor?: LLMExecutor;
 
     /**
      * Creates a template archive processor
      * @param {Template} template - the template to be used by the processor
-     * @param {LLMExecutorConfig} llmConfig - optional LLM fallback configuration
+     * @param {LLMExecutorConfig} [llmConfig] - optional LLM fallback configuration
      */
     constructor(template: Template, llmConfig?: LLMExecutorConfig) {
         this.template = template;
@@ -81,7 +90,7 @@ export class TemplateArchiveProcessor {
         const engine = new TemplateMarkInterpreter(modelManager, {});
         const templateMarkTransformer = new TemplateMarkTransformer();
         const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate(
-            { content: this.template.getTemplate() }, modelManager, templateKind); // kept from file (no { options } arg)
+            { content: this.template.getTemplate() }, modelManager, templateKind);
         const now = currentTime ? currentTime : new Date().toISOString();
         const ciceroMark = await engine.generate(templateMarkDom, data, { now });
         const result = transform(ciceroMark.toJSON(), 'ciceromark', ['ciceromark_unquoted', format], null, options);
@@ -126,33 +135,50 @@ export class TemplateArchiveProcessor {
         }
     }
 
-    // Helper: check if explicit TS logic exists (added from pasted version)
-    private hasTypeScriptLogic(): boolean {
-        const logicManager = this.template.getLogicManager();
-        if (!logicManager) {
-            return false;
-        }
-        if (logicManager.getLanguage() !== 'typescript') {
-            return false;
-        }
-        const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
-        return tsFiles.length > 0;
-    }
-
-    // Helper: check if LLM fallback is enabled (added from pasted version)
+    /**
+     * Determines whether LLM fallback is enabled.
+     * @returns {boolean} true if an LLM config is present and not disabled
+     */
     private shouldUseLLM(): boolean {
         return !!this.llmConfig && this.llmConfig.mode !== 'disabled';
     }
 
-    // Helper: construct LLM executor (added from pasted version)
+    /**
+     * Constructs an LLM executor for this template.
+     * @returns {LLMExecutor} the LLM executor
+     * @throws {Error} if no LLM config is present
+     */
     private makeLLMExecutor(): LLMExecutor {
         if (!this.llmConfig) {
             throw new Error('LLM fallback requested but llmConfig is missing');
         }
-        return new LLMExecutor(this.template, this.llmConfig);
+        if (!this.llmExecutor) {
+            this.llmExecutor = new LLMExecutor(this.template, this.llmConfig);
+        }
+        return this.llmExecutor;
     }
 
-    // Private TS trigger — delegates to compileLogic() (kept file's logic, not the inline duplicate from pasted)
+    // /**
+    //  * Returns precomputed LLM schema/model debug information when LLM execution
+    //  * is enabled for this processor.
+    //  * @returns {LLMExecutorDebugInfo | null} the LLM debug info, or null when disabled
+    //  */
+    // getLLMDebugInfo(): LLMExecutorDebugInfo | null {
+    //     if (!this.shouldUseLLM()) {
+    //         return null;
+    //     }
+    //     return this.makeLLMExecutor().getDebugInfo();
+    // }
+
+    /**
+     * Executes the template's compiled TypeScript trigger logic.
+     * @param {any} data - the data for the template
+     * @param {any} request - the request to send to the template logic
+     * @param {any} [state] - the current state of the template
+     * @param {string} [currentTime] - the current time, defaults to now
+     * @param {number} [utcOffset] - the UTC offset, defaults to zero
+     * @returns {Promise<TriggerResponse>} the response and any events
+     */
     private async executeTypeScriptTrigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number): Promise<TriggerResponse> {
         const compiledCode = await this.compileLogic();
         const resolvedTime = currentTime ?? new Date().toISOString();
@@ -173,7 +199,14 @@ export class TemplateArchiveProcessor {
         }
     }
 
-    // Private TS init — delegates to compileLogic() (kept file's logic, not the inline duplicate from pasted)
+    /**
+     * Executes the template's compiled TypeScript init logic. Returns an empty
+     * state when the compiled logic defines no `init` method (stateless template).
+     * @param {any} data - the data for the template
+     * @param {string} [currentTime] - the current time, defaults to now
+     * @param {number} [utcOffset] - the UTC offset, defaults to zero
+     * @returns {Promise<InitResponse>} the new state
+     */
     private async executeTypeScriptInit(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
         const compiledCode = await this.compileLogic();
         const logicCode = compiledCode['logic/logic.ts']?.code;
@@ -213,25 +246,23 @@ export class TemplateArchiveProcessor {
      * @returns {Promise<TriggerResponse>} the response and any events
      */
     async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<TriggerResponse> {
-        // FORCE mode — skip TS logic entirely
-        if (this.llmConfig?.mode === 'force') {
-            return this.makeLLMExecutor().trigger(data, request, state, currentTime, utcOffset);
-        }
+        const forceLLM = this.llmConfig?.mode === 'force';
 
-        // TypeScript logic path (uses compileLogic cache if requested)
-        if (this.hasTypeScriptLogic()) {
+        // Run the template's TypeScript logic unless the caller forces the LLM path.
+        if (!forceLLM && this.template.hasLogic()) {
             if (enableCompiledLogicCache) {
                 await this.compileLogic(true);
             }
             return this.executeTypeScriptTrigger(data, request, state, currentTime, utcOffset);
         }
 
-        // Fallback to LLM
-        if (this.shouldUseLLM()) {
+        // Otherwise use the LLM executor — either because it was forced, or
+        // because the template carries no executable logic.
+        if (forceLLM || this.shouldUseLLM()) {
             return this.makeLLMExecutor().trigger(data, request, state, currentTime, utcOffset);
         }
 
-        throw new Error('No TypeScript logic found and LLM fallback is disabled');
+        throw new Error('No executable logic found and LLM fallback is disabled');
     }
 
     /**
@@ -243,24 +274,22 @@ export class TemplateArchiveProcessor {
      * @returns {Promise<InitResponse>} the new state
      */
     async init(data: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<InitResponse> {
-        // FORCE mode — skip TS logic entirely
-        if (this.llmConfig?.mode === 'force') {
-            return this.makeLLMExecutor().init(data, currentTime, utcOffset);
-        }
+        const forceLLM = this.llmConfig?.mode === 'force';
 
-        // TypeScript logic path (uses compileLogic cache if requested)
-        if (this.hasTypeScriptLogic()) {
+        // Run the template's TypeScript logic unless the caller forces the LLM path.
+        if (!forceLLM && this.template.hasLogic()) {
             if (enableCompiledLogicCache) {
                 await this.compileLogic(true);
             }
             return this.executeTypeScriptInit(data, currentTime, utcOffset);
         }
 
-        // Fallback to LLM
-        if (this.shouldUseLLM()) {
+        // Otherwise use the LLM executor — either because it was forced, or
+        // because the template carries no executable logic.
+        if (forceLLM || this.shouldUseLLM()) {
             return this.makeLLMExecutor().init(data, currentTime, utcOffset);
         }
 
-        throw new Error('No TypeScript logic found and LLM fallback is disabled');
+        throw new Error('No executable logic found and LLM fallback is disabled');
     }
 }

@@ -20,18 +20,26 @@ import {
   isStatelessTemplate,
   treeShakeModel,
 } from './ModelManagerSchema';
+import type { TriggerResponse, InitResponse } from '../TemplateArchiveProcessor';
 
-export type TriggerResponse = {
-  result: object;
-  state: object;
-  events: object[];
-};
- 
-export type InitResponse = {
-  state: object;
-};
- 
-// Schema helpers 
+/**
+ * A JSON Schema `definitions` map as produced by the tree-shaker: keyed by
+ * fully-qualified Concerto type name, each value is the JSON Schema fragment for
+ * that type. Fragments may contain `$ref`s pointing at sibling definitions
+ * (`#/definitions/<fqn>`), which `deepResolve` later inlines.
+ */
+type SchemaDefinitions = Record<string, Record<string, any>>;
+
+/**
+ * Recursively stamps `additionalProperties: false` onto every object schema so
+ * strict structured-output providers reject unexpected keys.
+ *
+ * TODO: push this down into concerto-codegen's JSONSchemaVisitor as an opt-in
+ * flag (e.g. `additionalPropertiesFalse`) rather than post-processing here — see
+ * the tracking issue filed against accordproject/concerto-codegen.
+ * @param schema - the schema node to mutate in place
+ * @returns the same schema node, with `additionalProperties: false` applied
+ */
 function enforceAdditionalPropertiesFalse(schema: Record<string, any>): Record<string, any> {
   if (schema.type === 'object' || schema.properties) {
     schema.additionalProperties = false;
@@ -50,11 +58,10 @@ function enforceAdditionalPropertiesFalse(schema: Record<string, any>): Record<s
 /**
  * Fully resolves all $ref pointers in a schema node, recursively.
  * This produces a self-contained schema with no dangling $refs,
- * which is required by Anthropic (and safe for OpenAI).
  */
 function deepResolve(
   node: any,
-  definitions: Record<string, any>,
+  definitions: SchemaDefinitions,
   visiting = new Set<string>()  // cycle guard
 ): any {
   if (Array.isArray(node)) {
@@ -82,9 +89,14 @@ function deepResolve(
   return node;
 }
  
-// Strips JSON-Schema keywords that strict structured-output APIs reject and
-// pins the Concerto `$class` discriminator to a `const` so the model emits the
-// correct fully-qualified type name.
+/**
+ * JSON-Schema validation keywords that strict structured-output APIs (OpenAI,
+ * Anthropic) reject; stripped from generated schemas by `cleanForStructuredOutput`.
+ *
+ * TODO: this keyword-stripping belongs in concerto-codegen's JSONSchemaVisitor
+ * behind an opt-in flag (e.g. `omitValidators`) — see the tracking issue filed
+ * against accordproject/concerto-codegen.
+ */
 const UNSUPPORTED_KEYWORDS = new Set([
   'pattern',
   'format',
@@ -97,6 +109,13 @@ const UNSUPPORTED_KEYWORDS = new Set([
   'multipleOf',
 ]);
 
+/**
+ * Recursively strips provider-unsupported keywords (see {@link UNSUPPORTED_KEYWORDS})
+ * from a schema node and pins the Concerto `$class` discriminator to a `const` of
+ * its exact fully-qualified name, so the model emits the correct type tag.
+ * @param node - the schema node to clean
+ * @returns a cleaned copy of the node
+ */
 function cleanForStructuredOutput(node: any): any {
   if (Array.isArray(node)) {
     return node.map(cleanForStructuredOutput);
@@ -130,9 +149,16 @@ function cleanForStructuredOutput(node: any): any {
  * Fully resolves a single tree-shaken type into a self-contained, strict
  * JSON Schema: inlines every `$ref`, forces `additionalProperties: false`, and
  * strips provider-unsupported keywords.
+ *
+ * @param definitions  the tree-shaken `definitions` map (see {@link SchemaDefinitions}),
+ *                      used to look up `fqn` and to inline any `$ref`s it contains.
+ * @param fqn          fully-qualified Concerto type name to resolve; must be a key
+ *                      of `definitions` (throws otherwise).
+ * @returns a standalone JSON Schema object for `fqn` with no remaining `$ref`s,
+ *          safe to embed directly in a strict structured-output request.
  */
 function resolveTypeSchema(
-  definitions: Record<string, any>,
+  definitions: SchemaDefinitions,
   fqn: string
 ): Record<string, unknown> {
   const def = definitions[fqn];
@@ -147,7 +173,7 @@ function resolveTypeSchema(
  * response types, or several event types). Returns null when the set is empty.
  */
 function resolveUnionSchema(
-  definitions: Record<string, any>,
+  definitions: SchemaDefinitions,
   fqns: string[]
 ): Record<string, unknown> | null {
   if (fqns.length === 0) return null;
@@ -155,26 +181,40 @@ function resolveUnionSchema(
   return { anyOf: fqns.map(fqn => resolveTypeSchema(definitions, fqn)) };
 }
 
-/** Attach a description; only stamp `additionalProperties:false` on plain object
- *  schemas — never on an `anyOf` wrapper (its branches already carry it, and a
- *  bare `additionalProperties` alongside `anyOf` is rejected by strict mode). */
-function withSchemaDescription(
+/** Attach a human-readable description to a schema node. */
+function withDescription(
   def: Record<string, unknown>,
   description: string
 ): Record<string, unknown> {
-  if ('anyOf' in def) return { ...def, description };
-  return { ...def, description, additionalProperties: false };
+  return { ...def, description };
 }
 
-// Schema builders
+/** Close a plain object schema to extra keys with `additionalProperties:false`.
+ *  Never applied to an `anyOf` wrapper: its branches already carry the flag, and
+ *  a bare `additionalProperties` alongside `anyOf` is rejected by strict mode. */
+function closeObjectSchema(
+  def: Record<string, unknown>
+): Record<string, unknown> {
+  if ('anyOf' in def) return def;
+  return { ...def, additionalProperties: false };
+}
+
+// // Schema builders
+
+/**
+ * Build the JSON Schema fragment for the contract `state` property: the resolved
+ * state definition for full-schema providers, or an open object otherwise.
+ * @param full - whether to expand the resolved state definition
+ * @param stateDef - the resolved state schema, or null when unavailable
+ * @returns the `state` schema fragment
+ */
 function buildStateSchema(
   full: boolean,
   stateDef: Record<string, unknown> | null
 ): Record<string, unknown> {
   if (full && stateDef) {
-    return withSchemaDescription(
-      stateDef,
-      'The contract state. Must match the Concerto state model.'
+    return closeObjectSchema(
+      withDescription(stateDef, 'The contract state. Must match the Concerto state model.')
     );
   }
   return {
@@ -185,14 +225,20 @@ function buildStateSchema(
   };
 }
  
+/**
+ * Build the JSON Schema fragment for the trigger `result` property: the resolved
+ * response definition for full-schema providers, or an open object otherwise.
+ * @param full - whether to expand the resolved response definition
+ * @param resultDef - the resolved response schema, or null when unavailable
+ * @returns the `result` schema fragment
+ */
 function buildResultSchema(
   full: boolean,
   resultDef: Record<string, unknown> | null
 ): Record<string, unknown> {
   if (full && resultDef) {
-    return withSchemaDescription(
-      resultDef,
-      'The response object. Must match the Concerto response model.'
+    return closeObjectSchema(
+      withDescription(resultDef, 'The response object. Must match the Concerto response model.')
     );
   }
   return {
@@ -203,6 +249,13 @@ function buildResultSchema(
   };
 }
 
+/**
+ * Build the JSON Schema fragment for a single item of the `events` array: the
+ * lone event definition, an `anyOf` across several, or an open object.
+ * @param full - whether to expand the resolved event definitions
+ * @param eventDefs - the resolved event schemas, or null when unavailable
+ * @returns the event-item schema fragment
+ */
 function buildEventItemSchema(
   full: boolean,
   eventDefs: Record<string, unknown>[] | null
@@ -218,6 +271,13 @@ function buildEventItemSchema(
   return { type: 'object', additionalProperties: false, properties: {} };
 }
  
+/**
+ * Build the full JSON Schema for an `init` response (`{ state }`).
+ * @param full - whether to expand the resolved state definition
+ * @param stateDef - the resolved state schema, or null when unavailable
+ * @param stateless - true when the template carries no custom state
+ * @returns the init-response schema
+ */
 function buildInitSchema(
   full: boolean,
   stateDef: Record<string, unknown> | null,
@@ -249,6 +309,16 @@ function buildInitSchema(
   };
 }
  
+/**
+ * Build the full JSON Schema for a `trigger` response (`{ result, events }`,
+ * plus `state` for stateful templates).
+ * @param full - whether to expand the resolved definitions
+ * @param resultDef - the resolved response schema, or null when unavailable
+ * @param stateDef - the resolved state schema, or null when unavailable
+ * @param eventDefs - the resolved event schemas, or null when unavailable
+ * @param stateless - true when the template carries no custom state
+ * @returns the trigger-response schema
+ */
 function buildTriggerSchema(
   full: boolean,
   resultDef: Record<string, unknown> | null,
@@ -288,6 +358,13 @@ function usesFullSchema(config: LLMExecutorConfig): boolean {
  
 
 // Helper Functions
+
+/**
+ * Parse JSON from raw LLM output, tolerating a Markdown ```json ``` code fence.
+ * @param text - the raw model output
+ * @returns the parsed JSON value
+ * @throws {Error} if no valid JSON can be extracted
+ */
 function extractJson(text: string): any {
   const raw = text.trim();
   try {
@@ -299,12 +376,26 @@ function extractJson(text: string): any {
   }
 }
 
+/**
+ * Assert that a parsed value has the shape of an {@link InitResponse}.
+ * @param value - the value to check
+ * @throws {Error} if the value is not a valid init response
+ * TODO - replace these with Concerto based deserialization:
+ * template.getModelManager().getSerializer().fromJSON( json ) 
+ * throws error if object is not a valid Concerto instance
+ */
 function assertInitShape(value: any): asserts value is InitResponse {
   if (!value || typeof value !== 'object' || !value.state || typeof value.state !== 'object') {
     throw new Error('Invalid init response shape from LLM');
   }
 }
 
+/**
+ * Assert that a parsed value has the shape of a {@link TriggerResponse}.
+ * @param value - the value to check
+ * @param stateless - true when `state` is not required (stateless template)
+ * @throws {Error} if the value is not a valid trigger response
+ */
 function assertTriggerShape(value: any, stateless = false): asserts value is TriggerResponse {
   if (!value || typeof value !== 'object')
     throw new Error('Invalid trigger response: not an object');
@@ -316,10 +407,17 @@ function assertTriggerShape(value: any, stateless = false): asserts value is Tri
     throw new Error('Invalid trigger response: events must be an array');
 }
 
-// Injects Accord Project runtime metadata (`$timestamp` on result/events,
-// `$identifier` on state) immediately after `$class`, mirroring canonical
-// Cicero engine output. `$identifier` resolves via:
-//   state.$identifier → data.$identifier → data.clauseId → data.contractId → 'state-1'
+/**
+ * Inject Accord Project runtime metadata (`$timestamp` on result/events,
+ * `$identifier` on state), mirroring canonical Cicero engine output. Property
+ * order is irrelevant — Concerto does not enforce it — so the fields are simply
+ * assigned. `$identifier` resolves via:
+ * `state.$identifier → data.$identifier → data.clauseId → data.contractId → 'state-1'`.
+ * @param response - the LLM response to enrich, mutated in place
+ * @param timestamp - the ISO timestamp to stamp, defaults to now
+ * @param data - the contract data, used to resolve the state `$identifier`
+ * @returns the same response, with metadata applied
+ */
 function injectRuntimeMetadata<T extends { state?: any; result?: any; events?: any[] }>(
   response: T,
   timestamp: string = new Date().toISOString(),
@@ -332,25 +430,9 @@ function injectRuntimeMetadata<T extends { state?: any; result?: any; events?: a
     data?.clauseId ||
     data?.contractId ||
     'state-1';
-  
-  function insertAfterClass(obj: Record<string, any>, key: string, value: string): Record<string, any> {
-    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return obj;
-    const entries = Object.entries(obj);
-    const classIdx = entries.findIndex(([k]) => k === '$class');
-    if (classIdx === -1) {
-      // No $class present — prepend the metadata key at the front
-      return { [key]: value, ...obj };
-    }
-    const result: Record<string, any> = {};
-    for (let i = 0; i <= classIdx; i++) result[entries[i][0]] = entries[i][1];
-    result[key] = value;
-    for (let i = classIdx + 1; i < entries.length; i++) result[entries[i][0]] = entries[i][1];
-    return result;
-  }
 
- 
   if (response.result && typeof response.result === 'object') {
-    response.result = insertAfterClass(response.result as Record<string, any>, '$timestamp', timestamp);
+    response.result.$timestamp = timestamp;
   }
 
   if (
@@ -358,23 +440,30 @@ function injectRuntimeMetadata<T extends { state?: any; result?: any; events?: a
     typeof response.state === 'object' &&
     Object.keys(response.state).length > 0
   ) {
-    response.state = insertAfterClass(response.state as Record<string, any>, '$identifier', identifier);
+    response.state.$identifier = identifier;
   }
 
-  if (Array.isArray(response.events) && response.events.length > 0) {
-    response.events = response.events.map(event =>
-      event && typeof event === 'object'
-        ? insertAfterClass(event as Record<string, any>, '$timestamp', timestamp)
-        : event
-    );
+  if (Array.isArray(response.events)) {
+    for (const event of response.events) {
+      if (event && typeof event === 'object') event.$timestamp = timestamp;
+    }
   }
 
   return response;
 }
 
+/**
+ * Executes an Accord Project template's `init` / `trigger` operations using an
+ * LLM, deriving the request/response/state/event schemas from the template's own
+ * ModelManager. Used as a fallback when a template carries no executable logic,
+ * or when LLM execution is explicitly forced.
+ */
 export class LLMExecutor {
+  /** The template being executed. */
   private readonly template: Template;
+  /** The LLM provider configuration. */
   private readonly config: LLMExecutorConfig;
+  /** The provider-specific reasoner used to run completions. */
   private readonly reasoner: BaseReasoner;
 
   /** Whether this executor's provider enforces schema natively (OpenAI / Anthropic). */
@@ -393,11 +482,20 @@ export class LLMExecutor {
    *  ModelManager via tree-shaking — no external schema.json required. */
   private readonly initSchema: JsonSchema;
   private readonly triggerSchema: JsonSchema;
+  /** The tree-shaken schema definitions keyed by fully-qualified type name. */
+  private readonly definitions: SchemaDefinitions;
+  /** Root types discovered from the template and used to tree-shake the model. */
+  private readonly roots: ReturnType<typeof getRootTypes>;
 
   /** The tree-shaken .cto model files (request/response/state/event + their
    *  dependencies only). Falls back to the full model for non-schema providers. */
   private readonly contextModelFiles: { name: string; content: string }[];
 
+  /**
+   * Creates an LLM executor and precomputes the init/trigger schemas.
+   * @param {Template} template - the template to execute
+   * @param {LLMExecutorConfig} config - the LLM provider configuration
+   */
   constructor(template: Template, config: LLMExecutorConfig) {
     this.template = template;
     this.config = config;
@@ -412,6 +510,7 @@ export class LLMExecutor {
     // for ALL providers, keeping the prompt small (important for providers with
     // tight token-per-minute limits, e.g. Groq's free tier).
     const roots = getRootTypes(template);
+    this.roots = roots;
     const rootFqns = [
       ...roots.requests,
       ...roots.responses,
@@ -423,6 +522,7 @@ export class LLMExecutor {
       ? treeShakeModel(template, rootFqns)
       : { definitions: {} as Record<string, any>, modelFiles: [] };
 
+    this.definitions = definitions;
     this.contextModelFiles = modelFiles;
 
     if (this.fullSchema) {
@@ -447,6 +547,11 @@ export class LLMExecutor {
     }
   }
 
+  /**
+   * Assemble the context (template metadata, type names, model files) sent to
+   * the LLM on every operation.
+   * @returns the shared prompt context
+   */
   private buildSharedContext() {
     const metadata = this.template.getMetadata?.();
     const templateModel = this.template.getTemplateModel?.();
@@ -466,18 +571,24 @@ export class LLMExecutor {
       responseTypes: responseTypes.map((t: any) => t.getFullyQualifiedName?.() ?? String(t)),
       stateTypes: stateTypes.map((t: any) => t.getFullyQualifiedName?.() ?? String(t)),
       emitTypes: emitTypes.map((t: any) => t.getFullyQualifiedName?.() ?? String(t)),
-      // For native-schema providers send only the tree-shaken models; otherwise
-      // fall back to the full model set.
-      modelFiles:
-        this.contextModelFiles.length > 0
+      modelFiles: this.fullSchema
+        ? []
+        : this.contextModelFiles.length > 0
           ? this.contextModelFiles
           : modelManager?.getModelFiles?.().map((mf: any) => ({
               name: mf.getName?.() ?? 'unknown.cto',
               content: mf.getDefinitions?.() ?? '',
             })) ?? [],
-    };
+          };
   }
 
+  /**
+   * Send messages to the reasoner, retrying on failure per the provider config.
+   * @param messages - the chat messages to send
+   * @param schema - the JSON Schema the response must satisfy
+   * @returns the model response content
+   * @throws the last error if every attempt fails
+   */
   private async ask(
     messages: ChatMessage[],
     schema: JsonSchema
@@ -502,6 +613,13 @@ export class LLMExecutor {
     throw lastError;
   }
 
+  /**
+   * Compute the initial contract state via the LLM.
+   * @param data - the data for the template
+   * @param currentTime - the current time, defaults to now
+   * @param utcOffset - the UTC offset, defaults to zero
+   * @returns the new state
+   */
   async init(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
     if (this.config.verbose) console.log('[LLMExecutor] INIT called');
 
@@ -554,6 +672,15 @@ export class LLMExecutor {
     return injectRuntimeMetadata(parsed, currentTime ?? new Date().toISOString(), data);
   }
 
+  /**
+   * Evaluate contract behavior for a request via the LLM.
+   * @param data - the data for the template
+   * @param request - the request to send to the contract logic
+   * @param state - the current contract state
+   * @param currentTime - the current time, defaults to now
+   * @param utcOffset - the UTC offset, defaults to zero
+   * @returns the response, updated state, and any events
+   */
   async trigger(
     data: any,
     request: any,
