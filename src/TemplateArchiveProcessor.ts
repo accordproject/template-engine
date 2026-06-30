@@ -158,18 +158,6 @@ export class TemplateArchiveProcessor {
         return this.llmExecutor;
     }
 
-    // /**
-    //  * Returns precomputed LLM schema/model debug information when LLM execution
-    //  * is enabled for this processor.
-    //  * @returns {LLMExecutorDebugInfo | null} the LLM debug info, or null when disabled
-    //  */
-    // getLLMDebugInfo(): LLMExecutorDebugInfo | null {
-    //     if (!this.shouldUseLLM()) {
-    //         return null;
-    //     }
-    //     return this.makeLLMExecutor().getDebugInfo();
-    // }
-
     /**
      * Executes the template's compiled TypeScript trigger logic.
      * @param {any} data - the data for the template

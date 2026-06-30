@@ -15,11 +15,7 @@
 import { Template } from '@accordproject/cicero-core';
 import { BaseReasoner, ChatMessage, JsonSchema, createReasoner } from './Reasoners';
 import { LLMExecutorConfig } from './LLMConfig';
-import {
-  getRootTypes,
-  isStatelessTemplate,
-  treeShakeModel,
-} from './ModelManagerSchema';
+import { treeShakeModel } from './ModelManagerSchema';
 import type { TriggerResponse, InitResponse } from '../TemplateArchiveProcessor';
 
 /**
@@ -29,6 +25,41 @@ import type { TriggerResponse, InitResponse } from '../TemplateArchiveProcessor'
  * (`#/definitions/<fqn>`), which `deepResolve` later inlines.
  */
 type SchemaDefinitions = Record<string, Record<string, any>>;
+
+/**
+ * The request / response / state / event type names a template declares.
+ * All root-type decisions come from the Template API.
+ */
+interface TemplateRootTypes {
+  /** Concrete request types the template accepts. */
+  requests: string[];
+  /** Concrete response/result types the template can return. */
+  responses: string[];
+  /** Concrete state types the template carries (empty ⇒ stateless). */
+  states: string[];
+  /** Concrete event types the template can emit. */
+  events: string[];
+}
+
+/**
+ * Resolve the request / response / state / event type names a template
+ * declares. These are reliable — derived from the runtime base classes the
+ * types extend, not from their names — which lets the tree-shaker find them
+ * without guessing based on type naming conventions (e.g. `PayOut` vs `Payout`).
+ */
+function getTemplateRoots(template: Template): TemplateRootTypes {
+  return {
+    requests: template.getRequestTypes?.() ?? [],
+    responses: template.getResponseTypes?.() ?? [],
+    states: template.getStateTypes?.() ?? [],
+    events: template.getEmitTypes?.() ?? [],
+  };
+}
+
+/** A template is stateless when it reports no custom state type. */
+function isStatelessTemplate(template: Template): boolean {
+  return !template.isStateful();
+}
 
 /**
  * Recursively stamps `additionalProperties: false` onto every object schema so
@@ -485,7 +516,7 @@ export class LLMExecutor {
   /** The tree-shaken schema definitions keyed by fully-qualified type name. */
   private readonly definitions: SchemaDefinitions;
   /** Root types discovered from the template and used to tree-shake the model. */
-  private readonly roots: ReturnType<typeof getRootTypes>;
+  private readonly roots: TemplateRootTypes;
 
   /** The tree-shaken .cto model files (request/response/state/event + their
    *  dependencies only). Falls back to the full model for non-schema providers. */
@@ -509,7 +540,7 @@ export class LLMExecutor {
     // types and their dependencies. This reduced model set is sent as context
     // for ALL providers, keeping the prompt small (important for providers with
     // tight token-per-minute limits, e.g. Groq's free tier).
-    const roots = getRootTypes(template);
+    const roots = getTemplateRoots(template);
     this.roots = roots;
     const rootFqns = [
       ...roots.requests,
@@ -524,7 +555,6 @@ export class LLMExecutor {
 
     this.definitions = definitions;
     this.contextModelFiles = modelFiles;
-
     if (this.fullSchema) {
       // result/state may be a single type or an anyOf across several.
       const stateDef  = resolveUnionSchema(definitions, roots.states);
@@ -557,20 +587,15 @@ export class LLMExecutor {
     const templateModel = this.template.getTemplateModel?.();
     const modelManager = this.template.getModelManager?.();
 
-    const requestTypes = this.template.getRequestTypes?.() ?? [];
-    const responseTypes = this.template.getResponseTypes?.() ?? [];
-    const stateTypes = this.template.getStateTypes?.() ?? [];
-    const emitTypes = this.template.getEmitTypes?.() ?? [];
-
     return {
       templateName: metadata?.getName?.() ?? 'unknown-template',
       templateVersion: metadata?.getVersion?.() ?? null,
       contractText: this.template.getTemplate?.() ?? '',
       templateModelType: templateModel?.getFullyQualifiedName?.() ?? null,
-      requestTypes: requestTypes.map((t: any) => t.getFullyQualifiedName?.() ?? String(t)),
-      responseTypes: responseTypes.map((t: any) => t.getFullyQualifiedName?.() ?? String(t)),
-      stateTypes: stateTypes.map((t: any) => t.getFullyQualifiedName?.() ?? String(t)),
-      emitTypes: emitTypes.map((t: any) => t.getFullyQualifiedName?.() ?? String(t)),
+      requestTypes: this.roots.requests,
+      responseTypes: this.roots.responses,
+      stateTypes: this.roots.states,
+      emitTypes: this.roots.events,
       modelFiles: this.fullSchema
         ? []
         : this.contextModelFiles.length > 0
@@ -579,7 +604,7 @@ export class LLMExecutor {
               name: mf.getName?.() ?? 'unknown.cto',
               content: mf.getDefinitions?.() ?? '',
             })) ?? [],
-          };
+    };
   }
 
   /**
@@ -625,8 +650,8 @@ export class LLMExecutor {
 
     const context = this.buildSharedContext();
 
-    const isStatelessTemplate = this.stateless;
-    const systemPrompt = isStatelessTemplate
+    const isStateless = this.stateless;
+    const systemPrompt = isStateless
       ? ` You are a generic Accord Project contract runtime executor.
           This template is STATELESS — it carries no persistent state between executions.
 
@@ -692,8 +717,8 @@ export class LLMExecutor {
 
     const context = this.buildSharedContext();
 
-    const isStatelessTemplate = this.stateless;
-    const systemPrompt = isStatelessTemplate
+    const isStateless = this.stateless;
+    const systemPrompt = isStateless
       ? ` You are a generic Accord Project contract runtime executor.
           This template is STATELESS — outputs depend only on the current request and template model.
 
