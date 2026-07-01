@@ -49,9 +49,9 @@ interface TemplateRootTypes {
  */
 function getTemplateRoots(template: Template): TemplateRootTypes {
   return {
-    requests: template.getRequestTypes?.() ?? [],
-    responses: template.getResponseTypes?.() ?? [],
-    states: template.getStateTypes?.() ?? [],
+    requests: template.getCustomRequestTypes?.() ?? [],
+    responses: template.getCustomResponseTypes?.() ?? [],
+    states: template.getCustomStateTypes?.() ?? [],
     events: template.getEmitTypes?.() ?? [],
   };
 }
