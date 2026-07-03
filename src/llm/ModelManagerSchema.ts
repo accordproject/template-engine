@@ -26,8 +26,7 @@
 //   2. build a dependency graph of the whole ModelManager;
 //   3. tree-shake that graph down to only the types reachable from the roots we
 //      care about; and
-//   4. generate a minimal JSON Schema (and a reduced set of .cto model files)
-//      from that subgraph.
+//   4. generate a minimal JSON Schema from that subgraph.
 //
 // See concerto-codegen `lib/common/graph.js` (ConcertoGraphVisitor +
 // DirectedGraph.findConnectedGraph) and `test/common/graph.js` for the upstream
@@ -43,9 +42,6 @@ export interface TreeShakenModel {
   /** JSON Schema `definitions` map, keyed by fully-qualified type name,
    *  containing only the types reachable from the supplied roots. */
   definitions: Record<string, any>;
-  /** The reduced set of .cto model files (name + source) — suitable for
-   *  passing to the LLM as context without dumping the entire model. */
-  modelFiles: { name: string; content: string }[];
 }
 
 /**
@@ -77,12 +73,8 @@ export function treeShakeModel(template: any, roots: string[]): TreeShakenModel 
     connected.hasVertex(decl.getFullyQualifiedName())
   );
 
-  // 4. Generate JSON Schema definitions + collect the reduced .cto files.
+  // 4. Generate JSON Schema definitions 
   const schema = filtered.accept(new JSONSchemaVisitor(), {});
-  const modelFiles = filtered.getModelFiles().map((mf: any) => ({
-    name: mf.getName?.() ?? 'unknown.cto',
-    content: mf.getDefinitions?.() ?? '',
-  }));
 
-  return { definitions: schema.definitions ?? {}, modelFiles };
+  return { definitions: schema.definitions ?? {} };
 }

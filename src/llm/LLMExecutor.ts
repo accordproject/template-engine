@@ -42,21 +42,23 @@ interface TemplateRootTypes {
 }
 
 /**
- * Resolve the request / response / state / event type names a template
- * declares. These are reliable — derived from the runtime base classes the
- * types extend, not from their names — which lets the tree-shaker find them
- * without guessing based on type naming conventions (e.g. `PayOut` vs `Payout`).
+ * Reads the root types declared by a template.
+ * @param template - template instance
+ * @returns request, response, state, and event types
  */
 function getTemplateRoots(template: Template): TemplateRootTypes {
-  return {
-    requests: template.getCustomRequestTypes?.() ?? [],
-    responses: template.getCustomResponseTypes?.() ?? [],
-    states: template.getCustomStateTypes?.() ?? [],
-    events: template.getEmitTypes?.() ?? [],
-  };
+  const requests = template.getRequestTypes();
+  const responses = template.getResponseTypes();
+  const states = template.getStateTypes();
+  const events = template.getEmitTypes();
+  return { requests, responses, states, events };
 }
 
-/** A template is stateless when it reports no custom state type. */
+/**
+ * Checks whether a template is stateless.
+ * @param template - template instance
+ * @returns true when the template has no persistent state
+ */
 function isStatelessTemplate(template: Template): boolean {
   return !template.isStateful();
 }
@@ -85,7 +87,7 @@ function enforceAdditionalPropertiesFalse(schema: Record<string, any>): Record<s
   }
   return schema;
 }
- 
+
 /**
  * Fully resolves all $ref pointers in a schema node, recursively.
  * This produces a self-contained schema with no dangling $refs,
@@ -119,14 +121,9 @@ function deepResolve(
   }
   return node;
 }
- 
+
 /**
- * JSON-Schema validation keywords that strict structured-output APIs (OpenAI,
- * Anthropic) reject; stripped from generated schemas by `cleanForStructuredOutput`.
- *
- * TODO: this keyword-stripping belongs in concerto-codegen's JSONSchemaVisitor
- * behind an opt-in flag (e.g. `omitValidators`) — see the tracking issue filed
- * against accordproject/concerto-codegen.
+ * Schema keywords removed for structured-output providers.
  */
 const UNSUPPORTED_KEYWORDS = new Set([
   'pattern',
@@ -161,7 +158,7 @@ function cleanForStructuredOutput(node: any): any {
         for (const [propKey, propVal] of Object.entries(v as Record<string, any>)) {
           // Pin the Concerto type discriminator to its exact FQN.
           if (propKey === '$class' && propVal && (propVal as any).default) {
-            props[propKey] = { type: 'string', const: (propVal as any).default };
+            props[propKey] = { type: 'string', enum: [(propVal as any).default] };
           } else {
             props[propKey] = cleanForStructuredOutput(propVal);
           }
@@ -177,16 +174,10 @@ function cleanForStructuredOutput(node: any): any {
 }
 
 /**
- * Fully resolves a single tree-shaken type into a self-contained, strict
- * JSON Schema: inlines every `$ref`, forces `additionalProperties: false`, and
- * strips provider-unsupported keywords.
- *
- * @param definitions  the tree-shaken `definitions` map (see {@link SchemaDefinitions}),
- *                      used to look up `fqn` and to inline any `$ref`s it contains.
- * @param fqn          fully-qualified Concerto type name to resolve; must be a key
- *                      of `definitions` (throws otherwise).
- * @returns a standalone JSON Schema object for `fqn` with no remaining `$ref`s,
- *          safe to embed directly in a strict structured-output request.
+ * Resolves a tree-shaken type into a standalone schema.
+ * @param definitions - available schema definitions
+ * @param fqn - fully-qualified type name
+ * @returns a resolved schema for the requested type
  */
 function resolveTypeSchema(
   definitions: SchemaDefinitions,
@@ -199,9 +190,10 @@ function resolveTypeSchema(
 }
 
 /**
- * Resolve a set of type FQNs into a single schema: the lone type when there is
- * one, or an `anyOf` across all of them when a template has several (e.g. two
- * response types, or several event types). Returns null when the set is empty.
+ * Resolves one or more type names into a schema.
+ * @param definitions - available schema definitions
+ * @param fqns - fully-qualified type names
+ * @returns a schema or null when no types are provided
  */
 function resolveUnionSchema(
   definitions: SchemaDefinitions,
@@ -212,7 +204,12 @@ function resolveUnionSchema(
   return { anyOf: fqns.map(fqn => resolveTypeSchema(definitions, fqn)) };
 }
 
-/** Attach a human-readable description to a schema node. */
+/**
+ * Adds a description to a schema node.
+ * @param def - schema node
+ * @param description - description text
+ * @returns the updated schema node
+ */
 function withDescription(
   def: Record<string, unknown>,
   description: string
@@ -220,17 +217,17 @@ function withDescription(
   return { ...def, description };
 }
 
-/** Close a plain object schema to extra keys with `additionalProperties:false`.
- *  Never applied to an `anyOf` wrapper: its branches already carry the flag, and
- *  a bare `additionalProperties` alongside `anyOf` is rejected by strict mode. */
+/**
+ * Closes a plain object schema to additional properties.
+ * @param def - schema node
+ * @returns the updated schema node
+ */
 function closeObjectSchema(
   def: Record<string, unknown>
 ): Record<string, unknown> {
   if ('anyOf' in def) return def;
   return { ...def, additionalProperties: false };
 }
-
-// // Schema builders
 
 /**
  * Build the JSON Schema fragment for the contract `state` property: the resolved
@@ -255,10 +252,9 @@ function buildStateSchema(
     properties: {},
   };
 }
- 
+
 /**
- * Build the JSON Schema fragment for the trigger `result` property: the resolved
- * response definition for full-schema providers, or an open object otherwise.
+ * Builds the schema for the `result` property.
  * @param full - whether to expand the resolved response definition
  * @param resultDef - the resolved response schema, or null when unavailable
  * @returns the `result` schema fragment
@@ -301,7 +297,7 @@ function buildEventItemSchema(
   }
   return { type: 'object', additionalProperties: false, properties: {} };
 }
- 
+
 /**
  * Build the full JSON Schema for an `init` response (`{ state }`).
  * @param full - whether to expand the resolved state definition
@@ -339,7 +335,7 @@ function buildInitSchema(
     additionalProperties: false,
   };
 }
- 
+
 /**
  * Build the full JSON Schema for a `trigger` response (`{ result, events }`,
  * plus `state` for stateful templates).
@@ -366,13 +362,13 @@ function buildTriggerSchema(
     },
   };
   const required = ['result', 'events'];
- 
+
   if (!stateless) {
     // Stateful templates must carry their updated state back in the response.
     properties.state = buildStateSchema(full, stateDef);
     required.push('state');
   }
- 
+
   return {
     type: 'object',
     properties,
@@ -380,15 +376,6 @@ function buildTriggerSchema(
     additionalProperties: false,
   };
 }
- 
-/** Returns true for providers that enforce schemas natively and need the full
- *  definition expanded from schema.json (OpenAI, Anthropic). */
-function usesFullSchema(config: LLMExecutorConfig): boolean {
-  return config.provider.provider === 'openai' || config.provider.provider === 'anthropic';
-}
- 
-
-// Helper Functions
 
 /**
  * Parse JSON from raw LLM output, tolerating a Markdown ```json ``` code fence.
@@ -451,7 +438,7 @@ function assertTriggerShape(value: any, stateless = false): asserts value is Tri
  */
 function injectRuntimeMetadata<T extends { state?: any; result?: any; events?: any[] }>(
   response: T,
-  timestamp: string = new Date().toISOString(),
+  timestamp: string,
   data?: any
 ): T {
   const rawState = response.state;
@@ -492,12 +479,8 @@ function injectRuntimeMetadata<T extends { state?: any; result?: any; events?: a
 export class LLMExecutor {
   /** The template being executed. */
   private readonly template: Template;
-  /** The LLM provider configuration. */
   private readonly config: LLMExecutorConfig;
-  /** The provider-specific reasoner used to run completions. */
   private readonly reasoner: BaseReasoner;
-
-  /** Whether this executor's provider enforces schema natively (OpenAI / Anthropic). */
   private readonly fullSchema: boolean;
 
   /**
@@ -513,33 +496,21 @@ export class LLMExecutor {
    *  ModelManager via tree-shaking — no external schema.json required. */
   private readonly initSchema: JsonSchema;
   private readonly triggerSchema: JsonSchema;
-  /** The tree-shaken schema definitions keyed by fully-qualified type name. */
-  private readonly definitions: SchemaDefinitions;
-  /** Root types discovered from the template and used to tree-shake the model. */
   private readonly roots: TemplateRootTypes;
-
-  /** The tree-shaken .cto model files (request/response/state/event + their
-   *  dependencies only). Falls back to the full model for non-schema providers. */
-  private readonly contextModelFiles: { name: string; content: string }[];
+  private readonly promptSchema: Record<string, unknown> | null;
 
   /**
-   * Creates an LLM executor and precomputes the init/trigger schemas.
-   * @param {Template} template - the template to execute
-   * @param {LLMExecutorConfig} config - the LLM provider configuration
+   * Creates an executor for a template.
+   * @param template - template to execute
+   * @param config - LLM configuration
    */
   constructor(template: Template, config: LLMExecutorConfig) {
     this.template = template;
     this.config = config;
     this.reasoner = createReasoner(config.provider);
-    this.fullSchema = usesFullSchema(config);
-    this.stateless  = isStatelessTemplate(template);
+    this.fullSchema = config.provider.isStructuredOutputSupported ?? false;
+    this.stateless = isStatelessTemplate(template);
 
-    // Resolve the exact request/response/state/event type names the template
-    // declares (reliable — derived from the runtime base classes they extend,
-    // not from their names), then tree-shake the ModelManager to just those
-    // types and their dependencies. This reduced model set is sent as context
-    // for ALL providers, keeping the prompt small (important for providers with
-    // tight token-per-minute limits, e.g. Groq's free tier).
     const roots = getTemplateRoots(template);
     this.roots = roots;
     const rootFqns = [
@@ -549,25 +520,28 @@ export class LLMExecutor {
       ...roots.events,
     ];
 
-    const { definitions, modelFiles } = rootFqns.length
+    const { definitions } = rootFqns.length
       ? treeShakeModel(template, rootFqns)
-      : { definitions: {} as Record<string, any>, modelFiles: [] };
+      : { definitions: {} as Record<string, any> };
 
-    this.definitions = definitions;
-    this.contextModelFiles = modelFiles;
+    const stateDef = resolveUnionSchema(definitions, roots.states);
+    const resultDef = resolveUnionSchema(definitions, roots.responses);
+    const requestDef = resolveUnionSchema(definitions, roots.requests);
+    const eventDefs = roots.events.map(fqn => resolveTypeSchema(definitions, fqn));
+
     if (this.fullSchema) {
-      // result/state may be a single type or an anyOf across several.
-      const stateDef  = resolveUnionSchema(definitions, roots.states);
-      const resultDef = resolveUnionSchema(definitions, roots.responses);
-      const eventDefs = roots.events.map(fqn => resolveTypeSchema(definitions, fqn));
-
-      this.initSchema    = buildInitSchema(true, stateDef, this.stateless);
+      this.initSchema = buildInitSchema(true, stateDef, this.stateless);
       this.triggerSchema = buildTriggerSchema(true, resultDef, stateDef, eventDefs, this.stateless);
+      this.promptSchema = null;
     } else {
-      // Non-native-schema providers don't enforce a schema, but still get the
-      // tree-shaken model files as context (set above).
-      this.initSchema    = buildInitSchema(false, null, this.stateless);
+      this.initSchema = buildInitSchema(false, null, this.stateless);
       this.triggerSchema = buildTriggerSchema(false, null, null, null, this.stateless);
+      this.promptSchema = {
+        request: requestDef,
+        response: resultDef,
+        state: this.stateless ? null : stateDef,
+        events: eventDefs.length ? eventDefs : null,
+      };
     }
 
     if (config.verbose) {
@@ -578,14 +552,12 @@ export class LLMExecutor {
   }
 
   /**
-   * Assemble the context (template metadata, type names, model files) sent to
-   * the LLM on every operation.
-   * @returns the shared prompt context
+   * Builds the shared prompt context.
+   * @returns prompt context
    */
   private buildSharedContext() {
     const metadata = this.template.getMetadata?.();
     const templateModel = this.template.getTemplateModel?.();
-    const modelManager = this.template.getModelManager?.();
 
     return {
       templateName: metadata?.getName?.() ?? 'unknown-template',
@@ -596,19 +568,12 @@ export class LLMExecutor {
       responseTypes: this.roots.responses,
       stateTypes: this.roots.states,
       emitTypes: this.roots.events,
-      modelFiles: this.fullSchema
-        ? []
-        : this.contextModelFiles.length > 0
-          ? this.contextModelFiles
-          : modelManager?.getModelFiles?.().map((mf: any) => ({
-              name: mf.getName?.() ?? 'unknown.cto',
-              content: mf.getDefinitions?.() ?? '',
-            })) ?? [],
+      ...(this.promptSchema ? { schema: this.promptSchema } : {}),
     };
   }
 
   /**
-   * Send messages to the reasoner, retrying on failure per the provider config.
+   * Sends a request to the active reasoner with retries.
    * @param messages - the chat messages to send
    * @param schema - the JSON Schema the response must satisfy
    * @returns the model response content
@@ -639,7 +604,7 @@ export class LLMExecutor {
   }
 
   /**
-   * Compute the initial contract state via the LLM.
+   * Computes the initial contract state.
    * @param data - the data for the template
    * @param currentTime - the current time, defaults to now
    * @param utcOffset - the UTC offset, defaults to zero
@@ -649,6 +614,7 @@ export class LLMExecutor {
     if (this.config.verbose) console.log('[LLMExecutor] INIT called');
 
     const context = this.buildSharedContext();
+    const timestamp = currentTime ?? new Date().toISOString();
 
     const isStateless = this.stateless;
     const systemPrompt = isStateless
@@ -667,18 +633,11 @@ export class LLMExecutor {
 
           Task:
           Compute the initial state of the contract.
-
-          Rules:
-          - Return ONLY valid JSON matching the supplied schema
-          - No markdown, no explanation
-          - Output exactly: { "state": { ... } }
-          - The state must match the contract's state model
-          - Preserve "$class" when inferable
           `.trim();
 
     const userPrompt = JSON.stringify({
       operation: 'init',
-      currentTime: currentTime ?? new Date().toISOString(),
+      currentTime: timestamp,
       utcOffset: utcOffset ?? 0,
       data,
       context,
@@ -694,11 +653,11 @@ export class LLMExecutor {
 
     const parsed = extractJson(response.content);
     assertInitShape(parsed);
-    return injectRuntimeMetadata(parsed, currentTime ?? new Date().toISOString(), data);
+    return injectRuntimeMetadata(parsed, timestamp, data);
   }
 
   /**
-   * Evaluate contract behavior for a request via the LLM.
+   * Evaluates a trigger request.
    * @param data - the data for the template
    * @param request - the request to send to the contract logic
    * @param state - the current contract state
@@ -716,6 +675,7 @@ export class LLMExecutor {
     if (this.config.verbose) console.log('[LLMExecutor] TRIGGER called');
 
     const context = this.buildSharedContext();
+    const timestamp = currentTime ?? new Date().toISOString();
 
     const isStateless = this.stateless;
     const systemPrompt = isStateless
@@ -737,20 +697,11 @@ export class LLMExecutor {
           Task:
           Evaluate contract behavior for this request.
 
-          Rules:
-          - Return ONLY valid JSON matching the supplied schema
-          - No markdown, no explanation
-          - Output exactly: { "result": { ... }, "state": { ... }, "events": [ ... ] }
-          - result must match a response model
-          - state must match the state model
-          - events must match declared event models
-          - preserve "$class" fields where appropriate
-          - Runtime metadata like "$timestamp" and "$identifier" may be added by runtime
           `.trim();
 
     const userPrompt = JSON.stringify({
       operation: 'trigger',
-      currentTime: currentTime ?? new Date().toISOString(),
+      currentTime: timestamp,
       utcOffset: utcOffset ?? 0,
       data,
       request,
@@ -768,6 +719,6 @@ export class LLMExecutor {
 
     const parsed = extractJson(response.content);
     assertTriggerShape(parsed, this.stateless);
-    return injectRuntimeMetadata(parsed, currentTime ?? new Date().toISOString(), data);
+    return injectRuntimeMetadata(parsed, timestamp, data);
   }
 }
