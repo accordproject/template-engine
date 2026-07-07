@@ -9,3 +9,8 @@ src/externalModels
 output.html
 output
 test.html
+examples/
+
+.env
+.env.*
+!.env.example
