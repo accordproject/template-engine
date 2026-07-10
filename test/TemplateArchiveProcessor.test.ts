@@ -87,7 +87,11 @@ describe('template archive processor', () => {
             "$identifier": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8"
         };
         const request = {
-            goodsValue: 100
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyRequest",
+            "forceMajeure": false,
+            "agreedDelivery": "2017-10-07T16:38:01.412Z",
+            "goodsValue": 100,
+            "$timestamp": "2017-10-07T16:38:01.412Z"
         };
 
         // first we init the template
@@ -107,5 +111,47 @@ describe('template archive processor', () => {
         // the events should have been emitted
         const eventPayload = response.events[0] as { penaltyCalculated?: boolean };
         expect(eventPayload.penaltyCalculated).toBe(true);
+    });
+
+    it('should throw a validation error on invalid init data', async () => {
+        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        const invalidData = {
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
+            // missing mandatory fields like forceMajeure
+        };
+        await expect(templateArchiveProcessor.init(invalidData)).rejects.toThrow();
+    });
+
+    it('should throw a validation error on invalid trigger request', async () => {
+        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        const validData = {
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
+            "forceMajeure": true,
+            "penaltyDuration": {
+                "$class": "org.accordproject.time@0.3.0.Duration",
+                "amount": 2,
+                "unit": "days"
+            },
+            "penaltyPercentage": 10.5,
+            "capPercentage": 55,
+            "termination": {
+                "$class": "org.accordproject.time@0.3.0.Duration",
+                "amount": 15,
+                "unit": "days"
+            },
+            "fractionalPart": "days",
+            "clauseId": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8",
+            "$identifier": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8"
+        };
+        const invalidRequest = {
+            "$class": "invalid.class.Name", // invalid class
+            "goodsValue": "not a number" // type mismatch
+        };
+
+        const stateResponse = await templateArchiveProcessor.init(validData);
+
+        await expect(templateArchiveProcessor.trigger(validData, invalidRequest, stateResponse.state)).rejects.toThrow();
     });
 });

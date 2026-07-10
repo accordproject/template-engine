@@ -15,11 +15,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Template } from '@accordproject/cicero-core';
+import { Factory, Serializer } from '@accordproject/concerto-core';
 import { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { transform } from '@accordproject/markdown-transform';
 import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler';
-import Script from '@accordproject/cicero-core/lib/script';
+// @ts-expect-error - this type export is missing in recent cicero-core versions but is still required for TypeScript AST
+import Script from '@accordproject/cicero-core/types/src/script';
 import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { SMART_LEGAL_CONTRACT_BASE64 } from './runtime/declarations';
@@ -234,6 +236,15 @@ export class TemplateArchiveProcessor {
      * @returns {Promise<TriggerResponse>} the response and any events
      */
     async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<TriggerResponse> {
+        const factory = new Factory(this.template.getModelManager());
+        const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true, acceptResourcesForRelationships: true });
+        
+        // validate inputs before execution
+        if (data) serializer.fromJSON(data);
+        if (request) serializer.fromJSON(request);
+        if (state) serializer.fromJSON(state);
+
+        let triggerResponse: TriggerResponse;
         const forceLLM = this.llmConfig?.mode === 'force';
 
         // Run the template's TypeScript logic unless the caller forces the LLM path.
@@ -241,16 +252,22 @@ export class TemplateArchiveProcessor {
             if (enableCompiledLogicCache) {
                 await this.compileLogic(true);
             }
-            return this.executeTypeScriptTrigger(data, request, state, currentTime, utcOffset);
+            triggerResponse = await this.executeTypeScriptTrigger(data, request, state, currentTime, utcOffset);
+        } else if (forceLLM || this.shouldUseLLM()) {
+            // Otherwise use the LLM executor
+            triggerResponse = await this.makeLLMExecutor().trigger(data, request, state, currentTime, utcOffset);
+        } else {
+            throw new Error('No executable logic found and LLM fallback is disabled');
         }
 
-        // Otherwise use the LLM executor — either because it was forced, or
-        // because the template carries no executable logic.
-        if (forceLLM || this.shouldUseLLM()) {
-            return this.makeLLMExecutor().trigger(data, request, state, currentTime, utcOffset);
+        // validate outputs after execution
+        if (triggerResponse.state) serializer.fromJSON(triggerResponse.state);
+        if (triggerResponse.result) serializer.fromJSON(triggerResponse.result);
+        if (triggerResponse.events && Array.isArray(triggerResponse.events)) {
+            triggerResponse.events.forEach(e => serializer.fromJSON(e));
         }
 
-        throw new Error('No executable logic found and LLM fallback is disabled');
+        return triggerResponse;
     }
 
     /**
@@ -262,6 +279,13 @@ export class TemplateArchiveProcessor {
      * @returns {Promise<InitResponse>} the new state
      */
     async init(data: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<InitResponse> {
+        const factory = new Factory(this.template.getModelManager());
+        const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true, acceptResourcesForRelationships: true });
+        
+        // validate inputs before execution
+        if (data) serializer.fromJSON(data);
+
+        let initResponse: InitResponse;
         const forceLLM = this.llmConfig?.mode === 'force';
 
         // Run the template's TypeScript logic unless the caller forces the LLM path.
@@ -269,15 +293,17 @@ export class TemplateArchiveProcessor {
             if (enableCompiledLogicCache) {
                 await this.compileLogic(true);
             }
-            return this.executeTypeScriptInit(data, currentTime, utcOffset);
+            initResponse = await this.executeTypeScriptInit(data, currentTime, utcOffset);
+        } else if (forceLLM || this.shouldUseLLM()) {
+            // Otherwise use the LLM executor
+            initResponse = await this.makeLLMExecutor().init(data, currentTime, utcOffset);
+        } else {
+            throw new Error('No executable logic found and LLM fallback is disabled');
         }
 
-        // Otherwise use the LLM executor — either because it was forced, or
-        // because the template carries no executable logic.
-        if (forceLLM || this.shouldUseLLM()) {
-            return this.makeLLMExecutor().init(data, currentTime, utcOffset);
-        }
+        // validate outputs after execution
+        if (initResponse.state) serializer.fromJSON(initResponse.state);
 
-        throw new Error('No executable logic found and LLM fallback is disabled');
+        return initResponse;
     }
 }
