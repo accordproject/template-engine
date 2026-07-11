@@ -120,7 +120,7 @@ describe('template archive processor', () => {
             "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
             // missing mandatory fields like forceMajeure
         };
-        await expect(templateArchiveProcessor.init(invalidData)).rejects.toThrow();
+        await expect(templateArchiveProcessor.init(invalidData)).rejects.toThrow(/Invalid or missing identifier for Type/i);
     });
 
     it('should throw a validation error on invalid trigger request', async () => {
@@ -152,6 +152,6 @@ describe('template archive processor', () => {
 
         const stateResponse = await templateArchiveProcessor.init(validData);
 
-        await expect(templateArchiveProcessor.trigger(validData, invalidRequest, stateResponse.state)).rejects.toThrow();
+        await expect(templateArchiveProcessor.trigger(validData, invalidRequest, stateResponse.state)).rejects.toThrow(/Namespace is not defined/i);
     });
 });
