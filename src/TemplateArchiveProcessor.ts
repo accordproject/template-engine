@@ -27,6 +27,7 @@ import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { SMART_LEGAL_CONTRACT_BASE64 } from './runtime/declarations';
 import { LLMExecutor } from './llm/LLMExecutor';
 import { LLMExecutorConfig } from './llm/LLMConfig';
+import * as ts from 'typescript';
 
 /** The contract state. */
 export type State = object;
@@ -45,6 +46,28 @@ export type TriggerResponse = {
 /** The result of initializing a template: the initial state. */
 export type InitResponse = {
     state: State;
+}
+
+/** Options for compiling template logic. */
+export type CompileLogicOptions = {
+    enableCompiledLogicCache?: boolean;
+    requireTemplateLogic?: boolean;
+}
+
+type NormalizedCompileLogicOptions = Required<CompileLogicOptions>;
+
+function normalizeCompileLogicOptions(options: boolean | CompileLogicOptions = false): NormalizedCompileLogicOptions {
+    if (typeof options === 'boolean') {
+        return {
+            enableCompiledLogicCache: options,
+            requireTemplateLogic: false
+        };
+    }
+
+    return {
+        enableCompiledLogicCache: options.enableCompiledLogicCache ?? false,
+        requireTemplateLogic: options.requireTemplateLogic ?? false
+    };
 }
 
 /**
@@ -100,19 +123,27 @@ export class TemplateArchiveProcessor {
     }
 
     /**
-     * Compile the logic of a template
-     * @param {boolean} [enableCompiledLogicCache] - whether to cache the compiled logic for future use
+     * Compile the logic of a template.
+     * @param {boolean|CompileLogicOptions} [options] - whether to cache the compiled logic and whether to
+     * require a class extending TemplateLogic in the main logic file
      * @returns {Promise<Record<string, TwoSlashReturn>>} the compiled code for each typescript file
      */
-    async compileLogic(enableCompiledLogicCache: boolean = false): Promise<Record<string, TwoSlashReturn>> {
-        if (enableCompiledLogicCache && this.compiledLogicCache) {
-            return this.compiledLogicCache;
-        }
-
+    async compileLogic(options: boolean | CompileLogicOptions = false): Promise<Record<string, TwoSlashReturn>> {
+        const normalizedOptions = normalizeCompileLogicOptions(options);
         const logicManager = this.template.getLogicManager();
         if (logicManager.getLanguage() === 'typescript') {
             const compiledCode: Record<string, TwoSlashReturn> = {};
             const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
+            const logicScript = tsFiles.find((tsFile) => tsFile.getIdentifier() === 'logic/logic.ts');
+
+            if (normalizedOptions.requireTemplateLogic) {
+                this.assertTemplateLogicSubclass(logicScript);
+            }
+
+            if (normalizedOptions.enableCompiledLogicCache && this.compiledLogicCache) {
+                return this.compiledLogicCache;
+            }
+
             for (let n = 0; n < tsFiles.length; n++) {
                 const tsFile = tsFiles[n];
 
@@ -128,12 +159,45 @@ export class TemplateArchiveProcessor {
                 const result = compiler.compile(code);
                 compiledCode[tsFile.getIdentifier()] = result;
             }
-            if (enableCompiledLogicCache) {
+            if (normalizedOptions.enableCompiledLogicCache) {
                 this.compiledLogicCache = compiledCode;
             }
             return compiledCode;
         } else {
             throw new Error('Only TypeScript is supported at this time');
+        }
+    }
+
+    private assertTemplateLogicSubclass(tsFile?: Script): void {
+        if (!tsFile) {
+            throw new Error('Strict template logic compilation requires a logic/logic.ts file.');
+        }
+
+        const sourceFile = ts.createSourceFile(
+            tsFile.getIdentifier(),
+            tsFile.getContents(),
+            ts.ScriptTarget.Latest,
+            true,
+            ts.ScriptKind.TS
+        );
+
+        const hasTemplateLogicSubclass = sourceFile.statements.some((statement) => {
+            if (!ts.isClassDeclaration(statement) || !statement.heritageClauses) {
+                return false;
+            }
+
+            return statement.heritageClauses.some((clause) =>
+                clause.token === ts.SyntaxKind.ExtendsKeyword &&
+                clause.types.some((heritageType) => {
+                    const expression = heritageType.expression;
+                    return (ts.isIdentifier(expression) && expression.text === 'TemplateLogic') ||
+                        (ts.isPropertyAccessExpression(expression) && expression.name.text === 'TemplateLogic');
+                })
+            );
+        });
+
+        if (!hasTemplateLogicSubclass) {
+            throw new Error(`Strict template logic compilation requires ${tsFile.getIdentifier()} to define a class extending TemplateLogic.`);
         }
     }
 

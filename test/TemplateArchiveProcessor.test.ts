@@ -1,9 +1,60 @@
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import os from 'os';
+import path from 'path';
 import {Template} from '@accordproject/cicero-core';
 import { TemplateArchiveProcessor, InitResponse, TriggerResponse } from '../src/TemplateArchiveProcessor';
 
+const TEMPLATE_DIR = 'test/archives/latedeliveryandpenalty-typescript';
+const TEMPLATE_MODEL_DIR = path.join(TEMPLATE_DIR, 'model');
+
+function mockArchiveModelFetches() {
+    const originalFetch = global.fetch.bind(global);
+    const modelByUrl = new Map([
+        ['https://models.accordproject.org/time@0.3.0.cto', readFileSync(path.join(TEMPLATE_MODEL_DIR, '@models.accordproject.org.time@0.3.0.cto'), 'utf-8')],
+        ['https://models.accordproject.org/accordproject/contract@0.2.0.cto', readFileSync(path.join(TEMPLATE_MODEL_DIR, '@models.accordproject.org.accordproject.contract@0.2.0.cto'), 'utf-8')],
+        ['https://models.accordproject.org/accordproject/runtime@0.2.0.cto', readFileSync(path.join(TEMPLATE_MODEL_DIR, '@models.accordproject.org.accordproject.runtime@0.2.0.cto'), 'utf-8')]
+    ]);
+
+    return jest.spyOn(global, 'fetch').mockImplementation(async (input: string | URL | Request, init?: RequestInit) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+        const model = modelByUrl.get(url);
+
+        if (model !== undefined) {
+            return new Response(model, {
+                status: 200,
+                headers: {
+                    'content-type': 'text/plain'
+                }
+            });
+        }
+
+        return originalFetch(input, init);
+    });
+}
+
+async function loadTemplate(logicSource?: string): Promise<Template> {
+    if (!logicSource) {
+        return Template.fromDirectory(TEMPLATE_DIR, {offline: true});
+    }
+
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'template-engine-logic-'));
+    const tempDir = path.join(tempRoot, 'template');
+    cpSync(TEMPLATE_DIR, tempDir, { recursive: true });
+    writeFileSync(path.join(tempDir, 'logic', 'logic.ts'), logicSource);
+    return Template.fromDirectory(tempDir, {offline: true});
+}
+
 describe('template archive processor', () => {
+    beforeEach(() => {
+        mockArchiveModelFetches();
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
     test('should draft a template', async () => {
-        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
         const data = {
             "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
@@ -30,7 +81,7 @@ describe('template archive processor', () => {
     });
 
     test('should init a template', async () => {
-        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
         const data = {
             "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
@@ -57,15 +108,76 @@ describe('template archive processor', () => {
     });
 
     test('should compile logic', async () => {
-        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
         const compiledCode = await templateArchiveProcessor.compileLogic();
         expect(compiledCode['logic/logic.ts']).toBeDefined();
         expect(compiledCode['logic/logic.ts'].code).toContain('LateDeliveryAndPenalty');
     });
 
+    test('should compile logic in strict mode when the logic extends TemplateLogic', async () => {
+        const template = await loadTemplate();
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        const compiledCode = await templateArchiveProcessor.compileLogic({ requireTemplateLogic: true });
+        expect(compiledCode['logic/logic.ts']).toBeDefined();
+    });
+
+    test('should keep plain default-exported classes working by default', async () => {
+        const template = await loadTemplate(`
+export default class PlainLogic {
+    async init(data: any) {
+        return {
+            state: {
+                $class: 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyState',
+                $identifier: data.$identifier,
+                count: 0
+            }
+        };
+    }
+
+    async trigger(data: any, request: any, state: any) {
+        return {
+            result: {
+                penalty: data.penaltyPercentage * request.goodsValue,
+                buyerMayTerminate: true,
+                $timestamp: new Date(),
+                $class: 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyResponse'
+            },
+            events: [{
+                $class: 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyEvent',
+                $timestamp: new Date(),
+                penaltyCalculated: true
+            }],
+            state: {
+                $class: 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyState',
+                $identifier: state.$identifier,
+                count: state.count + 1
+            }
+        };
+    }
+}
+`);
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        const compiledCode = await templateArchiveProcessor.compileLogic();
+        expect(compiledCode['logic/logic.ts']).toBeDefined();
+    });
+
+    test('should reject plain default-exported classes in strict mode', async () => {
+        const template = await loadTemplate(`
+export default class PlainLogic {
+    async init() {
+        return { state: {} };
+    }
+}
+`);
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        await expect(
+            templateArchiveProcessor.compileLogic({ requireTemplateLogic: true })
+        ).rejects.toThrow(/class extending TemplateLogic/i);
+    });
+
     test('should trigger a template', async () => {
-        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
         const data = {
             "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
@@ -114,7 +226,7 @@ describe('template archive processor', () => {
     });
 
     it('should throw a validation error on invalid init data', async () => {
-        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
         const invalidData = {
             "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
@@ -124,7 +236,7 @@ describe('template archive processor', () => {
     });
 
     it('should throw a validation error on invalid trigger request', async () => {
-        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
         const validData = {
             "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
