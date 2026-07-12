@@ -27,11 +27,14 @@ import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { LLMExecutor } from './llm/LLMExecutor';
 import { LLMExecutorConfig } from './llm/LLMConfig';
 
-// The runtime Request base type. Note it is a *concrete* (non-abstract) transaction in
-// org.accordproject.runtime@0.2.0, so it is always an assignable class of itself: a
-// base-inclusive query (getRequestTypes) can never be empty. We therefore query with the
-// base excluded, matching how the compilation context derives the RuntimeRequest union.
+// Runtime base types that logic payloads must be, or extend. Request / Response / State
+// are concrete, so a template may use the bare base type; the check below allows the base
+// itself or any subclass and rejects a plain concept that does not extend the base. Events
+// bind to the base Concerto Event (a plain event or an Obligation both extend it).
 const RUNTIME_REQUEST_FQN = 'org.accordproject.runtime@0.2.0.Request';
+const RUNTIME_RESPONSE_FQN = 'org.accordproject.runtime@0.2.0.Response';
+const RUNTIME_STATE_FQN = 'org.accordproject.runtime@0.2.0.State';
+const BASE_EVENT_FQN = 'concerto@1.0.0.Event';
 
 /** The contract state. */
 export type State = object;
@@ -131,14 +134,14 @@ export class TemplateArchiveProcessor {
                 // parameters bound to the concrete subclasses declared by the model.
                 const result = compiler.compile(tsFile.getContents());
 
-                // Enforce the runtime model hierarchy at compile time. When a template's
-                // "state" is a plain concept (rather than an asset extending the runtime
-                // State), the RuntimeState union is `never` and using that type as the
-                // logic's state raises TS2344 ("Type '...' does not satisfy the constraint
-                // 'never'"). The same applies to Obligation events. We only enforce this
-                // for the logic entry point and only for the constraint-violation code, so
-                // that unrelated diagnostics (and non-logic scripts such as README.md) do
-                // not turn into hard failures.
+                // Surface the runtime-hierarchy constraint violation (TS2344) as a hard
+                // error. The state type argument must satisfy the RuntimeState union; a type
+                // that is structurally incompatible with the base (e.g. a concept with no
+                // $identifier used as state, or an emit that is not an Obligation) fails the
+                // constraint. Structural matches to the bare base are allowed here and are
+                // instead checked nominally at runtime (assertRuntimeHierarchy). Scoped to
+                // the logic entry point and to TS2344 so that unrelated diagnostics (and
+                // non-logic scripts such as README.md) do not turn into hard failures.
                 const isLogicEntry = tsFile.getIdentifier().endsWith('logic.ts');
                 if (isLogicEntry) {
                     const hierarchyErrors = (result.errors || [])
@@ -149,16 +152,6 @@ export class TemplateArchiveProcessor {
                             'Invalid template: State and Obligation declarations must extend the ' +
                             `runtime State / Obligation types.\n${message}`);
                     }
-
-                    // Enforce the runtime Request hierarchy at the model level. Unlike State,
-                    // Response and Event, the request type cannot be enforced at compile time:
-                    // it appears only as the `request` parameter of `trigger`, and TypeScript
-                    // method parameters are bivariant, so the model-derived `never` bound accepts
-                    // any type. We therefore assert the invariant against the model:
-                    // getRequestTypes() returns only concrete subclasses of the runtime Request,
-                    // so a "request" declared as a plain concept (that does not extend Request)
-                    // yields an empty list. We require this only when the logic defines a trigger.
-                    this.assertTriggerRequestType(tsFile.getContents());
                 }
 
                 compiledCode[tsFile.getIdentifier()] = result;
@@ -173,25 +166,35 @@ export class TemplateArchiveProcessor {
     }
 
     /**
-     * Asserts that a template whose logic defines a `trigger` declares a request type
-     * that extends the runtime Request. See the note in compileLogic for why this is a
-     * model-level check rather than a compile-time one.
-     *
-     * The base Request is concrete, so it is always assignable to itself; we must query
-     * with the base excluded (as `isStateful` and the RuntimeRequest union do) or the
-     * check could never fail. An empty result means no transaction actually extends
-     * Request — e.g. the "request" was declared as a plain concept.
-     * @param {string} logicSource - the source of the logic entry file
-     * @throws {Error} if the logic triggers but no valid request subtype is declared
+     * Asserts that a runtime payload's declared type is, or extends, the given runtime
+     * base type. This enforces the runtime class hierarchy nominally (by `$class`), which
+     * the type system cannot: request is a bivariant `trigger` parameter, and State's
+     * generated interface is structurally satisfied by any identified concept. Using the
+     * model's own assignability, the bare base type and any subclass are accepted while a
+     * plain concept that does not extend the base is rejected.
+     * @param {any} payload - a serialized Concerto object (has a `$class`), or undefined
+     * @param {string} baseFqn - the fully-qualified name of the runtime base type
+     * @param {string} role - the payload's role, used in the error message
+     * @throws {Error} if the payload's type is not the base type or a subclass of it
      */
-    private assertTriggerRequestType(logicSource: string): void {
-        const definesTrigger = /\btrigger\s*\(/.test(logicSource);
-        const requestSubtypes = this.template.findConcreteSubclassNames(RUNTIME_REQUEST_FQN, true);
-        if (definesTrigger && requestSubtypes.length === 0) {
+    private assertRuntimeHierarchy(payload: any, baseFqn: string, role: string): void {
+        if (!payload || !payload.$class) {
+            return;
+        }
+        const modelManager = this.template.getModelManager();
+        let base;
+        try {
+            base = modelManager.getType(baseFqn);
+        } catch {
+            // The runtime base type is not in the model; nothing to enforce.
+            return;
+        }
+        const isAssignable = base.getAssignableClassDeclarations()
+            .some((decl: any) => decl.getFullyQualifiedName() === payload.$class);
+        if (!isAssignable) {
             throw new Error(
-                'Invalid template: the trigger logic requires a request that extends the ' +
-                `runtime Request type (${RUNTIME_REQUEST_FQN}), but the model declares none. ` +
-                'Declare the request as a transaction that extends Request.');
+                `Invalid ${role}: '${payload.$class}' must be, or extend, the runtime ` +
+                `${role} type (${baseFqn}).`);
         }
     }
 
@@ -302,6 +305,10 @@ export class TemplateArchiveProcessor {
         if (request) serializer.fromJSON(request);
         if (state) serializer.fromJSON(state);
 
+        // enforce the runtime class hierarchy on the inputs
+        this.assertRuntimeHierarchy(request, RUNTIME_REQUEST_FQN, 'request');
+        this.assertRuntimeHierarchy(state, RUNTIME_STATE_FQN, 'state');
+
         let triggerResponse: TriggerResponse;
         const forceLLM = this.llmConfig?.mode === 'force';
 
@@ -323,6 +330,13 @@ export class TemplateArchiveProcessor {
         if (triggerResponse.result) serializer.fromJSON(triggerResponse.result);
         if (triggerResponse.events && Array.isArray(triggerResponse.events)) {
             triggerResponse.events.forEach(e => serializer.fromJSON(e));
+        }
+
+        // enforce the runtime class hierarchy on the outputs
+        this.assertRuntimeHierarchy(triggerResponse.state, RUNTIME_STATE_FQN, 'state');
+        this.assertRuntimeHierarchy(triggerResponse.result, RUNTIME_RESPONSE_FQN, 'response');
+        if (triggerResponse.events && Array.isArray(triggerResponse.events)) {
+            triggerResponse.events.forEach(e => this.assertRuntimeHierarchy(e, BASE_EVENT_FQN, 'event'));
         }
 
         return triggerResponse;
@@ -361,6 +375,10 @@ export class TemplateArchiveProcessor {
 
         // validate outputs after execution
         if (initResponse.state) serializer.fromJSON(initResponse.state);
+
+        // enforce the runtime class hierarchy on the output state (skipped for the empty
+        // state of a stateless template, which has no $class)
+        this.assertRuntimeHierarchy(initResponse.state, RUNTIME_STATE_FQN, 'state');
 
         return initResponse;
     }

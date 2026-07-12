@@ -155,29 +155,32 @@ describe('template archive processor', () => {
         await expect(templateArchiveProcessor.trigger(validData, invalidRequest, stateResponse.state)).rejects.toThrow(/Namespace is not defined/i);
     });
 
-    const RUNTIME_REQUEST_FQN = 'org.accordproject.runtime@0.2.0.Request';
+    const VALID_DATA = {
+        '$class': 'io.clause.latedeliveryandpenalty@0.1.0.TemplateModel',
+        'forceMajeure': true,
+        'penaltyDuration': { '$class': 'org.accordproject.time@0.3.0.Duration', 'amount': 2, 'unit': 'days' },
+        'penaltyPercentage': 10.5,
+        'capPercentage': 55,
+        'termination': { '$class': 'org.accordproject.time@0.3.0.Duration', 'amount': 15, 'unit': 'days' },
+        'fractionalPart': 'days',
+        'clauseId': 'c88e5ed7-c3e0-4249-a99c-ce9278684ac8',
+        '$identifier': 'c88e5ed7-c3e0-4249-a99c-ce9278684ac8'
+    };
 
-    it('compileLogic accepts trigger logic when the model declares a valid request type', async () => {
+    it('rejects a request whose type does not extend the runtime Request', async () => {
         const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
-        // The archive declares `transaction LateDeliveryAndPenaltyRequest extends Request`.
-        // The base Request is concrete, so the base-inclusive query always lists it - which
-        // is exactly why the check must use the base-excluding query instead.
-        expect(template.getRequestTypes()).toContain(RUNTIME_REQUEST_FQN);
-        expect(template.findConcreteSubclassNames(RUNTIME_REQUEST_FQN, true).length).toBeGreaterThan(0);
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
-        await expect(templateArchiveProcessor.compileLogic()).resolves.toBeDefined();
-    });
-
-    it('compileLogic rejects trigger logic when no request type extends the runtime Request', async () => {
-        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
-        // Simulate a template whose "request" is a plain concept rather than a transaction
-        // extending Request: the base-excluding subclass query then returns an empty list
-        // (an achievable value - unlike the base-inclusive getRequestTypes, which always
-        // lists the concrete base). This cannot be caught at compile time because the
-        // request only appears in the bivariant `trigger` parameter position.
-        jest.spyOn(template, 'findConcreteSubclassNames').mockReturnValue([]);
-        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
-        await expect(templateArchiveProcessor.compileLogic())
-            .rejects.toThrow(/requires a request that extends the runtime Request type/i);
+        const stateResponse = await templateArchiveProcessor.init(VALID_DATA);
+        // A well-formed Response object is a valid Concerto instance (so it passes
+        // serialization) but is not a Request - the runtime hierarchy check must reject it.
+        // This is the case the type system cannot catch (bivariant `trigger` parameter).
+        const responseAsRequest = {
+            '$class': 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyResponse',
+            'penalty': 0,
+            'buyerMayTerminate': false,
+            '$timestamp': '2019-01-31T16:34:00-05:00'
+        };
+        await expect(templateArchiveProcessor.trigger(VALID_DATA, responseAsRequest, stateResponse.state))
+            .rejects.toThrow(/Invalid request:.*must be, or extend, the runtime request type/i);
     });
 });

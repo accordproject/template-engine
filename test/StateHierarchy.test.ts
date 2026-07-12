@@ -7,11 +7,12 @@ const CONTRACT = readFileSync(`${ARCHIVE_MODEL_DIR}/@models.accordproject.org.ac
 const RUNTIME = readFileSync(`${ARCHIVE_MODEL_DIR}/@models.accordproject.org.accordproject.runtime@0.2.0.cto`, 'utf-8');
 
 /*
- * These tests verify that the compilation context enforces the runtime model
- * hierarchy: a template whose "state" is a plain identified concept (rather than an
- * asset that extends org.accordproject.runtime.State) must fail to type-check. This
- * is what makes the engine's type checking sufficient to reject the invalid
- * HelloWorldState definition reported against the template library.
+ * These tests verify how the compilation context enforces the runtime model hierarchy.
+ * Because Request/Response/State are concrete, the bare base type is allowed. The union
+ * still rejects types that are structurally incompatible with the base - e.g. a plain
+ * concept used as a Response, which lacks $timestamp. State carries only $identifier, so
+ * a concept-shaped state is admitted here and enforced nominally at runtime instead (see
+ * TemplateArchiveProcessor.assertRuntimeHierarchy).
  */
 
 const NS = 'org.accordproject.helloworldstate@0.1.0';
@@ -71,14 +72,19 @@ async function constraintErrors(model: string) {
 }
 
 describe('runtime State hierarchy enforcement', () => {
-    test('rejects a state that is a plain concept (does not extend State)', async () => {
-        const errors = await constraintErrors(INVALID_STATE);
-        expect(errors.length).toBeGreaterThan(0);
-        expect(errors.some(e => /does not satisfy the constraint 'never'/.test(e.renderedMessage))).toBe(true);
-    });
-
     test('accepts a state that extends the runtime State asset', async () => {
         const errors = await constraintErrors(VALID_STATE);
+        expect(errors).toHaveLength(0);
+    });
+
+    test('a plain-concept state now type-checks (bare base is allowed; the hierarchy is enforced at runtime instead)', async () => {
+        // The State base is concrete, so the RuntimeState union is no longer `never` - it
+        // includes the base. Because State carries only $identifier, an identified concept
+        // is structurally assignable to it, so a plain-concept state can no longer be
+        // rejected at compile time (that is the cost of allowing the bare base); it is
+        // caught nominally at runtime by TemplateArchiveProcessor.assertRuntimeHierarchy.
+        // (Before this change the same input produced a TS2344 `never`-constraint error.)
+        const errors = await constraintErrors(INVALID_STATE);
         expect(errors).toHaveLength(0);
     });
 
@@ -142,7 +148,11 @@ class L extends TemplateLogic<ITemplateModel, IMyState> {
 }
 export default L;`;
         const errors = await compileModel(model, logic);
-        expect(errors.some(e => e.code === 2322 && /is not assignable to type 'never'/.test(e.renderedMessage))).toBe(true);
+        // A plain concept lacks $timestamp, so it is not assignable to the (now base-inclusive)
+        // Response union - rejected at compile time in this return position because the
+        // required transaction discriminant $timestamp is missing.
+        expect(errors.length).toBeGreaterThan(0);
+        expect(errors.some(e => /\$timestamp/.test(e.renderedMessage))).toBe(true);
     });
 
     test('rejects an emitted event that does not extend the base Event', async () => {

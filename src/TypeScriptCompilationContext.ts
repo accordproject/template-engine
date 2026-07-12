@@ -60,14 +60,15 @@ export class TypeScriptCompilationContext {
     }
 
     /**
-     * Returns the fully-qualified names of the concrete (non-abstract) subclasses of
-     * the supplied base type, excluding the base type itself. This is the same query
-     * used by cicero-core's Template.findConcreteSubclassNames with excludeBaseType.
-     * Returns an empty array if the base type is not present in the model.
+     * Returns the concrete (non-abstract) types assignable to the supplied base type,
+     * *including the base type itself* when it is concrete. The runtime Request /
+     * Response / State bases are concrete, so a template may legitimately use the bare
+     * base type; only abstract bases (e.g. Obligation) are excluded. Returns an empty
+     * array if the base type is not present in the model.
      * @param {string} baseFqn the fully-qualified name of the runtime base type
-     * @returns {ClassDeclaration[]} the concrete subclass declarations
+     * @returns {ClassDeclaration[]} the concrete assignable declarations (base + subclasses)
      */
-    private getConcreteSubclasses(baseFqn: string) : ClassDeclaration[] {
+    private getConcreteRuntimeTypes(baseFqn: string) : ClassDeclaration[] {
         let baseType;
         try {
             baseType = this.modelManager.getType(baseFqn);
@@ -79,27 +80,31 @@ export class TypeScriptCompilationContext {
         }
         return baseType
             .getAssignableClassDeclarations()
-            .filter((decl: ClassDeclaration) => !decl.isAbstract())
-            .filter((decl: ClassDeclaration) => decl.getFullyQualifiedName() !== baseFqn);
+            .filter((decl: ClassDeclaration) => !decl.isAbstract());
     }
 
     /**
-     * Builds a TypeScript union type over the concrete subclasses of a runtime base
-     * type, along with the imports required to reference them. When no concrete
-     * subclass exists the union is `never`, which makes any attempt to use a
-     * non-conforming type as the logic's state (or obligation) fail to type-check.
+     * Builds a TypeScript union type over the concrete types assignable to a runtime
+     * base type (the base itself, when concrete, plus its subclasses), along with the
+     * imports required to reference them. Because the base is included, using the bare
+     * base type or any subclass type-checks. A plain concept that does not extend the
+     * base is still rejected structurally where the base carries a distinguishing member
+     * (Response/Event require `$timestamp`); State carries only `$identifier`, so a
+     * concept-shaped state is admitted here and instead enforced nominally at runtime
+     * (see TemplateArchiveProcessor.assertRuntimeHierarchy). When the base type is absent
+     * the union is `never`.
      * @param {string} baseFqn the fully-qualified name of the runtime base type
      * @param {string} aliasPrefix a unique prefix for the imported type aliases
      * @returns {{imports: string, union: string}} the import statements and union type
      */
     private buildRuntimeUnion(baseFqn: string, aliasPrefix: string) : {imports: string, union: string} {
-        const subclasses = this.getConcreteSubclasses(baseFqn);
-        if (subclasses.length === 0) {
+        const types = this.getConcreteRuntimeTypes(baseFqn);
+        if (types.length === 0) {
             return { imports: '', union: 'never' };
         }
         const imports:string[] = [];
         const members:string[] = [];
-        subclasses.forEach((decl, index) => {
+        types.forEach((decl, index) => {
             const alias = `${aliasPrefix}${index}`;
             imports.push(`import type { I${decl.getName()} as ${alias} } from './generated/${decl.getNamespace()}';`);
             members.push(alias);
