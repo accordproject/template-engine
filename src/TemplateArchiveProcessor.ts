@@ -27,6 +27,12 @@ import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { LLMExecutor } from './llm/LLMExecutor';
 import { LLMExecutorConfig } from './llm/LLMConfig';
 
+// The runtime Request base type. Note it is a *concrete* (non-abstract) transaction in
+// org.accordproject.runtime@0.2.0, so it is always an assignable class of itself: a
+// base-inclusive query (getRequestTypes) can never be empty. We therefore query with the
+// base excluded, matching how the compilation context derives the RuntimeRequest union.
+const RUNTIME_REQUEST_FQN = 'org.accordproject.runtime@0.2.0.Request';
+
 /** The contract state. */
 export type State = object;
 /** A response/result returned by the contract logic. */
@@ -143,6 +149,16 @@ export class TemplateArchiveProcessor {
                             'Invalid template: State and Obligation declarations must extend the ' +
                             `runtime State / Obligation types.\n${message}`);
                     }
+
+                    // Enforce the runtime Request hierarchy at the model level. Unlike State,
+                    // Response and Event, the request type cannot be enforced at compile time:
+                    // it appears only as the `request` parameter of `trigger`, and TypeScript
+                    // method parameters are bivariant, so the model-derived `never` bound accepts
+                    // any type. We therefore assert the invariant against the model:
+                    // getRequestTypes() returns only concrete subclasses of the runtime Request,
+                    // so a "request" declared as a plain concept (that does not extend Request)
+                    // yields an empty list. We require this only when the logic defines a trigger.
+                    this.assertTriggerRequestType(tsFile.getContents());
                 }
 
                 compiledCode[tsFile.getIdentifier()] = result;
@@ -153,6 +169,29 @@ export class TemplateArchiveProcessor {
             return compiledCode;
         } else {
             throw new Error('Only TypeScript is supported at this time');
+        }
+    }
+
+    /**
+     * Asserts that a template whose logic defines a `trigger` declares a request type
+     * that extends the runtime Request. See the note in compileLogic for why this is a
+     * model-level check rather than a compile-time one.
+     *
+     * The base Request is concrete, so it is always assignable to itself; we must query
+     * with the base excluded (as `isStateful` and the RuntimeRequest union do) or the
+     * check could never fail. An empty result means no transaction actually extends
+     * Request — e.g. the "request" was declared as a plain concept.
+     * @param {string} logicSource - the source of the logic entry file
+     * @throws {Error} if the logic triggers but no valid request subtype is declared
+     */
+    private assertTriggerRequestType(logicSource: string): void {
+        const definesTrigger = /\btrigger\s*\(/.test(logicSource);
+        const requestSubtypes = this.template.findConcreteSubclassNames(RUNTIME_REQUEST_FQN, true);
+        if (definesTrigger && requestSubtypes.length === 0) {
+            throw new Error(
+                'Invalid template: the trigger logic requires a request that extends the ' +
+                `runtime Request type (${RUNTIME_REQUEST_FQN}), but the model declares none. ` +
+                'Declare the request as a transaction that extends Request.');
         }
     }
 
