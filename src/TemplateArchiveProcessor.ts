@@ -24,7 +24,6 @@ import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler
 import Script from '@accordproject/cicero-core/types/src/script';
 import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
-import { SMART_LEGAL_CONTRACT_BASE64 } from './runtime/declarations';
 import { LLMExecutor } from './llm/LLMExecutor';
 import { LLMExecutorConfig } from './llm/LLMConfig';
 
@@ -121,11 +120,31 @@ export class TemplateArchiveProcessor {
 
                 await compiler.initialize();
 
-                // add the runtime type definitions to all ts files
-                const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
-                ${tsFile.getContents()}`;
+                // The runtime type declarations (IConcept, TemplateLogic, etc.) are
+                // provided by the compilation context, with the State / Obligation type
+                // parameters bound to the concrete subclasses declared by the model.
+                const result = compiler.compile(tsFile.getContents());
 
-                const result = compiler.compile(code);
+                // Enforce the runtime model hierarchy at compile time. When a template's
+                // "state" is a plain concept (rather than an asset extending the runtime
+                // State), the RuntimeState union is `never` and using that type as the
+                // logic's state raises TS2344 ("Type '...' does not satisfy the constraint
+                // 'never'"). The same applies to Obligation events. We only enforce this
+                // for the logic entry point and only for the constraint-violation code, so
+                // that unrelated diagnostics (and non-logic scripts such as README.md) do
+                // not turn into hard failures.
+                const isLogicEntry = tsFile.getIdentifier().endsWith('logic.ts');
+                if (isLogicEntry) {
+                    const hierarchyErrors = (result.errors || [])
+                        .filter(e => e.category === 1 && e.code === 2344);
+                    if (hierarchyErrors.length > 0) {
+                        const message = hierarchyErrors.map(e => e.renderedMessage).join('\n');
+                        throw new Error(
+                            'Invalid template: State and Obligation declarations must extend the ' +
+                            `runtime State / Obligation types.\n${message}`);
+                    }
+                }
+
                 compiledCode[tsFile.getIdentifier()] = result;
             }
             if (enableCompiledLogicCache) {

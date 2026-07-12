@@ -2,7 +2,7 @@
 
 exports[`typescript compilation context should create a context from a model manager 1`] = `
 "
-// @filename: concerto.decorator@1.0.0.ts
+// @filename: generated/concerto.decorator@1.0.0.ts
 /* eslint-disable @typescript-eslint/no-empty-interface */
 // Generated code for namespace: concerto.decorator@1.0.0
 
@@ -19,7 +19,7 @@ export interface IDotNetNamespace extends IDecorator {
 
 
 
-// @filename: concerto@1.0.0.ts
+// @filename: generated/concerto@1.0.0.ts
 /* eslint-disable @typescript-eslint/no-empty-interface */
 // Generated code for namespace: concerto@1.0.0
 
@@ -64,7 +64,7 @@ export interface IEvent extends IConcept {
 
 
 
-// @filename: test@1.0.0.ts
+// @filename: generated/test@1.0.0.ts
 /* eslint-disable @typescript-eslint/no-empty-interface */
 // Generated code for namespace: test@1.0.0
 
@@ -113,9 +113,71 @@ export interface ITemplateData extends IConcept {
 
 
 // @filename: code.ts
-import * as TemplateModel from './test@1.0.0';
+import * as TemplateModel from './generated/test@1.0.0';
 import dayjs from 'dayjs';
 import jp from 'jsonpath';
+
+
+
+
+
+
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+// Runtime declarations injected by the template engine. The Runtime* unions are
+// derived from the template's Concerto model so that the type checker enforces the
+// runtime State / Request / Response / Event class hierarchies.
+interface IConcept {
+    $class: string;
+}
+interface ITransaction extends IConcept {
+    $timestamp: Date;
+}
+interface IEvent extends IConcept {
+    $timestamp: Date;
+}
+interface IState {
+    $identifier: string;
+}
+interface IRequest extends ITransaction {
+}
+interface IResponse extends ITransaction {
+}
+interface IAsset extends IConcept {
+    $identifier: string;
+}
+interface IContract extends IAsset {
+    contractId: string;
+}
+interface IClause extends IAsset {
+    clauseId: string;
+}
+
+// The concrete subclasses declared by the model for each runtime type (never if the
+// template declares no valid subtype). Using these as the state type-parameter bound,
+// the request parameter, the result type and the emitted event type is what makes a
+// plain concept (that does not extend the corresponding runtime base) fail to compile.
+type RuntimeState = never;
+type RuntimeRequest = never;
+type RuntimeResponse = never;
+type RuntimeEvent = never;
+
+interface EngineResponse<S extends RuntimeState> {
+    state?: S;
+    events?: Array<RuntimeEvent>
+}
+interface TriggerResponse<S extends RuntimeState = RuntimeState> extends EngineResponse<S> {
+    result: RuntimeResponse;
+}
+interface InitResponse<S extends RuntimeState> extends EngineResponse<S> {}
+
+type TemplateData = IContract|IClause;
+
+abstract class TemplateLogic<T extends TemplateData, S extends RuntimeState = RuntimeState> {
+    abstract trigger(data: T, request: RuntimeRequest, state:S) : Promise<TriggerResponse<S>>;
+    // A concrete (stub) implementation so the class emits runtime JS (user logic does
+    // \`extends TemplateLogic\`) and does not raise TS2391 for a missing body.
+    init(data: T) : Promise<InitResponse<S>|undefined> { return Promise.resolve(undefined); }
+}
 
 type GenerationOptions = {
     now?:string,
