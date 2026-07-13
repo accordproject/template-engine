@@ -14,17 +14,13 @@
 import { ClassDeclaration, ModelManager } from '@accordproject/concerto-core';
 import { CodeGen } from '@accordproject/concerto-codegen';
 import { InMemoryWriter } from '@accordproject/concerto-util';
-import { getTemplateClassDeclaration } from './utils';
-
-// Fully-qualified names of the runtime base types that stateful/obligation-emitting
-// templates must extend. These mirror the checks in cicero-core's Template
-// (getStateTypes / getEmitTypes / isStateful).
-const RUNTIME_STATE_FQN = 'org.accordproject.runtime@0.2.0.State';
-const RUNTIME_REQUEST_FQN = 'org.accordproject.runtime@0.2.0.Request';
-const RUNTIME_RESPONSE_FQN = 'org.accordproject.runtime@0.2.0.Response';
-// The base Concerto event type. Any emitted event (a plain Event or a specialized
-// Obligation) must extend this, so we bind against it rather than Obligation.
-const BASE_EVENT_FQN = 'concerto@1.0.0.Event';
+import {
+    getTemplateClassDeclaration,
+    RUNTIME_STATE_FQN,
+    RUNTIME_REQUEST_FQN,
+    RUNTIME_RESPONSE_FQN,
+    BASE_EVENT_FQN,
+} from './utils';
 
 /**
  * This class creates the typescript types

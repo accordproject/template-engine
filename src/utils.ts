@@ -21,6 +21,17 @@ import { templatemarkutil } from '@accordproject/markdown-template';
 import { existsSync, mkdirSync, rmSync } from 'fs';
 import traverse from 'traverse';
 
+// Fully-qualified names of the runtime base types that logic types must be, or extend.
+// Request / Response / State are concrete in org.accordproject.runtime@0.2.0, so a template
+// may use the bare base type. Events bind to the base Concerto Event (a plain Event or a
+// specialized Obligation both extend it); Obligation itself is abstract. Shared by the
+// compilation context (compile-time unions) and the archive processor (runtime $class
+// hierarchy checks).
+export const RUNTIME_STATE_FQN = 'org.accordproject.runtime@0.2.0.State';
+export const RUNTIME_REQUEST_FQN = 'org.accordproject.runtime@0.2.0.Request';
+export const RUNTIME_RESPONSE_FQN = 'org.accordproject.runtime@0.2.0.Response';
+export const BASE_EVENT_FQN = 'concerto@1.0.0.Event';
+
 export function ensureDirSync(path:string) {
     if(!existsSync(path)) {
         mkdirSync(path, { recursive: true });

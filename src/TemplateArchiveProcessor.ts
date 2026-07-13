@@ -26,15 +26,12 @@ import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { LLMExecutor } from './llm/LLMExecutor';
 import { LLMExecutorConfig } from './llm/LLMConfig';
-
-// Runtime base types that logic payloads must be, or extend. Request / Response / State
-// are concrete, so a template may use the bare base type; the check below allows the base
-// itself or any subclass and rejects a plain concept that does not extend the base. Events
-// bind to the base Concerto Event (a plain event or an Obligation both extend it).
-const RUNTIME_REQUEST_FQN = 'org.accordproject.runtime@0.2.0.Request';
-const RUNTIME_RESPONSE_FQN = 'org.accordproject.runtime@0.2.0.Response';
-const RUNTIME_STATE_FQN = 'org.accordproject.runtime@0.2.0.State';
-const BASE_EVENT_FQN = 'concerto@1.0.0.Event';
+import {
+    RUNTIME_REQUEST_FQN,
+    RUNTIME_RESPONSE_FQN,
+    RUNTIME_STATE_FQN,
+    BASE_EVENT_FQN,
+} from './utils';
 
 /** The contract state. */
 export type State = object;
@@ -149,8 +146,9 @@ export class TemplateArchiveProcessor {
                     if (hierarchyErrors.length > 0) {
                         const message = hierarchyErrors.map(e => e.renderedMessage).join('\n');
                         throw new Error(
-                            'Invalid template: State and Obligation declarations must extend the ' +
-                            `runtime State / Obligation types.\n${message}`);
+                            'Invalid template: State, Request, Response and Event declarations must ' +
+                            'be, or extend, their runtime base types (org.accordproject.runtime ' +
+                            `State / Request / Response and the Concerto Event).\n${message}`);
                     }
                 }
 
