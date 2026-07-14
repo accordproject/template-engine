@@ -122,6 +122,20 @@ describe('template archive processor', () => {
         expect(compiledCode['logic/logic.ts']).toBeDefined();
     });
 
+    test('should only validate once when strict mode uses the compile cache', async () => {
+        const template = await loadTemplate();
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        const validationSpy = jest.spyOn(
+            templateArchiveProcessor as unknown as { assertTemplateLogicSubclass: () => Promise<void> },
+            'assertTemplateLogicSubclass'
+        );
+
+        await templateArchiveProcessor.compileLogic({ enableCompiledLogicCache: true, requireTemplateLogic: true });
+        await templateArchiveProcessor.compileLogic({ enableCompiledLogicCache: true, requireTemplateLogic: true });
+
+        expect(validationSpy).toHaveBeenCalledTimes(1);
+    });
+
     test('should keep plain default-exported classes working by default', async () => {
         const template = await loadTemplate(`
 export default class PlainLogic {
@@ -173,6 +187,23 @@ export default class PlainLogic {
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
         await expect(
             templateArchiveProcessor.compileLogic({ requireTemplateLogic: true })
+        ).rejects.toThrow(/class extending TemplateLogic/i);
+    });
+
+    test('should not let cached non-strict compilation bypass strict validation later', async () => {
+        const template = await loadTemplate(`
+export default class PlainLogic {
+    async init() {
+        return { state: {} };
+    }
+}
+`);
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+
+        await templateArchiveProcessor.compileLogic({ enableCompiledLogicCache: true });
+
+        await expect(
+            templateArchiveProcessor.compileLogic({ enableCompiledLogicCache: true, requireTemplateLogic: true })
         ).rejects.toThrow(/class extending TemplateLogic/i);
     });
 

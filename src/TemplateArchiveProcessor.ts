@@ -27,7 +27,6 @@ import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { SMART_LEGAL_CONTRACT_BASE64 } from './runtime/declarations';
 import { LLMExecutor } from './llm/LLMExecutor';
 import { LLMExecutorConfig } from './llm/LLMConfig';
-import * as ts from 'typescript';
 
 /** The contract state. */
 export type State = object;
@@ -80,6 +79,9 @@ export class TemplateArchiveProcessor {
 
     /** Cache of compiled logic, keyed by script identifier. */
     private compiledLogicCache?: Record<string, TwoSlashReturn>;
+
+    /** Tracks whether strict TemplateLogic validation has already passed for this template. */
+    private strictTemplateLogicValidated = false;
 
     /** Optional LLM fallback configuration. */
     llmConfig?: LLMExecutorConfig;
@@ -134,10 +136,11 @@ export class TemplateArchiveProcessor {
         if (logicManager.getLanguage() === 'typescript') {
             const compiledCode: Record<string, TwoSlashReturn> = {};
             const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
-            const logicScript = tsFiles.find((tsFile) => tsFile.getIdentifier() === 'logic/logic.ts');
 
-            if (normalizedOptions.requireTemplateLogic) {
-                this.assertTemplateLogicSubclass(logicScript);
+            if (normalizedOptions.requireTemplateLogic && !this.strictTemplateLogicValidated) {
+                const logicScript = tsFiles.find((tsFile) => tsFile.getIdentifier() === 'logic/logic.ts');
+                await this.assertTemplateLogicSubclass(logicScript);
+                this.strictTemplateLogicValidated = true;
             }
 
             if (normalizedOptions.enableCompiledLogicCache && this.compiledLogicCache) {
@@ -168,30 +171,33 @@ export class TemplateArchiveProcessor {
         }
     }
 
-    private assertTemplateLogicSubclass(tsFile?: Script): void {
+    private async assertTemplateLogicSubclass(tsFile?: Script): Promise<void> {
         if (!tsFile) {
             throw new Error('Strict template logic compilation requires a logic/logic.ts file.');
         }
 
-        const sourceFile = ts.createSourceFile(
+        const tsImport = await import('typescript');
+        const tsModule = ('default' in tsImport && tsImport.default ? tsImport.default : tsImport);
+
+        const sourceFile = tsModule.createSourceFile(
             tsFile.getIdentifier(),
             tsFile.getContents(),
-            ts.ScriptTarget.Latest,
+            tsModule.ScriptTarget.Latest,
             true,
-            ts.ScriptKind.TS
+            tsModule.ScriptKind.TS
         );
 
         const hasTemplateLogicSubclass = sourceFile.statements.some((statement) => {
-            if (!ts.isClassDeclaration(statement) || !statement.heritageClauses) {
+            if (!tsModule.isClassDeclaration(statement) || !statement.heritageClauses) {
                 return false;
             }
 
             return statement.heritageClauses.some((clause) =>
-                clause.token === ts.SyntaxKind.ExtendsKeyword &&
+                clause.token === tsModule.SyntaxKind.ExtendsKeyword &&
                 clause.types.some((heritageType) => {
                     const expression = heritageType.expression;
-                    return (ts.isIdentifier(expression) && expression.text === 'TemplateLogic') ||
-                        (ts.isPropertyAccessExpression(expression) && expression.name.text === 'TemplateLogic');
+                    return (tsModule.isIdentifier(expression) && expression.text === 'TemplateLogic') ||
+                        (tsModule.isPropertyAccessExpression(expression) && expression.name.text === 'TemplateLogic');
                 })
             );
         });
