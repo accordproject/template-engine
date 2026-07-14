@@ -393,7 +393,12 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
             else if (FORMULA_DEFINITION_RE.test(nodeClass)) {
                 if (context.code) {
                     const result = userCodeResults[this.path.join('/')];
-                    if (result === null) {
+                    if (result === undefined) {
+                        // JSON.stringify(undefined) is undefined, which would leave the
+                        // required `value` field unset and fail downstream validation.
+                        throw new Error(`Formula '${context.name}' did not return a value. Formulas must be an expression or use 'return' to produce a value.`);
+                    }
+                    else if (result === null) {
                         context.value = '<null>';
                     }
                     else if (typeof result === 'string') {

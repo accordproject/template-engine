@@ -1,0 +1,5 @@
+{
+    "$class" : "helloformula@1.0.0.TemplateData",
+    "message": "World",
+    "importerLOCAmount": 1000.0
+}
