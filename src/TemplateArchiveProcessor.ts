@@ -128,18 +128,20 @@ export class TemplateArchiveProcessor {
                 await compiler.initialize();
 
                 // The runtime type declarations (IConcept, TemplateLogic, etc.) are
-                // provided by the compilation context, with the State / Obligation type
-                // parameters bound to the concrete subclasses declared by the model.
+                // provided by the compilation context, with the State / Request / Response /
+                // Event type positions bound to the model-derived Runtime* unions (the
+                // concrete base plus its subclasses).
                 const result = compiler.compile(tsFile.getContents());
 
                 // Surface the runtime-hierarchy constraint violation (TS2344) as a hard
                 // error. The state type argument must satisfy the RuntimeState union; a type
                 // that is structurally incompatible with the base (e.g. a concept with no
-                // $identifier used as state, or an emit that is not an Obligation) fails the
-                // constraint. Structural matches to the bare base are allowed here and are
-                // instead checked nominally at runtime (assertRuntimeHierarchy). Scoped to
-                // the logic entry point and to TS2344 so that unrelated diagnostics (and
-                // non-logic scripts such as README.md) do not turn into hard failures.
+                // $identifier used as state, or an emit that is not assignable to the base
+                // Event) fails the constraint. Structural matches to the bare base are
+                // allowed here and are instead checked nominally at runtime
+                // (assertRuntimeHierarchy). Scoped to the logic entry point and to TS2344 so
+                // that unrelated diagnostics (and non-logic scripts such as README.md) do
+                // not turn into hard failures.
                 const isLogicEntry = tsFile.getIdentifier().endsWith('logic.ts');
                 if (isLogicEntry) {
                     const hierarchyErrors = (result.errors || [])
@@ -290,10 +292,11 @@ export class TemplateArchiveProcessor {
         const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true, acceptResourcesForRelationships: true });
         
         // validate inputs before execution. A stateless template's init returns an empty
-        // placeholder state ({} with no $class); skip validation for it (nothing to check).
+        // placeholder state ({}); skip only that. Any other state - including a non-empty
+        // object with no $class - is validated normally (and fails if malformed).
         if (data) serializer.fromJSON(data);
         if (request) serializer.fromJSON(request);
-        if (state && state.$class) serializer.fromJSON(state);
+        if (state && Object.keys(state).length > 0) serializer.fromJSON(state);
 
         // enforce the runtime class hierarchy on the inputs
         this.assertRuntimeHierarchy(request, RUNTIME_REQUEST_FQN, 'request');
@@ -315,8 +318,8 @@ export class TemplateArchiveProcessor {
             throw new Error('No executable logic found and LLM fallback is disabled');
         }
 
-        // validate outputs after execution (an empty placeholder state has no $class)
-        if (triggerResponse.state && (triggerResponse.state as any).$class) serializer.fromJSON(triggerResponse.state);
+        // validate outputs after execution (skip only the empty {} placeholder state)
+        if (triggerResponse.state && Object.keys(triggerResponse.state).length > 0) serializer.fromJSON(triggerResponse.state);
         if (triggerResponse.result) serializer.fromJSON(triggerResponse.result);
         if (triggerResponse.events && Array.isArray(triggerResponse.events)) {
             triggerResponse.events.forEach(e => serializer.fromJSON(e));
@@ -364,8 +367,8 @@ export class TemplateArchiveProcessor {
         }
 
         // validate outputs after execution. A stateless template returns an empty
-        // placeholder state ({} with no $class); skip validation for it.
-        if (initResponse.state && (initResponse.state as any).$class) serializer.fromJSON(initResponse.state);
+        // placeholder state ({}); skip only that - any other state is validated normally.
+        if (initResponse.state && Object.keys(initResponse.state).length > 0) serializer.fromJSON(initResponse.state);
 
         // enforce the runtime class hierarchy on the output state (skipped for the empty
         // state of a stateless template, which has no $class)

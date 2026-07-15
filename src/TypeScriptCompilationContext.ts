@@ -87,11 +87,13 @@ export class TypeScriptCompilationContext {
 
     /**
      * Emits the runtime SmartLegalContract declarations (IConcept, TemplateLogic, etc.)
-     * with the state type parameter bound to the concrete State subclasses declared by
-     * the template's model. This enforces — at compile time — that any type used as the
-     * logic's state actually extends the runtime State type (and likewise for emitted
-     * Obligations). A template whose "state" is a plain concept that does not extend
-     * State produces an empty union (`never`), so the logic fails to compile.
+     * with the State / Request / Response / Event type positions bound to the model-derived
+     * Runtime* unions (the concrete base type plus its subclasses; see buildRuntimeUnion).
+     * Because the concrete base is included, using the bare base type or a subclass
+     * type-checks. Types that are structurally incompatible with the base still fail here
+     * (Response/Event require `$timestamp`); State carries only `$identifier`, so a
+     * concept-shaped state type-checks and is instead enforced nominally at runtime (see
+     * TemplateArchiveProcessor.assertRuntimeHierarchy).
      * @returns {string} the runtime declarations, as a TypeScript source string
      */
     private getRuntimeDeclarations() : string {
@@ -136,10 +138,11 @@ interface IClause extends IAsset {
     clauseId: string;
 }
 
-// The concrete subclasses declared by the model for each runtime type (never if the
-// template declares no valid subtype). Using these as the state type-parameter bound,
-// the request parameter, the result type and the emitted event type is what makes a
-// plain concept (that does not extend the corresponding runtime base) fail to compile.
+// The concrete types assignable to each runtime base (the base itself, when concrete,
+// plus its subclasses; never when the base is absent). Used as the state type-parameter
+// bound, the request parameter, the result type and the emitted event type: a type that is
+// structurally incompatible with the base (e.g. a plain concept lacking $timestamp used as
+// a response/event) fails to compile. State is enforced nominally at runtime instead.
 type RuntimeState = ${state.union};
 type RuntimeRequest = ${request.union};
 type RuntimeResponse = ${response.union};

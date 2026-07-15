@@ -152,10 +152,11 @@ interface IClause extends IAsset {
     clauseId: string;
 }
 
-// The concrete subclasses declared by the model for each runtime type (never if the
-// template declares no valid subtype). Using these as the state type-parameter bound,
-// the request parameter, the result type and the emitted event type is what makes a
-// plain concept (that does not extend the corresponding runtime base) fail to compile.
+// The concrete types assignable to each runtime base (the base itself, when concrete,
+// plus its subclasses; never when the base is absent). Used as the state type-parameter
+// bound, the request parameter, the result type and the emitted event type: a type that is
+// structurally incompatible with the base (e.g. a plain concept lacking $timestamp used as
+// a response/event) fails to compile. State is enforced nominally at runtime instead.
 type RuntimeState = never;
 type RuntimeRequest = never;
 type RuntimeResponse = never;

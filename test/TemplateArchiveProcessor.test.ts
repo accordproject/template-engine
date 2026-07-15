@@ -194,4 +194,14 @@ describe('template archive processor', () => {
         const response = await templateArchiveProcessor.init(VALID_DATA);
         expect(response.state).toEqual({});
     });
+
+    it('does not exempt a non-empty state that is missing $class (only {} is skipped)', async () => {
+        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        // A non-empty classless object is not the stateless placeholder - it must still be
+        // validated (and rejected), not silently skipped.
+        jest.spyOn(templateArchiveProcessor as unknown as { executeTypeScriptInit: () => Promise<InitResponse> },
+            'executeTypeScriptInit').mockResolvedValue({ state: { count: 1 } });
+        await expect(templateArchiveProcessor.init(VALID_DATA)).rejects.toThrow();
+    });
 });
