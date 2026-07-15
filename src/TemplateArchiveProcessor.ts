@@ -27,6 +27,7 @@ import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { LLMExecutor } from './llm/LLMExecutor';
 import { LLMExecutorConfig } from './llm/LLMConfig';
 import {
+    isAssignableTo,
     RUNTIME_REQUEST_FQN,
     RUNTIME_RESPONSE_FQN,
     RUNTIME_STATE_FQN,
@@ -179,17 +180,7 @@ export class TemplateArchiveProcessor {
         if (!payload || !payload.$class) {
             return;
         }
-        const modelManager = this.template.getModelManager();
-        let base;
-        try {
-            base = modelManager.getType(baseFqn);
-        } catch {
-            // The runtime base type is not in the model; nothing to enforce.
-            return;
-        }
-        const isAssignable = base.getAssignableClassDeclarations()
-            .some((decl: any) => decl.getFullyQualifiedName() === payload.$class);
-        if (!isAssignable) {
+        if (!isAssignableTo(this.template.getModelManager(), payload.$class, baseFqn)) {
             throw new Error(
                 `Invalid ${role}: '${payload.$class}' must be, or extend, the runtime ` +
                 `${role} type (${baseFqn}).`);
@@ -298,10 +289,11 @@ export class TemplateArchiveProcessor {
         const factory = new Factory(this.template.getModelManager());
         const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true, acceptResourcesForRelationships: true });
         
-        // validate inputs before execution
+        // validate inputs before execution. A stateless template's init returns an empty
+        // placeholder state ({} with no $class); skip validation for it (nothing to check).
         if (data) serializer.fromJSON(data);
         if (request) serializer.fromJSON(request);
-        if (state) serializer.fromJSON(state);
+        if (state && state.$class) serializer.fromJSON(state);
 
         // enforce the runtime class hierarchy on the inputs
         this.assertRuntimeHierarchy(request, RUNTIME_REQUEST_FQN, 'request');
@@ -323,8 +315,8 @@ export class TemplateArchiveProcessor {
             throw new Error('No executable logic found and LLM fallback is disabled');
         }
 
-        // validate outputs after execution
-        if (triggerResponse.state) serializer.fromJSON(triggerResponse.state);
+        // validate outputs after execution (an empty placeholder state has no $class)
+        if (triggerResponse.state && (triggerResponse.state as any).$class) serializer.fromJSON(triggerResponse.state);
         if (triggerResponse.result) serializer.fromJSON(triggerResponse.result);
         if (triggerResponse.events && Array.isArray(triggerResponse.events)) {
             triggerResponse.events.forEach(e => serializer.fromJSON(e));
@@ -371,8 +363,9 @@ export class TemplateArchiveProcessor {
             throw new Error('No executable logic found and LLM fallback is disabled');
         }
 
-        // validate outputs after execution
-        if (initResponse.state) serializer.fromJSON(initResponse.state);
+        // validate outputs after execution. A stateless template returns an empty
+        // placeholder state ({} with no $class); skip validation for it.
+        if (initResponse.state && (initResponse.state as any).$class) serializer.fromJSON(initResponse.state);
 
         // enforce the runtime class hierarchy on the output state (skipped for the empty
         // state of a stateless template, which has no $class)

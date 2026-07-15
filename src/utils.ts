@@ -32,6 +32,40 @@ export const RUNTIME_REQUEST_FQN = 'org.accordproject.runtime@0.2.0.Request';
 export const RUNTIME_RESPONSE_FQN = 'org.accordproject.runtime@0.2.0.Response';
 export const BASE_EVENT_FQN = 'concerto@1.0.0.Event';
 
+/**
+ * Returns the concrete (non-abstract) class declarations assignable to baseFqn: the base
+ * type itself (when concrete) plus every subclass of it. Returns an empty array when
+ * baseFqn is not present in the model. This is the single source of truth for the runtime
+ * type hierarchy — used both to build the compile-time unions (TypeScriptCompilationContext)
+ * and to check payloads at runtime (TemplateArchiveProcessor).
+ * @param {ModelManager} modelManager - the model manager to resolve types against
+ * @param {string} baseFqn - the fully-qualified name of the runtime base type
+ * @returns {ClassDeclaration[]} the concrete assignable declarations (base + subclasses)
+ */
+export function getAssignableConcreteTypes(modelManager: ModelManager, baseFqn: string): ClassDeclaration[] {
+    let baseType;
+    try {
+        baseType = modelManager.getType(baseFqn);
+    } catch {
+        // The base type is not loaded in this model (e.g. a text-only template with no logic).
+        return [];
+    }
+    return baseType.getAssignableClassDeclarations().filter((decl: ClassDeclaration) => !decl.isAbstract());
+}
+
+/**
+ * Returns true when the type identified by fqn is, or extends, baseFqn (restricted to
+ * concrete types). Used to enforce the runtime class hierarchy against a payload's $class.
+ * @param {ModelManager} modelManager - the model manager to resolve types against
+ * @param {string} fqn - the fully-qualified name of the candidate type
+ * @param {string} baseFqn - the fully-qualified name of the runtime base type
+ * @returns {boolean} true if fqn is, or extends, baseFqn
+ */
+export function isAssignableTo(modelManager: ModelManager, fqn: string, baseFqn: string): boolean {
+    return getAssignableConcreteTypes(modelManager, baseFqn)
+        .some((decl: ClassDeclaration) => decl.getFullyQualifiedName() === fqn);
+}
+
 export function ensureDirSync(path:string) {
     if(!existsSync(path)) {
         mkdirSync(path, { recursive: true });

@@ -183,4 +183,15 @@ describe('template archive processor', () => {
         await expect(templateArchiveProcessor.trigger(VALID_DATA, responseAsRequest, stateResponse.state))
             .rejects.toThrow(/Invalid request:.*must be, or extend, the runtime request type/i);
     });
+
+    it('init does not throw for a stateless template (empty placeholder state)', async () => {
+        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        // A stateless template (no compiled `init`) yields the empty placeholder `{ state: {} }`.
+        // init() must not try to serialize/validate that classless placeholder.
+        jest.spyOn(templateArchiveProcessor as unknown as { executeTypeScriptInit: () => Promise<InitResponse> },
+            'executeTypeScriptInit').mockResolvedValue({ state: {} });
+        const response = await templateArchiveProcessor.init(VALID_DATA);
+        expect(response.state).toEqual({});
+    });
 });

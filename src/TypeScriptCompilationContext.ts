@@ -16,6 +16,7 @@ import { CodeGen } from '@accordproject/concerto-codegen';
 import { InMemoryWriter } from '@accordproject/concerto-util';
 import {
     getTemplateClassDeclaration,
+    getAssignableConcreteTypes,
     RUNTIME_STATE_FQN,
     RUNTIME_REQUEST_FQN,
     RUNTIME_RESPONSE_FQN,
@@ -56,30 +57,6 @@ export class TypeScriptCompilationContext {
     }
 
     /**
-     * Returns the concrete (non-abstract) types assignable to the supplied base type,
-     * *including the base type itself* when it is concrete. The runtime Request /
-     * Response / State bases are concrete, so a template may legitimately use the bare
-     * base type; only abstract bases (e.g. Obligation) are excluded. Returns an empty
-     * array if the base type is not present in the model.
-     * @param {string} baseFqn the fully-qualified name of the runtime base type
-     * @returns {ClassDeclaration[]} the concrete assignable declarations (base + subclasses)
-     */
-    private getConcreteRuntimeTypes(baseFqn: string) : ClassDeclaration[] {
-        let baseType;
-        try {
-            baseType = this.modelManager.getType(baseFqn);
-        }
-        catch {
-            // The runtime type is not loaded in this model (e.g. a text-only template
-            // with no logic). Nothing to constrain.
-            return [];
-        }
-        return baseType
-            .getAssignableClassDeclarations()
-            .filter((decl: ClassDeclaration) => !decl.isAbstract());
-    }
-
-    /**
      * Builds a TypeScript union type over the concrete types assignable to a runtime
      * base type (the base itself, when concrete, plus its subclasses), along with the
      * imports required to reference them. Because the base is included, using the bare
@@ -94,7 +71,7 @@ export class TypeScriptCompilationContext {
      * @returns {{imports: string, union: string}} the import statements and union type
      */
     private buildRuntimeUnion(baseFqn: string, aliasPrefix: string) : {imports: string, union: string} {
-        const types = this.getConcreteRuntimeTypes(baseFqn);
+        const types = getAssignableConcreteTypes(this.modelManager, baseFqn);
         if (types.length === 0) {
             return { imports: '', union: 'never' };
         }
