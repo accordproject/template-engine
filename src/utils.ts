@@ -38,6 +38,9 @@ export const BASE_EVENT_FQN = 'concerto@1.0.0.Event';
  * baseFqn is not present in the model. This is the single source of truth for the runtime
  * type hierarchy — used both to build the compile-time unions (TypeScriptCompilationContext)
  * and to check payloads at runtime (TemplateArchiveProcessor).
+ *
+ * TODO: migrate to a Concerto-provided helper once available — see
+ * https://github.com/accordproject/concerto/issues/1281
  * @param {ModelManager} modelManager - the model manager to resolve types against
  * @param {string} baseFqn - the fully-qualified name of the runtime base type
  * @returns {ClassDeclaration[]} the concrete assignable declarations (base + subclasses)
