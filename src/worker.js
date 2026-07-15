@@ -35,12 +35,13 @@ process.on('message', (msg) => {
         const fun = new Function(...argNames, code);
         const result = fun(...args);
         process.send({ result }, () => {
-            process.exit();
+            process.disconnect();
         });
     } catch (err) {
         // console.log(`worker: ${err} ${msg.code}`);
         process.send({ message: err.toString() }, () => {
-            process.exit(1);
+            process.exitCode = 1;
+            process.disconnect();
         });
     }
 });
