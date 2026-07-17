@@ -154,4 +154,29 @@ describe('template archive processor', () => {
 
         await expect(templateArchiveProcessor.trigger(validData, invalidRequest, stateResponse.state)).rejects.toThrow(/Namespace is not defined/i);
     });
+
+    test('should compile logic with requireTemplateLogic=true (success)', async () => {
+        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        const compiledCode = await templateArchiveProcessor.compileLogic(false, true);
+        expect(compiledCode['logic/logic.ts']).toBeDefined();
+    });
+
+    test('should throw error when compile logic with requireTemplateLogic=true and no TemplateLogic subclass is present', async () => {
+        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        const scripts = template.getLogicManager().getScriptManager().getScriptsForTarget('typescript');
+        const script = scripts.find((s: any) => s.getIdentifier() === 'logic/logic.ts');
+        const originalContents = script.getContents;
+        script.getContents = () => `
+            export function trigger(data: any, request: any, state: any) {
+                return { result: {}, state: {}, events: [] };
+            }
+        `;
+        try {
+            await expect(templateArchiveProcessor.compileLogic(false, true)).rejects.toThrow('Compilation failed: No class extending TemplateLogic was found.');
+        } finally {
+            script.getContents = originalContents;
+        }
+    });
 });

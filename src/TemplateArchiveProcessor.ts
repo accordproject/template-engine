@@ -102,39 +102,55 @@ export class TemplateArchiveProcessor {
     /**
      * Compile the logic of a template
      * @param {boolean} [enableCompiledLogicCache] - whether to cache the compiled logic for future use
+     * @param {boolean} [requireTemplateLogic] - whether to throw if a TemplateLogic class is not found
      * @returns {Promise<Record<string, TwoSlashReturn>>} the compiled code for each typescript file
      */
-    async compileLogic(enableCompiledLogicCache: boolean = false): Promise<Record<string, TwoSlashReturn>> {
+    async compileLogic(enableCompiledLogicCache: boolean = false, requireTemplateLogic: boolean = false): Promise<Record<string, TwoSlashReturn>> {
+        let compiledCode: Record<string, TwoSlashReturn> = {};
         if (enableCompiledLogicCache && this.compiledLogicCache) {
-            return this.compiledLogicCache;
-        }
-
-        const logicManager = this.template.getLogicManager();
-        if (logicManager.getLanguage() === 'typescript') {
-            const compiledCode: Record<string, TwoSlashReturn> = {};
-            const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
-            for (let n = 0; n < tsFiles.length; n++) {
-                const tsFile = tsFiles[n];
-
-                const compiler = new TypeScriptToJavaScriptCompiler(this.template.getModelManager(),
-                    this.template.getTemplateModel().getFullyQualifiedName());
-
-                await compiler.initialize();
-
-                // add the runtime type definitions to all ts files
-                const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
-                ${tsFile.getContents()}`;
-
-                const result = compiler.compile(code);
-                compiledCode[tsFile.getIdentifier()] = result;
-            }
-            if (enableCompiledLogicCache) {
-                this.compiledLogicCache = compiledCode;
-            }
-            return compiledCode;
+            compiledCode = this.compiledLogicCache;
         } else {
-            throw new Error('Only TypeScript is supported at this time');
+            const logicManager = this.template.getLogicManager();
+            if (logicManager.getLanguage() === 'typescript') {
+                const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
+                for (let n = 0; n < tsFiles.length; n++) {
+                    const tsFile = tsFiles[n];
+
+                    const compiler = new TypeScriptToJavaScriptCompiler(this.template.getModelManager(),
+                        this.template.getTemplateModel().getFullyQualifiedName());
+
+                    await compiler.initialize();
+
+                    // add the runtime type definitions to all ts files
+                    const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
+                    ${tsFile.getContents()}`;
+
+                    const result = compiler.compile(code);
+                    compiledCode[tsFile.getIdentifier()] = result;
+                }
+                if (enableCompiledLogicCache) {
+                    this.compiledLogicCache = compiledCode;
+                }
+            } else {
+                throw new Error('Only TypeScript is supported at this time');
+            }
         }
+
+        if (requireTemplateLogic) {
+            let hasTemplateLogic = false;
+            for (const fileId of Object.keys(compiledCode)) {
+                const jsCode = compiledCode[fileId].code;
+                if (jsCode && /class\s+(\w+)\s+extends\s+TemplateLogic/.test(jsCode)) {
+                    hasTemplateLogic = true;
+                    break;
+                }
+            }
+            if (!hasTemplateLogic) {
+                throw new Error('Compilation failed: No class extending TemplateLogic was found.');
+            }
+        }
+
+        return compiledCode;
     }
 
     /**
