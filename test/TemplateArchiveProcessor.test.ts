@@ -115,14 +115,7 @@ describe('template archive processor', () => {
         expect(compiledCode['logic/logic.ts'].code).toContain('LateDeliveryAndPenalty');
     });
 
-    test('should compile logic in strict mode when the logic extends TemplateLogic', async () => {
-        const template = await loadTemplate();
-        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
-        const compiledCode = await templateArchiveProcessor.compileLogic({ requireTemplateLogic: true });
-        expect(compiledCode['logic/logic.ts']).toBeDefined();
-    });
-
-    test('should only validate once when strict mode uses the compile cache', async () => {
+    test('should not revalidate cached logic', async () => {
         const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
         const validationSpy = jest.spyOn(
@@ -130,53 +123,13 @@ describe('template archive processor', () => {
             'assertTemplateLogicSubclass'
         );
 
-        await templateArchiveProcessor.compileLogic({ enableCompiledLogicCache: true, requireTemplateLogic: true });
-        await templateArchiveProcessor.compileLogic({ enableCompiledLogicCache: true, requireTemplateLogic: true });
+        await templateArchiveProcessor.compileLogic(true);
+        await templateArchiveProcessor.compileLogic(true);
 
         expect(validationSpy).toHaveBeenCalledTimes(1);
     });
 
-    test('should keep plain default-exported classes working by default', async () => {
-        const template = await loadTemplate(`
-export default class PlainLogic {
-    async init(data: any) {
-        return {
-            state: {
-                $class: 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyState',
-                $identifier: data.$identifier,
-                count: 0
-            }
-        };
-    }
-
-    async trigger(data: any, request: any, state: any) {
-        return {
-            result: {
-                penalty: data.penaltyPercentage * request.goodsValue,
-                buyerMayTerminate: true,
-                $timestamp: new Date(),
-                $class: 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyResponse'
-            },
-            events: [{
-                $class: 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyEvent',
-                $timestamp: new Date(),
-                penaltyCalculated: true
-            }],
-            state: {
-                $class: 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyState',
-                $identifier: state.$identifier,
-                count: state.count + 1
-            }
-        };
-    }
-}
-`);
-        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
-        const compiledCode = await templateArchiveProcessor.compileLogic();
-        expect(compiledCode['logic/logic.ts']).toBeDefined();
-    });
-
-    test('should reject plain default-exported classes in strict mode', async () => {
+    test('should reject plain default-exported classes', async () => {
         const template = await loadTemplate(`
 export default class PlainLogic {
     async init() {
@@ -185,26 +138,7 @@ export default class PlainLogic {
 }
 `);
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
-        await expect(
-            templateArchiveProcessor.compileLogic({ requireTemplateLogic: true })
-        ).rejects.toThrow(/class extending TemplateLogic/i);
-    });
-
-    test('should not let cached non-strict compilation bypass strict validation later', async () => {
-        const template = await loadTemplate(`
-export default class PlainLogic {
-    async init() {
-        return { state: {} };
-    }
-}
-`);
-        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
-
-        await templateArchiveProcessor.compileLogic({ enableCompiledLogicCache: true });
-
-        await expect(
-            templateArchiveProcessor.compileLogic({ enableCompiledLogicCache: true, requireTemplateLogic: true })
-        ).rejects.toThrow(/class extending TemplateLogic/i);
+        await expect(templateArchiveProcessor.compileLogic()).rejects.toThrow(/class extending TemplateLogic/i);
     });
 
     test('should trigger a template', async () => {

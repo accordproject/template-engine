@@ -47,28 +47,6 @@ export type InitResponse = {
     state: State;
 }
 
-/** Options for compiling template logic. */
-export type CompileLogicOptions = {
-    enableCompiledLogicCache?: boolean;
-    requireTemplateLogic?: boolean;
-}
-
-type NormalizedCompileLogicOptions = Required<CompileLogicOptions>;
-
-function normalizeCompileLogicOptions(options: boolean | CompileLogicOptions = false): NormalizedCompileLogicOptions {
-    if (typeof options === 'boolean') {
-        return {
-            enableCompiledLogicCache: options,
-            requireTemplateLogic: false
-        };
-    }
-
-    return {
-        enableCompiledLogicCache: options.enableCompiledLogicCache ?? false,
-        requireTemplateLogic: options.requireTemplateLogic ?? false
-    };
-}
-
 /**
  * A template archive processor: can draft content using the
  * templatemark for the archive and trigger the logic of the archive
@@ -79,9 +57,6 @@ export class TemplateArchiveProcessor {
 
     /** Cache of compiled logic, keyed by script identifier. */
     private compiledLogicCache?: Record<string, TwoSlashReturn>;
-
-    /** Tracks whether strict TemplateLogic validation has already passed for this template. */
-    private strictTemplateLogicValidated = false;
 
     /** Optional LLM fallback configuration. */
     llmConfig?: LLMExecutorConfig;
@@ -125,27 +100,21 @@ export class TemplateArchiveProcessor {
     }
 
     /**
-     * Compile the logic of a template.
-     * @param {boolean|CompileLogicOptions} [options] - whether to cache the compiled logic and whether to
-     * require a class extending TemplateLogic in the main logic file
+     * Compile the logic of a template
+     * @param {boolean} [enableCompiledLogicCache] - whether to cache the compiled logic for future use
      * @returns {Promise<Record<string, TwoSlashReturn>>} the compiled code for each typescript file
      */
-    async compileLogic(options: boolean | CompileLogicOptions = false): Promise<Record<string, TwoSlashReturn>> {
-        const normalizedOptions = normalizeCompileLogicOptions(options);
+    async compileLogic(enableCompiledLogicCache: boolean = false): Promise<Record<string, TwoSlashReturn>> {
+        if (enableCompiledLogicCache && this.compiledLogicCache) {
+            return this.compiledLogicCache;
+        }
+
         const logicManager = this.template.getLogicManager();
         if (logicManager.getLanguage() === 'typescript') {
             const compiledCode: Record<string, TwoSlashReturn> = {};
             const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
-
-            if (normalizedOptions.requireTemplateLogic && !this.strictTemplateLogicValidated) {
-                const logicScript = tsFiles.find((tsFile) => tsFile.getIdentifier() === 'logic/logic.ts');
-                await this.assertTemplateLogicSubclass(logicScript);
-                this.strictTemplateLogicValidated = true;
-            }
-
-            if (normalizedOptions.enableCompiledLogicCache && this.compiledLogicCache) {
-                return this.compiledLogicCache;
-            }
+            const logicScript = tsFiles.find((tsFile) => tsFile.getIdentifier() === 'logic/logic.ts');
+            await this.assertTemplateLogicSubclass(logicScript);
 
             for (let n = 0; n < tsFiles.length; n++) {
                 const tsFile = tsFiles[n];
@@ -162,7 +131,7 @@ export class TemplateArchiveProcessor {
                 const result = compiler.compile(code);
                 compiledCode[tsFile.getIdentifier()] = result;
             }
-            if (normalizedOptions.enableCompiledLogicCache) {
+            if (enableCompiledLogicCache) {
                 this.compiledLogicCache = compiledCode;
             }
             return compiledCode;
@@ -173,7 +142,7 @@ export class TemplateArchiveProcessor {
 
     private async assertTemplateLogicSubclass(tsFile?: Script): Promise<void> {
         if (!tsFile) {
-            throw new Error('Strict template logic compilation requires a logic/logic.ts file.');
+            throw new Error('Template logic compilation requires a logic/logic.ts file.');
         }
 
         const tsImport = await import('typescript');
@@ -203,7 +172,7 @@ export class TemplateArchiveProcessor {
         });
 
         if (!hasTemplateLogicSubclass) {
-            throw new Error(`Strict template logic compilation requires ${tsFile.getIdentifier()} to define a class extending TemplateLogic.`);
+            throw new Error(`Template logic compilation requires ${tsFile.getIdentifier()} to define a class extending TemplateLogic.`);
         }
     }
 
