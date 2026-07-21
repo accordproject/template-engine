@@ -113,6 +113,9 @@ export class TemplateArchiveProcessor {
         if (logicManager.getLanguage() === 'typescript') {
             const compiledCode: Record<string, TwoSlashReturn> = {};
             const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
+            const logicScript = tsFiles.find((tsFile) => tsFile.getIdentifier() === 'logic/logic.ts');
+            await this.assertTemplateLogicSubclass(logicScript);
+
             for (let n = 0; n < tsFiles.length; n++) {
                 const tsFile = tsFiles[n];
 
@@ -134,6 +137,42 @@ export class TemplateArchiveProcessor {
             return compiledCode;
         } else {
             throw new Error('Only TypeScript is supported at this time');
+        }
+    }
+
+    private async assertTemplateLogicSubclass(tsFile?: Script): Promise<void> {
+        if (!tsFile) {
+            throw new Error('Template logic compilation requires a logic/logic.ts file.');
+        }
+
+        const tsImport = await import('typescript');
+        const tsModule = ('default' in tsImport && tsImport.default ? tsImport.default : tsImport);
+
+        const sourceFile = tsModule.createSourceFile(
+            tsFile.getIdentifier(),
+            tsFile.getContents(),
+            tsModule.ScriptTarget.Latest,
+            true,
+            tsModule.ScriptKind.TS
+        );
+
+        const hasTemplateLogicSubclass = sourceFile.statements.some((statement) => {
+            if (!tsModule.isClassDeclaration(statement) || !statement.heritageClauses) {
+                return false;
+            }
+
+            return statement.heritageClauses.some((clause) =>
+                clause.token === tsModule.SyntaxKind.ExtendsKeyword &&
+                clause.types.some((heritageType) => {
+                    const expression = heritageType.expression;
+                    return (tsModule.isIdentifier(expression) && expression.text === 'TemplateLogic') ||
+                        (tsModule.isPropertyAccessExpression(expression) && expression.name.text === 'TemplateLogic');
+                })
+            );
+        });
+
+        if (!hasTemplateLogicSubclass) {
+            throw new Error(`Template logic compilation requires ${tsFile.getIdentifier()} to define a class extending TemplateLogic.`);
         }
     }
 
