@@ -24,9 +24,15 @@ import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler
 import Script from '@accordproject/cicero-core/types/src/script';
 import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
-import { SMART_LEGAL_CONTRACT_BASE64 } from './runtime/declarations';
 import { LLMExecutor } from './llm/LLMExecutor';
 import { LLMExecutorConfig } from './llm/LLMConfig';
+import {
+    isAssignableTo,
+    RUNTIME_REQUEST_FQN,
+    RUNTIME_RESPONSE_FQN,
+    RUNTIME_STATE_FQN,
+    BASE_EVENT_FQN,
+} from './utils';
 
 /** The contract state. */
 export type State = object;
@@ -124,11 +130,34 @@ export class TemplateArchiveProcessor {
 
                 await compiler.initialize();
 
-                // add the runtime type definitions to all ts files
-                const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
-                ${tsFile.getContents()}`;
+                // The runtime type declarations (IConcept, TemplateLogic, etc.) are
+                // provided by the compilation context, with the State / Request / Response /
+                // Event type positions bound to the model-derived Runtime* unions (the
+                // concrete base plus its subclasses).
+                const result = compiler.compile(tsFile.getContents());
 
-                const result = compiler.compile(code);
+                // Surface the runtime-hierarchy constraint violation (TS2344) as a hard
+                // error. The state type argument must satisfy the RuntimeState union; a type
+                // that is structurally incompatible with the base (e.g. a concept with no
+                // $identifier used as state, or an emit that is not assignable to the base
+                // Event) fails the constraint. Structural matches to the bare base are
+                // allowed here and are instead checked nominally at runtime
+                // (assertRuntimeHierarchy). Scoped to the logic entry point and to TS2344 so
+                // that unrelated diagnostics (and non-logic scripts such as README.md) do
+                // not turn into hard failures.
+                const isLogicEntry = tsFile.getIdentifier().endsWith('logic.ts');
+                if (isLogicEntry) {
+                    const hierarchyErrors = (result.errors || [])
+                        .filter(e => e.category === 1 && e.code === 2344);
+                    if (hierarchyErrors.length > 0) {
+                        const message = hierarchyErrors.map(e => e.renderedMessage).join('\n');
+                        throw new Error(
+                            'Invalid template: State, Request, Response and Event declarations must ' +
+                            'be, or extend, their runtime base types (org.accordproject.runtime ' +
+                            `State / Request / Response and the Concerto Event).\n${message}`);
+                    }
+                }
+
                 compiledCode[tsFile.getIdentifier()] = result;
             }
             if (enableCompiledLogicCache) {
@@ -173,6 +202,29 @@ export class TemplateArchiveProcessor {
 
         if (!hasTemplateLogicSubclass) {
             throw new Error(`Template logic compilation requires ${tsFile.getIdentifier()} to define a class extending TemplateLogic.`);
+        }
+    }
+
+    /**
+     * Asserts that a runtime payload's declared type is, or extends, the given runtime
+     * base type. This enforces the runtime class hierarchy nominally (by `$class`), which
+     * the type system cannot: request is a bivariant `trigger` parameter, and State's
+     * generated interface is structurally satisfied by any identified concept. Using the
+     * model's own assignability, the bare base type and any subclass are accepted while a
+     * plain concept that does not extend the base is rejected.
+     * @param {any} payload - a serialized Concerto object (has a `$class`), or undefined
+     * @param {string} baseFqn - the fully-qualified name of the runtime base type
+     * @param {string} role - the payload's role, used in the error message
+     * @throws {Error} if the payload's type is not the base type or a subclass of it
+     */
+    private assertRuntimeHierarchy(payload: any, baseFqn: string, role: string): void {
+        if (!payload || !payload.$class) {
+            return;
+        }
+        if (!isAssignableTo(this.template.getModelManager(), payload.$class, baseFqn)) {
+            throw new Error(
+                `Invalid ${role}: '${payload.$class}' must be, or extend, the runtime ` +
+                `${role} type (${baseFqn}).`);
         }
     }
 
@@ -278,10 +330,16 @@ export class TemplateArchiveProcessor {
         const factory = new Factory(this.template.getModelManager());
         const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true, acceptResourcesForRelationships: true });
         
-        // validate inputs before execution
+        // validate inputs before execution. A stateless template's init returns an empty
+        // placeholder state ({}); skip only that. Any other state - including a non-empty
+        // object with no $class - is validated normally (and fails if malformed).
         if (data) serializer.fromJSON(data);
         if (request) serializer.fromJSON(request);
-        if (state) serializer.fromJSON(state);
+        if (state && Object.keys(state).length > 0) serializer.fromJSON(state);
+
+        // enforce the runtime class hierarchy on the inputs
+        this.assertRuntimeHierarchy(request, RUNTIME_REQUEST_FQN, 'request');
+        this.assertRuntimeHierarchy(state, RUNTIME_STATE_FQN, 'state');
 
         let triggerResponse: TriggerResponse;
         const forceLLM = this.llmConfig?.mode === 'force';
@@ -299,11 +357,18 @@ export class TemplateArchiveProcessor {
             throw new Error('No executable logic found and LLM fallback is disabled');
         }
 
-        // validate outputs after execution
-        if (triggerResponse.state) serializer.fromJSON(triggerResponse.state);
+        // validate outputs after execution (skip only the empty {} placeholder state)
+        if (triggerResponse.state && Object.keys(triggerResponse.state).length > 0) serializer.fromJSON(triggerResponse.state);
         if (triggerResponse.result) serializer.fromJSON(triggerResponse.result);
         if (triggerResponse.events && Array.isArray(triggerResponse.events)) {
             triggerResponse.events.forEach(e => serializer.fromJSON(e));
+        }
+
+        // enforce the runtime class hierarchy on the outputs
+        this.assertRuntimeHierarchy(triggerResponse.state, RUNTIME_STATE_FQN, 'state');
+        this.assertRuntimeHierarchy(triggerResponse.result, RUNTIME_RESPONSE_FQN, 'response');
+        if (triggerResponse.events && Array.isArray(triggerResponse.events)) {
+            triggerResponse.events.forEach(e => this.assertRuntimeHierarchy(e, BASE_EVENT_FQN, 'event'));
         }
 
         return triggerResponse;
@@ -340,8 +405,13 @@ export class TemplateArchiveProcessor {
             throw new Error('No executable logic found and LLM fallback is disabled');
         }
 
-        // validate outputs after execution
-        if (initResponse.state) serializer.fromJSON(initResponse.state);
+        // validate outputs after execution. A stateless template returns an empty
+        // placeholder state ({}); skip only that - any other state is validated normally.
+        if (initResponse.state && Object.keys(initResponse.state).length > 0) serializer.fromJSON(initResponse.state);
+
+        // enforce the runtime class hierarchy on the output state (skipped for the empty
+        // state of a stateless template, which has no $class)
+        this.assertRuntimeHierarchy(initResponse.state, RUNTIME_STATE_FQN, 'state');
 
         return initResponse;
     }

@@ -231,4 +231,54 @@ export default class PlainLogic {
 
         await expect(templateArchiveProcessor.trigger(validData, invalidRequest, stateResponse.state)).rejects.toThrow(/Namespace is not defined/i);
     });
+
+    const VALID_DATA = {
+        '$class': 'io.clause.latedeliveryandpenalty@0.1.0.TemplateModel',
+        'forceMajeure': true,
+        'penaltyDuration': { '$class': 'org.accordproject.time@0.3.0.Duration', 'amount': 2, 'unit': 'days' },
+        'penaltyPercentage': 10.5,
+        'capPercentage': 55,
+        'termination': { '$class': 'org.accordproject.time@0.3.0.Duration', 'amount': 15, 'unit': 'days' },
+        'fractionalPart': 'days',
+        'clauseId': 'c88e5ed7-c3e0-4249-a99c-ce9278684ac8',
+        '$identifier': 'c88e5ed7-c3e0-4249-a99c-ce9278684ac8'
+    };
+
+    it('rejects a request whose type does not extend the runtime Request', async () => {
+        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        const stateResponse = await templateArchiveProcessor.init(VALID_DATA);
+        // A well-formed Response object is a valid Concerto instance (so it passes
+        // serialization) but is not a Request - the runtime hierarchy check must reject it.
+        // This is the case the type system cannot catch (bivariant `trigger` parameter).
+        const responseAsRequest = {
+            '$class': 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyResponse',
+            'penalty': 0,
+            'buyerMayTerminate': false,
+            '$timestamp': '2019-01-31T16:34:00-05:00'
+        };
+        await expect(templateArchiveProcessor.trigger(VALID_DATA, responseAsRequest, stateResponse.state))
+            .rejects.toThrow(/Invalid request:.*must be, or extend, the runtime request type/i);
+    });
+
+    it('init does not throw for a stateless template (empty placeholder state)', async () => {
+        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        // A stateless template (no compiled `init`) yields the empty placeholder `{ state: {} }`.
+        // init() must not try to serialize/validate that classless placeholder.
+        jest.spyOn(templateArchiveProcessor as unknown as { executeTypeScriptInit: () => Promise<InitResponse> },
+            'executeTypeScriptInit').mockResolvedValue({ state: {} });
+        const response = await templateArchiveProcessor.init(VALID_DATA);
+        expect(response.state).toEqual({});
+    });
+
+    it('does not exempt a non-empty state that is missing $class (only {} is skipped)', async () => {
+        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        // A non-empty classless object is not the stateless placeholder - it must still be
+        // validated (and rejected), not silently skipped.
+        jest.spyOn(templateArchiveProcessor as unknown as { executeTypeScriptInit: () => Promise<InitResponse> },
+            'executeTypeScriptInit').mockResolvedValue({ state: { count: 1 } });
+        await expect(templateArchiveProcessor.init(VALID_DATA)).rejects.toThrow();
+    });
 });

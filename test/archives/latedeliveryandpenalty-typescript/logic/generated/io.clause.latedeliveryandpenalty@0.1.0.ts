@@ -4,8 +4,8 @@
 // imports
 import {IDuration,TemporalUnit} from './org.accordproject.time@0.3.0';
 import {IClause} from './org.accordproject.contract@0.2.0';
-import {IRequest,IResponse} from './org.accordproject.runtime@0.2.0';
-import {IEvent,IConcept} from './concerto@1.0.0';
+import {IRequest,IResponse,IState} from './org.accordproject.runtime@0.2.0';
+import {IEvent} from './concerto@1.0.0';
 
 // interfaces
 export interface ITemplateModel extends IClause {
@@ -33,7 +33,6 @@ export interface ILateDeliveryAndPenaltyEvent extends IEvent {
    penaltyCalculated: boolean;
 }
 
-export interface ILateDeliveryAndPenaltyState extends IConcept {
-   $identifier: string;
+export interface ILateDeliveryAndPenaltyState extends IState {
    count: number;
 }
