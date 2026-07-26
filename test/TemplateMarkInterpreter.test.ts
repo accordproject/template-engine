@@ -211,5 +211,12 @@ concept TemplateData {
                 'bullet'
             );
         });
+
+        test('olist body with leading text yields populated items', async () => {
+            await expectVariablesResolved(
+                '{{#olist volumeDiscounts}}\nAbove {{volumeAbove}} units: {{rate}}% off\n{{/olist}}\n',
+                'ordered'
+            );
+        });
     });
 });
