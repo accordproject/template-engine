@@ -141,6 +141,10 @@ concept TemplateData {
                 { $class: 'volumediscount@1.0.0.VolumeDiscount', volumeAbove: 500, rate: 10 },
             ]
         };
+        const LIST_CASES: Array<['ulist' | 'olist', 'bullet' | 'ordered']> = [
+            ['ulist', 'bullet'],
+            ['olist', 'ordered'],
+        ];
 
         async function renderList(content: string): Promise<any> {
             const modelManager = new ModelManager();
@@ -190,32 +194,18 @@ concept TemplateData {
 
         // Failure mode A: a VariableDefinition is the very first inline node, which
         // triggered `getJsonPath` to throw `Paths must be supplied`.
-        test('ulist body starting with a variable does not throw and resolves values', async () => {
+        test.each(LIST_CASES)('%s body starting with a variable does not throw and resolves values', async (templateListType, renderedListType) => {
             await expectVariablesResolved(
-                '{{#ulist volumeDiscounts}}\n{{volumeAbove}} units at {{rate}}%\n{{/ulist}}\n',
-                'bullet'
-            );
-        });
-
-        test('olist body starting with a variable does not throw and resolves values', async () => {
-            await expectVariablesResolved(
-                '{{#olist volumeDiscounts}}\n{{volumeAbove}} units at {{rate}}%\n{{/olist}}\n',
-                'ordered'
+                `{{#${templateListType} volumeDiscounts}}\n{{volumeAbove}} units at {{rate}}%\n{{/${templateListType}}}\n`,
+                renderedListType
             );
         });
 
         // Failure mode B: leading text means no throw, but Items were silently empty.
-        test('ulist body with leading text yields populated items', async () => {
+        test.each(LIST_CASES)('%s body with leading text yields populated items', async (templateListType, renderedListType) => {
             await expectVariablesResolved(
-                '{{#ulist volumeDiscounts}}\nAbove {{volumeAbove}} units: {{rate}}% off\n{{/ulist}}\n',
-                'bullet'
-            );
-        });
-
-        test('olist body with leading text yields populated items', async () => {
-            await expectVariablesResolved(
-                '{{#olist volumeDiscounts}}\nAbove {{volumeAbove}} units: {{rate}}% off\n{{/olist}}\n',
-                'ordered'
+                `{{#${templateListType} volumeDiscounts}}\nAbove {{volumeAbove}} units: {{rate}}% off\n{{/${templateListType}}}\n`,
+                renderedListType
             );
         });
     });
