@@ -4,7 +4,6 @@ import { TemplateMarkInterpreter } from '../src';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { readFileSync, readdirSync } from 'fs';
 import * as path from 'path';
-import { loadOfflineExternalModels } from './support/externalModels';
 
 const CLAUSE_LIBRARY = {
     'clauses': [
@@ -37,6 +36,8 @@ const CLAUSE_LIBRARY = {
 
 const GOOD_TEMPLATES_ROOT = './test/templates/good';
 const BAD_TEMPLATES_ROOT = './test/templates/bad';
+const MONEY_MODEL_FILE = '@models.accordproject.org.money@0.3.0.cto';
+const MONEY_MODEL = readFileSync(path.join(__dirname, 'models', MONEY_MODEL_FILE), 'utf-8');
 
 describe('templatemark interpreter', () => {
     jest.setTimeout(30000);
@@ -71,8 +72,8 @@ describe('templatemark interpreter', () => {
             const data = JSON.parse(readFileSync(`${GOOD_TEMPLATES_ROOT}/${templateName}/data.json`, 'utf-8'));
 
             const modelManager = new ModelManager();
-            loadOfflineExternalModels(modelManager);
-            modelManager.addCTOModel(model, undefined, true);
+            modelManager.addCTOModel(MONEY_MODEL, MONEY_MODEL_FILE);
+            modelManager.addCTOModel(model);
             const engine = new TemplateMarkInterpreter(modelManager, CLAUSE_LIBRARY);
 
             const templateMarkTransformer = new TemplateMarkTransformer();
