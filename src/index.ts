@@ -18,3 +18,8 @@ export { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 export { TemplateArchiveProcessor } from './TemplateArchiveProcessor';
 export { TemplateLogic }
 export * from './utils';
+
+// Re-exported for convenience so a single browser bundle can run the full
+// model -> template -> agreement flow (and so consumers share one concerto instance).
+export { ModelManager } from '@accordproject/concerto-core';
+export { TemplateMarkTransformer } from '@accordproject/markdown-template';

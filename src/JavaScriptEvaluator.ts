@@ -223,7 +223,7 @@ export class JavaScriptEvaluator {
         } catch(err) { // eslint-disable-line @typescript-eslint/no-unused-vars
             // if we cannot load the module it likely means we are running
             // a unit test inside the module...
-            return path.join(__dirname, '..', 'dist', 'worker.js');
+            return path.join(__dirname, '..', 'lib', 'worker.js');
         }
     }
     private doWork(work: WorkItem, options: EvalOptions): Promise<EvalResponse> {
