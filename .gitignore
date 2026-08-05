@@ -10,7 +10,9 @@ output.html
 output
 test.html
 examples/
-
+templates/
+compare-outputs.test.mjs
+scripts/run-all-stateless.js
 .env
 .env.*
 !.env.example

@@ -32,6 +32,8 @@ import {
     RUNTIME_RESPONSE_FQN,
     RUNTIME_STATE_FQN,
     BASE_EVENT_FQN,
+    RUNTIME_OBLIGATION_FQN,
+    RUNTIME_CONTRACT_FQN,
 } from './utils';
 
 /** The contract state. */
@@ -121,7 +123,6 @@ export class TemplateArchiveProcessor {
             const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
             const logicScript = tsFiles.find((tsFile) => tsFile.getIdentifier() === 'logic/logic.ts');
             await this.assertTemplateLogicSubclass(logicScript);
-
             for (let n = 0; n < tsFiles.length; n++) {
                 const tsFile = tsFiles[n];
 
@@ -169,6 +170,84 @@ export class TemplateArchiveProcessor {
         }
     }
 
+    /**
+     * Asserts that a runtime payload's declared type is, or extends, the given runtime
+     * base type. This enforces the runtime class hierarchy nominally (by `$class`), which
+     * the type system cannot: request is a bivariant `trigger` parameter, and State's
+     * generated interface is structurally satisfied by any identified concept. Using the
+     * model's own assignability, the bare base type and any subclass are accepted while a
+     * plain concept that does not extend the base is rejected.
+     * @param {any} payload - a serialized Concerto object (has a `$class`), or undefined
+     * @param {string} baseFqn - the fully-qualified name of the runtime base type
+     * @param {string} role - the payload's role, used in the error message
+     * @throws {Error} if the payload's type is not the base type or a subclass of it
+     */
+    private assertRuntimeHierarchy(payload: any, baseFqn: string, role: string): void {
+        if (!payload || !payload.$class) {
+            return;
+        }
+        if (!isAssignableTo(this.template.getModelManager(), payload.$class, baseFqn)) {
+            throw new Error(
+                `Invalid ${role}: '${payload.$class}' must be, or extend, the runtime ` +
+                `${role} type (${baseFqn}).`);
+        }
+    }
+
+    /**
+     * Populates the `contract` back-reference that `org.accordproject.runtime.Obligation`
+     * (and therefore any event that extends it, e.g. a template's `PaymentObligationEvent`)
+     * requires, so that template logic never has to set it explicitly.
+     *
+     * Only events whose `contract` field is not already set are touched, so template logic
+     * that deliberately points an obligation at a different contract is left alone. Filling
+     * the field in is only meaningful when the template's own data model is itself a
+     * `Contract` (or a subtype of it) - that's the only instance in scope at `trigger()` time
+     * that the relationship is allowed to point to. The `Serializer` this class uses is
+     * constructed with `acceptResourcesForRelationships: true`, so handing it the full `data`
+     * resource is enough for it to resolve the relationship from that resource's own
+     * `$class`/identifier.
+     * @param {Event[]} events - the events returned by the template logic, mutated in place
+     * @param {any} data - the contract/clause data instance passed into trigger()
+     * @throws {Error} if an Obligation-derived event is missing `contract` and the template's
+     * data model does not extend Contract, so there is nothing valid to auto-populate with
+     */
+    private populateObligationBackReferences(events: Event[], data: any): void {
+        const modelManager = this.template.getModelManager();
+        events.forEach((event: any) => {
+            if (!event || !event.$class || event.contract) {
+                return;
+            }
+            if (!isAssignableTo(modelManager, event.$class, RUNTIME_OBLIGATION_FQN)) {
+                return;
+            }
+            if (data && data.$class && isAssignableTo(modelManager, data.$class, RUNTIME_CONTRACT_FQN)) {
+                // Relationship fields must be a "<fq-class>#<id>" string, not the full resource.
+                // Assigning `data` directly (as before) satisfies acceptResourcesForRelationships
+                // during population, but validate() then rejects it: that flag only relaxes what
+                // the populator will accept as *input*, it doesn't change what a relationship field
+                // is allowed to *hold* afterward - it still must be a Relationship, not a Resource.
+                const classDecl = modelManager.getType(data.$class);
+                const idField = classDecl.getIdentifierFieldName();
+                const idValue = idField ? data[idField] : undefined;
+                if (!idField || idValue === undefined) {
+                    throw new Error(
+                        `Cannot populate the required 'contract' back-reference on event '${event.$class}': ` +
+                        `the data model '${data.$class}' has no resolvable identifier value for field '${idField}'.`
+                    );
+                }
+                event.contract = `${idValue}`;
+                return;
+            }
+            throw new Error(
+                `Cannot populate the required 'contract' back-reference on event '${event.$class}': ` +
+                `it extends ${RUNTIME_OBLIGATION_FQN}, but this template's data model ` +
+                `('${data?.$class ?? 'undefined'}') does not extend ${RUNTIME_CONTRACT_FQN}. Either ` +
+                "change the template model to extend Contract, or have the template logic set " +
+                "'contract' explicitly on the event before returning it."
+            );
+        });
+    }
+
     private async assertTemplateLogicSubclass(tsFile?: Script): Promise<void> {
         if (!tsFile) {
             throw new Error('Template logic compilation requires a logic/logic.ts file.');
@@ -206,29 +285,6 @@ export class TemplateArchiveProcessor {
     }
 
     /**
-     * Asserts that a runtime payload's declared type is, or extends, the given runtime
-     * base type. This enforces the runtime class hierarchy nominally (by `$class`), which
-     * the type system cannot: request is a bivariant `trigger` parameter, and State's
-     * generated interface is structurally satisfied by any identified concept. Using the
-     * model's own assignability, the bare base type and any subclass are accepted while a
-     * plain concept that does not extend the base is rejected.
-     * @param {any} payload - a serialized Concerto object (has a `$class`), or undefined
-     * @param {string} baseFqn - the fully-qualified name of the runtime base type
-     * @param {string} role - the payload's role, used in the error message
-     * @throws {Error} if the payload's type is not the base type or a subclass of it
-     */
-    private assertRuntimeHierarchy(payload: any, baseFqn: string, role: string): void {
-        if (!payload || !payload.$class) {
-            return;
-        }
-        if (!isAssignableTo(this.template.getModelManager(), payload.$class, baseFqn)) {
-            throw new Error(
-                `Invalid ${role}: '${payload.$class}' must be, or extend, the runtime ` +
-                `${role} type (${baseFqn}).`);
-        }
-    }
-
-    /**
      * Determines whether LLM fallback is enabled.
      * @returns {boolean} true if an LLM config is present and not disabled
      */
@@ -255,12 +311,13 @@ export class TemplateArchiveProcessor {
      * Executes the template's compiled TypeScript trigger logic.
      * @param {any} data - the data for the template
      * @param {any} request - the request to send to the template logic
-     * @param {any} [state] - the current state of the template
+     * @param {any} [priorState] - the state produced by init() (or a previous
+     * trigger()); required for stateful templates, ignored for stateless ones
      * @param {string} [currentTime] - the current time, defaults to now
      * @param {number} [utcOffset] - the UTC offset, defaults to zero
      * @returns {Promise<TriggerResponse>} the response and any events
      */
-    private async executeTypeScriptTrigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number): Promise<TriggerResponse> {
+    private async executeTypeScriptTrigger(data: any, request: any, priorState?: any, currentTime?: string, utcOffset?: number): Promise<TriggerResponse> {
         const compiledCode = await this.compileLogic();
         const resolvedTime = currentTime ?? new Date().toISOString();
         const resolvedOffset = utcOffset ?? 0;
@@ -271,7 +328,7 @@ export class TemplateArchiveProcessor {
             functionName: 'trigger',
             code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
             argumentNames: ['data', 'request', 'state'],
-            arguments: [data, request, state, resolvedTime, resolvedOffset]
+            arguments: [data, request, priorState, resolvedTime, resolvedOffset]
         });
         if (evalResponse.result) {
             return evalResponse.result as TriggerResponse;
@@ -318,28 +375,52 @@ export class TemplateArchiveProcessor {
 
     /**
      * Trigger the logic of a template.
+     *
+     * Stateful templates (`this.template.isStateful()`) carry state across
+     * executions, so they must always be seeded with `priorState` — the state
+     * returned by a prior call to {@link init} (or by a prior call to
+     * `trigger`) — before a request can be evaluated. There is no implicit
+     * "empty" state for a template that declares custom State fields; calling
+     * `trigger` without `priorState` for such a template throws. Stateless
+     * templates ignore `priorState` entirely.
      * @param {object} data - the data for the template
      * @param {object} request - the request to send to the template logic
-     * @param {object} state - the current state of the template
+     * @param {object} priorState - the state to evaluate the request against.
+     * For stateful templates this is required and must be the state produced
+     * by init() or a previous trigger(); for stateless templates it is ignored.
      * @param {[string]} currentTime - the current time, defaults to now
      * @param {[number]} utcOffset - the UTC offset, defaults to zero
      * @param {boolean} [enableCompiledLogicCache] - whether to use the compiled logic cache
      * @returns {Promise<TriggerResponse>} the response and any events
+     * @throws {Error} if the template is stateful and no priorState is supplied, or if an
+     * emitted event extends `org.accordproject.runtime.Obligation` and its `contract`
+     * back-reference can't be auto-populated (see {@link populateObligationBackReferences})
      */
-    async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<TriggerResponse> {
+    async trigger(data: any, request: any, priorState?: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<TriggerResponse> {
         const factory = new Factory(this.template.getModelManager());
-        const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true, acceptResourcesForRelationships: true });
-        
+        const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true});
+
+        // Stateful templates must always be triggered against the state produced by
+        // init() (or a previous trigger()) — there is no implicit "empty" state for
+        // a template that declares custom State fields. Stateless templates have no
+        // persistent state, so priorState is not required for them.
+        if (this.template.isStateful() && (!priorState || Object.keys(priorState).length === 0)) {
+            throw new Error(
+                'Stateful templates require priorState: call init() first and pass its ' +
+                'returned state (or the state returned by a previous trigger()) as priorState.'
+            );
+        }
+
         // validate inputs before execution. A stateless template's init returns an empty
         // placeholder state ({}); skip only that. Any other state - including a non-empty
         // object with no $class - is validated normally (and fails if malformed).
         if (data) serializer.fromJSON(data);
         if (request) serializer.fromJSON(request);
-        if (state && Object.keys(state).length > 0) serializer.fromJSON(state);
+        if (priorState && Object.keys(priorState).length > 0) serializer.fromJSON(priorState);
 
         // enforce the runtime class hierarchy on the inputs
         this.assertRuntimeHierarchy(request, RUNTIME_REQUEST_FQN, 'request');
-        this.assertRuntimeHierarchy(state, RUNTIME_STATE_FQN, 'state');
+        this.assertRuntimeHierarchy(priorState, RUNTIME_STATE_FQN, 'state');
 
         let triggerResponse: TriggerResponse;
         const forceLLM = this.llmConfig?.mode === 'force';
@@ -349,10 +430,10 @@ export class TemplateArchiveProcessor {
             if (enableCompiledLogicCache) {
                 await this.compileLogic(true);
             }
-            triggerResponse = await this.executeTypeScriptTrigger(data, request, state, currentTime, utcOffset);
+            triggerResponse = await this.executeTypeScriptTrigger(data, request, priorState, currentTime, utcOffset);
         } else if (forceLLM || this.shouldUseLLM()) {
             // Otherwise use the LLM executor
-            triggerResponse = await this.makeLLMExecutor().trigger(data, request, state, currentTime, utcOffset);
+            triggerResponse = await this.makeLLMExecutor().trigger(data, request, priorState, currentTime, utcOffset);
         } else {
             throw new Error('No executable logic found and LLM fallback is disabled');
         }
@@ -361,6 +442,7 @@ export class TemplateArchiveProcessor {
         if (triggerResponse.state && Object.keys(triggerResponse.state).length > 0) serializer.fromJSON(triggerResponse.state);
         if (triggerResponse.result) serializer.fromJSON(triggerResponse.result);
         if (triggerResponse.events && Array.isArray(triggerResponse.events)) {
+            this.populateObligationBackReferences(triggerResponse.events, data);
             triggerResponse.events.forEach(e => serializer.fromJSON(e));
         }
 
@@ -384,7 +466,7 @@ export class TemplateArchiveProcessor {
      */
     async init(data: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<InitResponse> {
         const factory = new Factory(this.template.getModelManager());
-        const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true, acceptResourcesForRelationships: true });
+        const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true});
         
         // validate inputs before execution
         if (data) serializer.fromJSON(data);
