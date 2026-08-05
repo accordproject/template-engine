@@ -300,14 +300,37 @@ async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary
                         throw new Error(`Values found for path '${path}' in data ${data} is not an array: ${arrayData}.`);
                     }
                     else {
+                        // The shape of the ListBlockDefinition's children depends on whether
+                        // the markdown parser produced a CommonMark List/Item wrapping. That
+                        // wrapping is only emitted when the items have leading list markers
+                        // (e.g. `- ` for ulist, `1. ` for olist). When users put direct
+                        // variable references inside `{{#ulist}}` / `{{#olist}}` with no
+                        // leading marker (see #145), the body is parsed as a single Paragraph
+                        // directly under the ListBlockDefinition.
+                        const firstChild = context.nodes[0];
+                        const hasListWrapper = firstChild &&
+                            firstChild.$class === `${CommonMarkModel.NAMESPACE}.List` &&
+                            Array.isArray(firstChild.nodes) &&
+                            firstChild.nodes.length > 0;
+                        // When wrapped, the per-iteration template is the first Item inside
+                        // the List. Otherwise the ListBlockDefinition's first child IS the
+                        // per-iteration template (typically a Paragraph).
+                        const itemTemplate = hasListWrapper ? firstChild.nodes[0] : firstChild;
                         const nodes = [];
                         for (let n = 0; n < arrayData.length; n++) {
                             const arrayItem = arrayData[n];
                             // arrayItem is now the data for the nested generation
-                            const subResult = await generateAgreement(modelManager, clauseLibrary, context.nodes[0].nodes[0], arrayItem, options);
+                            const subResult = await generateAgreement(modelManager, clauseLibrary, itemTemplate, arrayItem, options);
+                            // When the template had a List/Item wrapper, the processed Item's
+                            // children (a Paragraph) become the children of the new output Item.
+                            // Otherwise the processed block itself becomes the sole child of
+                            // the new output node, preserving a valid block hierarchy.
+                            const childNodes = hasListWrapper
+                                ? (subResult.nodes ? subResult.nodes : [])
+                                : [subResult];
                             nodes.push({
                                 $class: childNodeClass,
-                                nodes: subResult.nodes ? subResult.nodes : []
+                                nodes: childNodes
                             });
                         }
                         result[thisPath.join('/')] = nodes;
