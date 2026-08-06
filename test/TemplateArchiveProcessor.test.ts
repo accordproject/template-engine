@@ -6,38 +6,19 @@ import { TemplateArchiveProcessor, InitResponse, TriggerResponse } from '../src/
 
 const TEMPLATE_DIR = 'test/archives/latedeliveryandpenalty-typescript';
 
-async function fromDirectoryOffline(templateDir: string): Promise<Template> {
-    const originalValidate = Template.prototype.validate;
-    Template.prototype.validate = function validateOffline(options = {}) {
-        return originalValidate.call(this, {...options, offline: true});
-    };
-
-    try {
-        return await Template.fromDirectory(templateDir, {offline: true});
-    } finally {
-        Template.prototype.validate = originalValidate;
-    }
-}
-
 async function loadTemplate(logicSource?: string): Promise<Template> {
     if (!logicSource) {
-        return fromDirectoryOffline(TEMPLATE_DIR);
+        return Template.fromDirectory(TEMPLATE_DIR, {offline: true});
     }
 
     const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'template-engine-logic-'));
     const tempDir = path.join(tempRoot, 'template');
     cpSync(TEMPLATE_DIR, tempDir, { recursive: true });
     writeFileSync(path.join(tempDir, 'logic', 'logic.ts'), logicSource);
-    return fromDirectoryOffline(tempDir);
+    return Template.fromDirectory(tempDir, {offline: true});
 }
 
 describe('template archive processor', () => {
-    test('should restore template validation after offline loading', async () => {
-        const originalValidate = Template.prototype.validate;
-        await loadTemplate();
-        expect(Template.prototype.validate).toBe(originalValidate);
-    });
-
     test('should draft a template', async () => {
         const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
