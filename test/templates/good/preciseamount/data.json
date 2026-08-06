@@ -1,0 +1,13 @@
+{
+    "$class": "preciseamount@1.0.0.TemplateData",
+    "payment": {
+        "$class": "org.accordproject.money@1.0.0.PreciseAmount",
+        "unscaledValue": "123400",
+        "unit": {
+            "$class": "org.accordproject.money@1.0.0.Unit",
+            "code": "USD",
+            "scale": 2,
+            "scheme": "iso4217"
+        }
+    }
+}
