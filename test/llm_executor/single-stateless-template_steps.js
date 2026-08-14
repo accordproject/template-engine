@@ -8,7 +8,6 @@ const { Template } = require("@accordproject/cicero-core");
 
 const { TEMPLATE_PATH, TEMPLATE_ARCHIVE_PROCESSOR_LIB, EXEC_PROVIDERS, JUDGE_PROVIDERS } = require("./config");
 
-// eslint-disable-next-line import/no-dynamic-require, global-require
 const { TemplateArchiveProcessor } = require(TEMPLATE_ARCHIVE_PROCESSOR_LIB);
 
 /** @param {string} templatePath */
@@ -150,7 +149,7 @@ function parseJudgeJson(text) {
   const cleaned = text.replace(/```json/g, "").replace(/```/g, "").trim();
   try {
     return JSON.parse(cleaned);
-  } catch (err) {
+  } catch {
     throw new Error(`Judge did not return valid JSON. Raw response:\n${text}`);
   }
 }
