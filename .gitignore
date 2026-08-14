@@ -13,6 +13,8 @@ examples/
 templates/
 compare-outputs.test.mjs
 scripts/run-all-stateless.js
+scripts/run-all-stateful.js
+llm-judge-compare.test.mjs
 .env
 .env.*
 !.env.example
