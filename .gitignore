@@ -18,3 +18,4 @@ llm-judge-compare.test.mjs
 .env
 .env.*
 !.env.example
+.claude

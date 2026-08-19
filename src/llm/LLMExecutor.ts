@@ -426,6 +426,20 @@ function assertTriggerShape(value: any, stateless = false): asserts value is Tri
 }
 
 /**
+ * Normalise a request's `$timestamp` to an ISO-8601 string. Concerto-
+ * deserialized requests expose a `Date`; raw JSON requests expose a string.
+ * @param request - the incoming request, may be undefined
+ * @returns the request timestamp as an ISO string, or null when the request
+ * carries no usable `$timestamp`
+ */
+function getRequestTimestamp(request: any): string | null {
+  const raw = request?.$timestamp;
+  if (!raw) return null;
+  const date = raw instanceof Date ? raw : new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+/**
  * Inject Accord Project runtime metadata (`$timestamp` on result/events,
  * `$identifier` on state), mirroring canonical Cicero engine output. Property
  * order is irrelevant — Concerto does not enforce it — so the fields are simply
@@ -669,7 +683,8 @@ export class LLMExecutor {
    * @param priorState - the state to evaluate the request against. Required
    * for stateful templates (must originate from init() or a previous
    * trigger()); ignored for stateless templates.
-   * @param currentTime - the current time, defaults to now
+   * @param currentTime - the current time. Only used when the request carries
+   * no `$timestamp`, which always takes precedence; defaults to now
    * @param utcOffset - the UTC offset, defaults to zero
    * @returns the response, updated state, and any events
    * @throws {Error} if the template is stateful and no priorState is supplied
@@ -691,7 +706,8 @@ export class LLMExecutor {
     }
 
     const context = this.buildSharedContext();
-    const timestamp = currentTime ?? new Date().toISOString();
+    // The request's own `$timestamp` wins, then currentTime, then now.
+    const timestamp = getRequestTimestamp(request) ?? currentTime ?? new Date().toISOString();
 
     const isStateless = this.stateless;
     const systemPrompt = isStateless
