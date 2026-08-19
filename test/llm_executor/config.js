@@ -1,18 +1,55 @@
 "use strict";
 
+const fs = require("fs");
 const path = require("path");
 
-/** Path to the template directory under test (set per run, no default). */
-const TEMPLATE_PATH = process.env.TEMPLATE_PATH ? path.resolve(process.env.TEMPLATE_PATH) : null;
+/** Root directory template labels are resolved against. */
+const TEMPLATE_DIR = process.env.TEMPLATE_DIR
+  ? path.resolve(process.env.TEMPLATE_DIR)
+  : path.join(__dirname, "..", "templates");
+
+/** A directory is a template if it carries a package.json (vs. a grouping folder). */
+function isTemplateDir(dir) {
+  return fs.existsSync(path.join(dir, "package.json"));
+}
+
+/**
+ * Resolves a feature file's template label to a directory under TEMPLATE_DIR.
+ * @param {string} label - the label from the feature file's Given step.
+ * @returns {string} absolute path to the template directory.
+ */
+function resolveTemplatePath(label) {
+  if (!label || typeof label !== "string") {
+    throw new Error(`Template label must be a non-empty string, got: ${JSON.stringify(label)}`);
+  }
+
+  if (!fs.existsSync(TEMPLATE_DIR)) {
+    throw new Error(`TEMPLATE_DIR does not exist: ${TEMPLATE_DIR}`);
+  }
+
+  const templatePath = path.join(TEMPLATE_DIR, label);
+  if (!isTemplateDir(templatePath)) {
+    throw new Error(
+      `No template found for "${label}": ${templatePath} is not a template directory ` +
+        `(no package.json). Either fix the label in the feature file's Given step, or point ` +
+        `TEMPLATE_DIR (currently ${TEMPLATE_DIR}) at the folder holding the template.`
+    );
+  }
+  return templatePath;
+}
+
+/** Per-step timeout (ms) for the stateful suite's "for each request in sequence" steps. */
+const STATEFUL_SEQUENCE_TIMEOUT_MS = process.env.STATEFUL_SEQUENCE_TIMEOUT_MS
+  ? Number(process.env.STATEFUL_SEQUENCE_TIMEOUT_MS)
+  : 300000;
 
 /** Path to the template archive processor library. */
 const TEMPLATE_ARCHIVE_PROCESSOR_LIB =
   process.env.TEMPLATE_ARCHIVE_PROCESSOR_LIB || path.join(__dirname, "..", "..", "lib", "index");
 
 /**
- * Execution providers usable by the LLM ("force") executor, keyed by
- * provider name. The name is what the feature file passes to
- * `I run the LLM executor in force mode using provider "<name>"`.
+ * Execution providers for the LLM ("force") executor, keyed by the name a
+ * feature file passes to `I run the LLM executor in force mode using provider "<name>"`.
  */
 const EXEC_PROVIDERS = {
   mistral: {
@@ -38,9 +75,11 @@ const EXEC_PROVIDERS = {
   anthropic: {
     provider: "anthropic",
     apiKey: process.env.ANTHROPIC_API_KEY,
-    model: process.env.EXEC_MODEL_ANTHROPIC || "claude-sonnet-4-6",
-    temperature: 0,
-    maxTokens: 4096,
+    model: process.env.EXEC_MODEL_ANTHROPIC || "claude-opus-4-8",
+    // No `temperature`: Opus 4.7+ / Sonnet 5 reject sampling parameters.
+    effort: process.env.EXEC_EFFORT_ANTHROPIC || "medium",
+    // Adaptive thinking is on by default and its tokens come out of maxTokens.
+    maxTokens: 16000,
     retries: 2,
     timeoutMs: 60000,
     isStructuredOutputSupported: true,
@@ -48,7 +87,8 @@ const EXEC_PROVIDERS = {
   openai: {
     provider: "openai",
     apiKey: process.env.OPENAI_API_KEY,
-    model: process.env.EXEC_MODEL_OPENAI || "gpt-4o",
+    model: process.env.EXEC_MODEL_OPENAI || "gpt-5.6",
+    effort: process.env.EXEC_EFFORT_OPENAI,
     temperature: 0,
     maxTokens: 4096,
     retries: 2,
@@ -58,21 +98,14 @@ const EXEC_PROVIDERS = {
 };
 
 /**
- * LLM judges usable by the judge step, keyed by provider name. The name is
- * what the feature file passes to
- * `Then the LLM judge "<name>" should find the two outputs equivalent`.
- *
- * Each entry carries its own request/response shape so
- * `single-stateless-template_steps.js` can call any of them the same way:
- *   url(model, apiKey)   -> request URL
- *   headers(apiKey)      -> request headers
- *   body(prompt, model)  -> request body
- *   extractText(data)    -> judge's text response, parsed from the JSON body
+ * LLM judges for the judge step, keyed by the name a feature file passes to
+ * `Then the LLM judge "<name>" should find ...`. Each entry carries its own
+ * url/headers/body/extractText so judge.js can call any of them the same way.
  */
 const JUDGE_PROVIDERS = {
   anthropic: {
     provider: "anthropic",
-    model: process.env.JUDGE_MODEL_ANTHROPIC || "claude-sonnet-4-5",
+    model: process.env.JUDGE_MODEL_ANTHROPIC || "claude-opus-4-5",
     envKey: "ANTHROPIC_API_KEY",
     apiKey: process.env.ANTHROPIC_API_KEY,
     url: () => "https://api.anthropic.com/v1/messages",
@@ -142,7 +175,9 @@ const JUDGE_PROVIDERS = {
 };
 
 module.exports = {
-  TEMPLATE_PATH,
+  TEMPLATE_DIR,
+  resolveTemplatePath,
+  STATEFUL_SEQUENCE_TIMEOUT_MS,
   TEMPLATE_ARCHIVE_PROCESSOR_LIB,
   EXEC_PROVIDERS,
   JUDGE_PROVIDERS,
