@@ -1,102 +1,126 @@
 # LLM Executor
 
-The LLM executor runs an Accord Project template's `init` and `trigger` operations through an LLM instead of compiled Ergo/TypeScript logic. It's a fallback (or forced alternative) for templates with no executable logic, or when you want a model to infer contract behaviour.
+Runs a template's `init` / `trigger` through an LLM instead of compiled TypeScript logic — a fallback for templates with no executable logic, or a forced alternative when you want the model to infer contract behaviour.
 
-The design goal: give the model exactly the right context — only the request/response/state/event types of *this* template (and their dependencies), as a strict JSON Schema the provider can enforce. We get there by tree-shaking the template's Concerto model.
+The whole design is one idea: **give the model only this template's types, as a strict JSON Schema the provider enforces.** We get there by tree-shaking the template's Concerto model down to the request/response/state/event types and their dependencies.
 
 ## Module map
 
 | File | Responsibility |
 | --- | --- |
-| `src/llm/ModelManagerSchema.ts` | Detects the template's root types and tree-shakes the `ModelManager` down to a minimal schema + reduced `.cto` set. |
-| `src/llm/LLMExecutor.ts` | Builds the `init`/`trigger` JSON Schemas, prompts the model, validates and post-processes the response. |
-| `src/llm/Reasoners.ts` | Thin provider clients (OpenAI / Anthropic) with native structured-output support. |
-| `src/llm/LLMConfig.ts` | Configuration types (provider, model, temperature, retries, …). |
+| [ModelManagerSchema.ts](../src/llm/ModelManagerSchema.ts) | Tree-shakes the `ModelManager` to a minimal JSON Schema `definitions` map. |
+| [LLMExecutor.ts](../src/llm/LLMExecutor.ts) | Builds the `init`/`trigger` schemas, prompts the model, validates and post-processes the reply. |
+| [Reasoners.ts](../src/llm/Reasoners.ts) | Provider clients behind one `complete(messages, schema)` interface. |
+| [LLMConfig.ts](../src/llm/LLMConfig.ts) | Config types — provider union, per-provider effort levels. |
 
-## Detect types, don't guess names
+## Quick start
 
-A template declares four kinds of runtime types. The executor resolves them from the model itself — never by matching type names, since templates name things inconsistently (a response called `PayOut`, a state that's just a plain `concept …State`, etc).
+```ts
+import { TemplateArchiveProcessor } from '@accordproject/template-engine';
 
-| Root | How it's detected | Why |
-| --- | --- | --- |
-| **request** | Concrete subclasses of `org.accordproject.runtime@*.Request` (`template.getRequestTypes()`). | Requests always extend the runtime base. |
-| **response** | Concrete subclasses of `org.accordproject.runtime@*.Response` (`template.getResponseTypes()`). | Reliable even when named `PayOut`, `Payout`, etc. |
-| **state** | Subclasses of the runtime `State` base, or any concrete declaration whose name ends in `State`. | Some templates declare state as `concept FooState identified {}` without extending the runtime base — the accessor alone misses these. |
-| **events** | Every concrete `event` declaration in the model. | `getEmitTypes()` only finds `Obligation` subclasses, so plain `event`s get missed. |
+const processor = new TemplateArchiveProcessor(template, {
+  mode: 'force',                    // 'disabled' | 'fallback' | 'force'
+  provider: {
+    provider: 'anthropic',
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    model: 'claude-opus-4-8',
+    effort: 'medium',
+    maxTokens: 16000,               // thinking tokens come out of this budget
+    retries: 2,
+    isStructuredOutputSupported: true,
+  },
+  verbose: true,
+});
 
-All four come back as lists (`getRootTypes()` → `{ requests, responses, states, events }`) since a template can declare several of each.
+const { state } = await processor.init(data);
+const { result, events, state: next } = await processor.trigger(data, request, state);
+```
 
-A template is stateless when no state type is found — `init` returns `{}` and `trigger` omits `state` entirely.
+`mode` decides the routing in `TemplateArchiveProcessor`:
 
-## Model tree-shaking
+| Mode | Behaviour |
+| --- | --- |
+| `disabled` | Never uses the LLM; throws if the template has no logic. |
+| `fallback` | TypeScript logic when `template.hasLogic()`, otherwise the LLM. |
+| `force` | Always the LLM, even when compiled logic exists (used by the test suite for A/B comparison). |
 
-Every type in the model is a vertex; every dependency (field type, supertype, relationship, map key/value, decorator) is an edge. Tree-shaking keeps only what's reachable from the root types.
+Outputs are validated by Concerto (`Serializer.fromJSON`) and checked against the runtime class hierarchy after execution, whichever path produced them — the LLM gets no free pass.
 
-`treeShakeModel` in `ModelManagerSchema.ts`:
+**Stateless templates** (`isStateful() === false`): `init` returns `{ state: {} }` and `trigger` omits `state` from both the schema and the required keys. **Stateful templates** require `priorState` on `trigger` — `trigger()` throws if it's missing or empty, since there's no implicit empty state for a template with declared state fields.
+
+## Tree-shaking the model
+
+`treeShakeModel(template, roots)` returns `{ definitions }` — a JSON Schema definitions map containing only the types reachable from the roots.
 
 ```ts
 const graph = new DirectedGraph();
 modelManager.accept(new ConcertoGraphVisitor(), { graph, includeDerivedTypes: true });
 
-const connected = graph.findConnectedGraph(roots);            // BFS from roots
-const filtered  = modelManager.filter(d =>                    // keep reachable only
-  connected.hasVertex(d.getFullyQualifiedName()));
-
-const schema = filtered.accept(new JSONSchemaVisitor(), {});  // { definitions }
+const connected = graph.findConnectedGraph(roots);              // BFS from roots
+const filtered  = modelManager.filter(d => connected.hasVertex(d.getFullyQualifiedName()));
+const schema    = filtered.accept(new JSONSchemaVisitor(), {}); // { definitions }
 ```
 
-- `includeDerivedTypes: true` adds reverse edges (supertype → subtype), so keeping a base type also keeps its concrete subtypes.
-- `findConnectedGraph` takes an array of roots and returns the maximal subgraph reachable from any of them.
-- The reduced `.cto` files are collected too and sent as prompt context, so the model never sees the whole model.
+Every type is a vertex; every field, supertype, relationship, map key/value and decorator reference is an edge. `includeDerivedTypes: true` adds reverse supertype → subtype edges, so keeping an abstract base keeps its concrete subtypes.
 
-Upstream reference: `@accordproject/concerto-codegen` — `lib/common/graph.js` (`ConcertoGraphVisitor`, `DirectedGraph.findConnectedGraph`).
+Upstream pattern: `@accordproject/concerto-codegen`, `lib/common/graph.js`.
 
-## From tree-shaken model to a strict response schema
+## From definitions to a provider-safe schema
 
-`JSONSchemaVisitor` output uses `$ref` and carries Concerto-specific keywords. The executor turns each root type into a self-contained, provider-safe schema in three passes:
+`JSONSchemaVisitor` output uses `$ref`s and Concerto-specific keywords. Three passes make each root type standalone and strict-mode-safe:
 
-- **`deepResolve`** — inlines every `$ref` pointer (with a cycle guard) so the schema is fully self-contained. Required by Anthropic, safe for OpenAI.
-- **`enforceAdditionalPropertiesFalse`** — sets `additionalProperties: false` on every object, since strict structured outputs reject unknown keys.
-- **`cleanForStructuredOutput`** — strips keywords the strict APIs don't support (`pattern`, `format`, `minLength`, `maximum`, `default`, …) and pins the Concerto discriminator `$class` to a `const` of the exact fully-qualified type name, forcing the model to emit the correct type tag.
+| Pass | What it does |
+| --- | --- |
+| `deepResolve` | Inlines every `$ref` (cycle guard emits an open object stub). Required by Anthropic, safe elsewhere. |
+| `enforceAdditionalPropertiesFalse` | Stamps `additionalProperties: false` on every object. |
+| `cleanForStructuredOutput` | Drops keywords strict APIs reject (`pattern`, `format`, `min*`/`max*`, `multipleOf`, `default`) and pins `$class` to an `enum` of the exact FQN, forcing the right type tag. |
 
-When a template has multiple responses or events, the types combine with `anyOf` (`resolveUnionSchema`), so the model can return whichever fits the incoming request.
+Multiple responses or events combine with `anyOf` (`resolveUnionSchema`).
 
-## The `init` / `trigger` schemas
-
-The per-type schemas above get wrapped in operation envelopes:
+## Operation envelopes
 
 ```jsonc
-// init, stateful
-{ "state": <StateSchema> }
-// init, stateless
-{ "state": {} }
-```
+// init
+{ "state": <StateSchema> }              // stateless: state is an empty closed object
 
-```jsonc
 // trigger
 {
-  "result": <ResponseSchema | anyOf[...]>,
-  "events": [ <EventSchema | anyOf[...]> ],
-  "state":  <StateSchema>   // present only for stateful templates
+  "result": <ResponseSchema | anyOf[…]>,
+  "events": [ <EventSchema | anyOf[…]> ],
+  "state":  <StateSchema>                // stateful only
 }
 ```
 
-Schemas are built once in the `LLMExecutor` constructor and stored, so the object reference stays stable — this helps with Anthropic's grammar cache.
+Both are built once in the constructor and held on the instance, so the object reference stays stable across calls.
 
-## Executor lifecycle
+### Two schema paths
 
-1. **`buildSharedContext()`** assembles the prompt context: template name/version, contract text, declared type FQNs, and the tree-shaken `.cto` files.
-2. **`ask()`** calls the provider through the configured reasoner with the pre-built schema, and retries on failure.
-3. **`extractJson` + `assertInitShape` / `assertTriggerShape`** parse and structurally validate the model's reply.
-4. **`injectRuntimeMetadata`** inserts the Accord Project runtime fields the model shouldn't invent — `$timestamp` on `result`/events, `$identifier` on `state` — mirroring canonical Cicero engine output.
+`isStructuredOutputSupported` on the provider config picks the path:
 
-## Providers and structured outputs
+- **`true`** — the full resolved schemas go on the wire, and the provider enforces them.
+- **`false`** — the wire schema is an open envelope, and the resolved request/response/state/event definitions are instead handed to the model as `context.schema` in the prompt. Best-effort, but usable with providers that have no strict mode.
 
-`createReasoner(config)` selects the client.
+## Execution flow
 
-| Provider | Schema enforcement | Notes |
-| --- | --- | --- |
-| **OpenAI** | Native — `response_format: { type: "json_schema", strict: true, … }` | Full tree-shaken schema. |
-| **Anthropic** | Native — `output_config: { format: { type: "json_schema", … } }` | Full tree-shaken schema; requires a structured-output-capable model (e.g. Sonnet 4.6 / Opus 4.8 — not Sonnet 4.5). |
+1. `buildSharedContext()` — template name/version, contract text, template model FQN, the declared type FQNs, and (schema-less path only) the resolved definitions.
+2. `ask()` — calls `reasoner.complete(messages, schema)`, retrying `provider.retries ?? 1` times.
+3. `extractJson` — parses the reply, tolerating a ```` ```json ```` fence.
+4. `assertInitShape` / `assertTriggerShape` — structural checks. *(TODO: replace with Concerto deserialization.)*
+5. `injectRuntimeMetadata` — stamps the fields the model must not invent: `$timestamp` on `result` and each event, `$identifier` on `state` (resolved `state.$identifier → data.$identifier → data.clauseId → data.contractId → 'state-1'`).
 
-`usesFullSchema(config)` returns `true` for both providers — they get the strict per-type schemas, plus the reduced model files as context.
+The timestamp is the request's own `$timestamp` when present, then `currentTime`, then now.
+
+## Providers
+
+`createReasoner(config)` switches on `config.provider`. All of them lazy-load their SDK on first call and throw an install hint if it's missing.
+
+| Provider | Structured output | Effort levels | Notes |
+| --- | --- | --- | --- |
+| `anthropic` | `output_config.format` | `low`, `medium`, `high`, `xhigh`, `max` | Adaptive thinking on by default; `maxTokens` defaults to 16000. |
+| `openai` | `response_format` | `minimal`, `low`, `medium`, `high` | Effort is reasoning models only — `gpt-4o` rejects it. |
+| `groq` | `response_format` (strict) | `none`, `low`, `medium`, `high` | The only provider that still forwards `temperature` / `topP`. |
+| `google` | `responseJsonSchema` | — | |
+| `mistral` | `responseFormat` | — | |
+| `openrouter` | `responseFormat` | — | |
+| `ollama` | OpenAI-compatible | — | Defaults to `http://localhost:11434/v1`. |
+| `openai-compatible` | OpenAI-compatible | — | Requires `customEndpoint`. |

@@ -24,6 +24,13 @@ import {
   OllamaProviderConfig,
   OpenAICompatibleProviderConfig,
   BaseProviderConfig,
+  ReasoningEffort,
+  GroqEffort,
+  GROQ_EFFORT_LEVELS,
+  OpenAIEffort,
+  OPENAI_EFFORT_LEVELS,
+  AnthropicEffort,
+  ANTHROPIC_EFFORT_LEVELS,
 } from './LLMConfig';
 
 /**
@@ -67,6 +74,30 @@ function loadOptionalModule(specifier: string): Promise<any> {
   return import(specifier);
 }
 
+/**
+ * Narrows a configured effort level to the ones a provider's API accepts,
+ * throwing rather than silently falling back to the provider default.
+ * @param effort - the configured effort level, if any
+ * @param supported - the levels this provider accepts
+ * @param providerLabel - provider name, used in the error message
+ * @returns the effort level, or undefined when none was configured
+ * @throws {Error} if the level is not one the provider supports
+ */
+function resolveEffort<T extends ReasoningEffort>(
+  effort: ReasoningEffort | undefined,
+  supported: readonly T[],
+  providerLabel: string
+): T | undefined {
+  if (!effort) return undefined;
+  if (!(supported as readonly string[]).includes(effort)) {
+    throw new Error(
+      `The ${providerLabel} provider does not support effort '${effort}'. ` +
+      `Supported levels: ${supported.join(', ')}`
+    );
+  }
+  return effort as T;
+}
+
 interface GroqResponseFormat {
   type: 'json_schema';
   json_schema: {
@@ -83,7 +114,8 @@ interface GroqChatCompletionCreateParams {
   max_tokens: number;
   top_p: number;
   response_format?: GroqResponseFormat;
-  reasoning_effort?: GroqProviderConfig['reasoningEffort'];
+  /** Reasoning depth; reasoning models only. */
+  reasoning_effort?: GroqEffort;
 }
 
 interface GroqChatCompletionResponse {
@@ -109,7 +141,7 @@ export class GroqReasoner extends BaseReasoner {
       'apiKey' | 'model' | 'baseUrl' | 'temperature' | 'maxTokens' | 'topP' | 'timeoutMs'
     >
   > &
-    Pick<GroqProviderConfig, 'reasoningEffort'>;
+    Pick<GroqProviderConfig, 'effort'>;
 
   constructor(config: GroqProviderConfig) {
     super();
@@ -126,7 +158,7 @@ export class GroqReasoner extends BaseReasoner {
       temperature: config.temperature ?? 0,
       maxTokens: config.maxTokens ?? 4096,
       topP: config.topP ?? 1,
-      reasoningEffort: config.reasoningEffort,
+      effort: resolveEffort(config.effort, GROQ_EFFORT_LEVELS, 'groq'),
       timeoutMs: config.timeoutMs ?? 60000,
     };
   }
@@ -167,8 +199,8 @@ export class GroqReasoner extends BaseReasoner {
       top_p: this.config.topP,
     };
 
-    if (this.config.reasoningEffort) {
-      options.reasoning_effort = this.config.reasoningEffort;
+    if (this.config.effort) {
+      options.reasoning_effort = this.config.effort;
     }
 
     if (schema) {
@@ -233,6 +265,8 @@ interface OpenAIChatCompletionCreateParams {
   messages: OpenAIChatMessageParam[];
   stream: false;
   response_format?: OpenAIResponseFormat;
+  /** Reasoning depth; reasoning models only. */
+  reasoning_effort?: OpenAIEffort;
   /** OpenAI-native token limit field. */
   max_completion_tokens?: number;
   /** Legacy token limit field used by OpenAI-compatible APIs. */
@@ -304,6 +338,7 @@ export class OpenAIReasoner extends BaseReasoner {
   private readonly apiKey: string;
   private readonly model: string;
   private readonly maxTokens: number;
+  private readonly effort?: OpenAIEffort;
 
   constructor(config: OpenAIProviderConfig) {
     super();
@@ -311,6 +346,7 @@ export class OpenAIReasoner extends BaseReasoner {
     this.apiKey = config.apiKey;
     this.model = config.model;
     this.maxTokens = config.maxTokens ?? 4096;
+    this.effort = resolveEffort(config.effort, OPENAI_EFFORT_LEVELS, 'openai');
   }
 
   /**
@@ -344,6 +380,10 @@ export class OpenAIReasoner extends BaseReasoner {
       stream: false,
     };
 
+    if (this.effort) {
+      options.reasoning_effort = this.effort;
+    }
+
     if (schema) {
       options.response_format = createOpenAIResponseFormat(schema, false);
     }
@@ -362,11 +402,18 @@ interface AnthropicMessageParam {
   content: string;
 }
 
+/** Anthropic's `output_config`, carrying both the output format and the effort level. */
 interface AnthropicOutputConfig {
-  format: {
+  format?: {
     type: string;
     schema: JsonSchema;
   };
+  effort?: AnthropicEffort;
+}
+
+/** Adaptive extended thinking; depth comes from `effort`, not `budget_tokens`. */
+interface AnthropicThinkingConfig {
+  type: 'adaptive';
 }
 
 interface AnthropicMessageCreateParams {
@@ -375,6 +422,7 @@ interface AnthropicMessageCreateParams {
   system?: string;
   messages: AnthropicMessageParam[];
   output_config?: AnthropicOutputConfig;
+  thinking?: AnthropicThinkingConfig;
 }
 
 interface AnthropicContentBlock {
@@ -401,13 +449,18 @@ export class AnthropicReasoner extends BaseReasoner {
   private readonly apiKey: string;
   private readonly model: string;
   private readonly maxTokens: number;
+  private readonly effort?: AnthropicEffort;
+  private readonly thinking: boolean;
 
   constructor(config: AnthropicProviderConfig) {
     super();
     if (!config.apiKey) throw new Error('Missing apiKey for Anthropic provider');
     this.apiKey = config.apiKey;
     this.model = config.model;
-    this.maxTokens = config.maxTokens ?? 4096;
+    // Thinking tokens share this budget with the answer, so leave room for both.
+    this.maxTokens = config.maxTokens ?? 16000;
+    this.effort = resolveEffort(config.effort, ANTHROPIC_EFFORT_LEVELS, 'anthropic');
+    this.thinking = config.thinking ?? true;
   }
 
   /**
@@ -447,13 +500,23 @@ export class AnthropicReasoner extends BaseReasoner {
       messages: formattedMessages,
     };
 
+    // Extended thinking is opt-in; without it `effort` has nothing to deepen.
+    if (this.thinking) {
+      params.thinking = { type: 'adaptive' };
+    }
+
+    const outputConfig: AnthropicOutputConfig = {};
     if (schema) {
-      params.output_config = {
-        format: {
-          type: 'json_schema',
-          schema,
-        },
+      outputConfig.format = {
+        type: 'json_schema',
+        schema,
       };
+    }
+    if (this.effort) {
+      outputConfig.effort = this.effort;
+    }
+    if (Object.keys(outputConfig).length > 0) {
+      params.output_config = outputConfig;
     }
 
     const client = await this.getClient();
@@ -461,6 +524,15 @@ export class AnthropicReasoner extends BaseReasoner {
 
     if (response.stop_reason === 'refusal') {
       throw new Error('Anthropic refused to produce structured output for this request');
+    }
+
+    // An exhausted budget surfaces as truncated JSON; report it as such rather
+    // than leaving the caller with a JSON.parse syntax error.
+    if (response.stop_reason === 'max_tokens') {
+      throw new Error(
+        `Anthropic response hit the ${this.maxTokens}-token limit before completing. ` +
+        'Raise maxTokens, lower effort, or set thinking: false.'
+      );
     }
 
     const block = response.content.find(b => b.type === 'text');
