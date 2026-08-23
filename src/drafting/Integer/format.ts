@@ -40,11 +40,15 @@ export function draftIntegerFormat(value:number,format:NumberDraftFormat) : stri
             const vs = value.toFixed(0);
             let res = '';
             let i = vs.substring(0,vs.length);
+            // Group the digits only. Leaving the minus sign in place would let it
+            // be counted as a digit, so -123 would be grouped as -,123.
+            const sign = i.startsWith('-') ? '-' : '';
+            i = i.substring(sign.length);
             while (i.length > 3) {
                 res = sep1 + i.substring(i.length - 3) + res;
                 i = i.substring(0, i.length - 3);
             }
-            return i + res;
+            return sign + i + res;
         });
     }
 }
