@@ -154,7 +154,13 @@ function getJsonPath(rootData: any, currentNode: any, paths: string[]): string {
         if (obj && obj.$class) {
             if (NAVIGATION_NODES.indexOf(obj.$class) >= 0) {
                 if(obj.name !== 'top') { // HACK!!
-                    withPath.push(`['${obj.name}']`);
+                    // For primitive optional definitions, do not navigate into the
+                    // property scope — variables inside should resolve from the parent context
+                    const isOptional = OPTIONAL_DEFINITION_RE.test(obj.$class);
+                    const isPrimitive = isOptional && obj.elementType && (ModelUtil as any).isPrimitiveType(obj.elementType);
+                    if (!isPrimitive) {
+                        withPath.push(`['${obj.name}']`);
+                    }
                 }
             }
         }
@@ -244,6 +250,16 @@ async function generateOptionalBlocks(modelManager: ModelManager, clauseLibrary:
                 if (variableValues.length > 0) {
                     // Optional property exists, process whenSome with the property value as context
                     const optionalPropertyValue = variableValues[0];
+
+                    // For primitive optional values (string, number, boolean), skip
+                    // pre-processing and let the normal traverse handle it with the
+                    // full parent data context. This allows named variables like {{age}}
+                    // to resolve correctly inside {{#optional age}}...{{/optional}}.
+                    const isPrimitive = typeof optionalPropertyValue !== 'object' || optionalPropertyValue === null;
+                    if (isPrimitive) {
+                        continue;
+                    }
+
                     if (context.whenSome && context.whenSome.length > 0) {
                         // Create a paragraph wrapper for the whenSome content
                         const whenSomeParagraph = {
