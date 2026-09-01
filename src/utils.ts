@@ -31,6 +31,8 @@ export const RUNTIME_STATE_FQN = 'org.accordproject.runtime@0.2.0.State';
 export const RUNTIME_REQUEST_FQN = 'org.accordproject.runtime@0.2.0.Request';
 export const RUNTIME_RESPONSE_FQN = 'org.accordproject.runtime@0.2.0.Response';
 export const BASE_EVENT_FQN = 'concerto@1.0.0.Event';
+export const RUNTIME_OBLIGATION_FQN = 'org.accordproject.runtime@0.2.0.Obligation';
+export const RUNTIME_CONTRACT_FQN = 'org.accordproject.contract@0.2.0.Contract';
 
 /**
  * Returns the concrete (non-abstract) class declarations assignable to baseFqn: the base

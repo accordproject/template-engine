@@ -15,7 +15,7 @@
 import { draftDoubleIEEE } from '../Double/format';
 import { draftDoubleFormat } from '../Double/format';
 import { MonetaryAmountFormat } from '../DraftFormat';
-import { CurrencyCode } from './currencycode';
+import { replaceCurrencyTokens } from './formatTokens';
 
 type MonetaryAmount = {
     doubleValue: number;
@@ -31,20 +31,6 @@ function monetaryAmountDefaultDrafter(value:MonetaryAmount) {
     return '' + draftDoubleIEEE(value.doubleValue) + ' ' + value.currencyCode;
 }
 
-/**
- * Symbol from a currency code
- * @param {string} c - the currency code
- * @returns {string} the symbol
- */
-function codeSymbol(c:string) : string {
-    const index: number = Object.keys(CurrencyCode).indexOf(c);
-    if(index >=0) {
-        return Object.values(CurrencyCode)[index];
-    }
-    else {
-        return c;
-    }
-}
 
 /**
  * Creates a drafter for monetary amount with a given format
@@ -53,10 +39,7 @@ function codeSymbol(c:string) : string {
  * @returns {string} the text
  */
 function monetaryAmountFormatDrafter(value:MonetaryAmount,format:MonetaryAmountFormat) : string {
-    return draftDoubleFormat(value.doubleValue,
-        format
-            .replace(/K/gi,codeSymbol(value.currencyCode))
-            .replace(/CCC/gi,value.currencyCode));
+    return draftDoubleFormat(value.doubleValue, replaceCurrencyTokens(format, value.currencyCode));
 }
 
 /**

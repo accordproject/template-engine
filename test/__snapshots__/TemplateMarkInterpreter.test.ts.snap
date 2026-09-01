@@ -4410,6 +4410,49 @@ exports[`templatemark interpreter should generate playground 1`] = `
 }
 `;
 
+exports[`templatemark interpreter should generate preciseamount 1`] = `
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": [
+    {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Payment: ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "org.accordproject.money@1.0.0.PreciseAmount",
+              "name": "payment",
+              "value": "1234.00 USD",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Softbreak",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Formatted: ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.FormattedVariable",
+              "elementType": "org.accordproject.money@1.0.0.PreciseAmount",
+              "format": "K 0,0.00 CCC",
+              "name": "payment",
+              "value": "$ 1,234.00 USD",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
 exports[`templatemark interpreter should generate volumediscountolist 1`] = `
 {
   "$class": "org.accordproject.commonmark@0.5.0.Document",

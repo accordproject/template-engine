@@ -1,0 +1,8 @@
+namespace preciseamount@1.0.0
+
+import org.accordproject.money@1.0.0.{PreciseAmount} from https://models.accordproject.org/money@1.0.0.cto
+
+@template
+concept TemplateData {
+    o PreciseAmount payment
+}

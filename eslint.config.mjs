@@ -16,4 +16,10 @@ export default defineConfig([
     extends: ["js/recommended"],
   },
   tseslint.configs.recommended,
+  {
+    files: ["test/llm_executor/**/*.js"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ]);

@@ -426,6 +426,20 @@ function assertTriggerShape(value: any, stateless = false): asserts value is Tri
 }
 
 /**
+ * Normalise a request's `$timestamp` to an ISO-8601 string. Concerto-
+ * deserialized requests expose a `Date`; raw JSON requests expose a string.
+ * @param request - the incoming request, may be undefined
+ * @returns the request timestamp as an ISO string, or null when the request
+ * carries no usable `$timestamp`
+ */
+function getRequestTimestamp(request: any): string | null {
+  const raw = request?.$timestamp;
+  if (!raw) return null;
+  const date = raw instanceof Date ? raw : new Date(raw);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+/**
  * Inject Accord Project runtime metadata (`$timestamp` on result/events,
  * `$identifier` on state), mirroring canonical Cicero engine output. Property
  * order is irrelevant — Concerto does not enforce it — so the fields are simply
@@ -658,24 +672,42 @@ export class LLMExecutor {
 
   /**
    * Evaluates a trigger request.
+   *
+   * Stateful templates (`!this.stateless`) must always be evaluated against
+   * `priorState` — the state produced by a prior call to {@link init} (or by
+   * a prior call to `trigger`) — since there is no implicit "empty" state for
+   * a template that declares custom State fields. Stateless templates ignore
+   * `priorState` entirely.
    * @param data - the data for the template
    * @param request - the request to send to the contract logic
-   * @param state - the current contract state
-   * @param currentTime - the current time, defaults to now
+   * @param priorState - the state to evaluate the request against. Required
+   * for stateful templates (must originate from init() or a previous
+   * trigger()); ignored for stateless templates.
+   * @param currentTime - the current time. Only used when the request carries
+   * no `$timestamp`, which always takes precedence; defaults to now
    * @param utcOffset - the UTC offset, defaults to zero
    * @returns the response, updated state, and any events
+   * @throws {Error} if the template is stateful and no priorState is supplied
    */
   async trigger(
     data: any,
     request: any,
-    state?: any,
+    priorState?: any,
     currentTime?: string,
     utcOffset?: number
   ): Promise<TriggerResponse> {
     if (this.config.verbose) console.log('[LLMExecutor] TRIGGER called');
 
+    if (!this.stateless && (!priorState || Object.keys(priorState).length === 0)) {
+      throw new Error(
+        'Stateful templates require priorState: call init() first and pass its ' +
+        'returned state (or the state returned by a previous trigger()) as priorState.'
+      );
+    }
+
     const context = this.buildSharedContext();
-    const timestamp = currentTime ?? new Date().toISOString();
+    // The request's own `$timestamp` wins, then currentTime, then now.
+    const timestamp = getRequestTimestamp(request) ?? currentTime ?? new Date().toISOString();
 
     const isStateless = this.stateless;
     const systemPrompt = isStateless
@@ -691,11 +723,12 @@ export class LLMExecutor {
           - contract text
           - Concerto model definitions
           - template data
-          - current state
+          - priorState (the state produced by init(), or by the previous trigger())
           - incoming request/transaction
 
           Task:
-          Evaluate contract behavior for this request.
+          Evaluate contract behavior for this request, starting from priorState,
+          and return the updated state.
 
           `.trim();
 
@@ -705,7 +738,7 @@ export class LLMExecutor {
       utcOffset: utcOffset ?? 0,
       data,
       request,
-      state: state ?? {},
+      priorState: priorState ?? {},
       context,
     });
 
