@@ -36,6 +36,10 @@ const CLAUSE_LIBRARY = {
 
 const GOOD_TEMPLATES_ROOT = './test/templates/good';
 const BAD_TEMPLATES_ROOT = './test/templates/bad';
+const MONEY_MODEL_FILES = [
+    '@models.accordproject.org.money@0.3.0.cto',
+    '@models.accordproject.org.money@1.0.0.cto'
+];
 
 describe('templatemark interpreter', () => {
     jest.setTimeout(30000);
@@ -70,8 +74,10 @@ describe('templatemark interpreter', () => {
             const data = JSON.parse(readFileSync(`${GOOD_TEMPLATES_ROOT}/${templateName}/data.json`, 'utf-8'));
 
             const modelManager = new ModelManager();
-            modelManager.addCTOModel(model, undefined, true);
-            await modelManager.updateExternalModels();
+            MONEY_MODEL_FILES.forEach(file => {
+                modelManager.addCTOModel(readFileSync(path.join(__dirname, 'models', file), 'utf-8'), file);
+            });
+            modelManager.addCTOModel(model);
             const engine = new TemplateMarkInterpreter(modelManager, CLAUSE_LIBRARY);
 
             const templateMarkTransformer = new TemplateMarkTransformer();

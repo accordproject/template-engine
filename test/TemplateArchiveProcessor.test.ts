@@ -1,36 +1,10 @@
-import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { cpSync, mkdtempSync, writeFileSync } from 'fs';
 import os from 'os';
 import path from 'path';
 import {Template} from '@accordproject/cicero-core';
 import { TemplateArchiveProcessor, InitResponse, TriggerResponse } from '../src/TemplateArchiveProcessor';
 
 const TEMPLATE_DIR = 'test/archives/latedeliveryandpenalty-typescript';
-const TEMPLATE_MODEL_DIR = path.join(TEMPLATE_DIR, 'model');
-
-function mockArchiveModelFetches() {
-    const originalFetch = global.fetch.bind(global);
-    const modelByUrl = new Map([
-        ['https://models.accordproject.org/time@0.3.0.cto', readFileSync(path.join(TEMPLATE_MODEL_DIR, '@models.accordproject.org.time@0.3.0.cto'), 'utf-8')],
-        ['https://models.accordproject.org/accordproject/contract@0.2.0.cto', readFileSync(path.join(TEMPLATE_MODEL_DIR, '@models.accordproject.org.accordproject.contract@0.2.0.cto'), 'utf-8')],
-        ['https://models.accordproject.org/accordproject/runtime@0.2.0.cto', readFileSync(path.join(TEMPLATE_MODEL_DIR, '@models.accordproject.org.accordproject.runtime@0.2.0.cto'), 'utf-8')]
-    ]);
-
-    return jest.spyOn(global, 'fetch').mockImplementation(async (input: string | URL | Request, init?: RequestInit) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-        const model = modelByUrl.get(url);
-
-        if (model !== undefined) {
-            return new Response(model, {
-                status: 200,
-                headers: {
-                    'content-type': 'text/plain'
-                }
-            });
-        }
-
-        return originalFetch(input, init);
-    });
-}
 
 async function loadTemplate(logicSource?: string): Promise<Template> {
     if (!logicSource) {
@@ -45,14 +19,6 @@ async function loadTemplate(logicSource?: string): Promise<Template> {
 }
 
 describe('template archive processor', () => {
-    beforeEach(() => {
-        mockArchiveModelFetches();
-    });
-
-    afterEach(() => {
-        jest.restoreAllMocks();
-    });
-
     test('should draft a template', async () => {
         const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
@@ -245,7 +211,7 @@ export default class PlainLogic {
     };
 
     it('rejects a request whose type does not extend the runtime Request', async () => {
-        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
         const stateResponse = await templateArchiveProcessor.init(VALID_DATA);
         // A well-formed Response object is a valid Concerto instance (so it passes
@@ -262,7 +228,7 @@ export default class PlainLogic {
     });
 
     it('init does not throw for a stateless template (empty placeholder state)', async () => {
-        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
         // A stateless template (no compiled `init`) yields the empty placeholder `{ state: {} }`.
         // init() must not try to serialize/validate that classless placeholder.
@@ -273,7 +239,7 @@ export default class PlainLogic {
     });
 
     it('does not exempt a non-empty state that is missing $class (only {} is skipped)', async () => {
-        const template = await Template.fromDirectory('test/archives/latedeliveryandpenalty-typescript', {offline: true});
+        const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
         // A non-empty classless object is not the stateless placeholder - it must still be
         // validated (and rejected), not silently skipped.
