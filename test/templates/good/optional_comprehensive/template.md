@@ -2,9 +2,9 @@
 
 ### Scalar Optional Cases
 
-1. Integer: {{#optional age}}Age is {{this}}{{else}}No age{{/optional}}
-2. String: {{#optional middleName}}Middle name: {{this}}{{else}}No middle name{{/optional}}
-3. Boolean: {{#optional active}}Status: {{this}}{{else}}Status unknown{{/optional}}
+1. Integer: {{#optional age}}Age is {{age}}{{else}}No age{{/optional}}
+2. String: {{#optional middleName}}Middle name: {{middleName}}{{else}}No middle name{{/optional}}
+3. Boolean: {{#optional active}}Status: {{active}}{{else}}Status unknown{{/optional}}
 
 ### Object Optional Cases
 
@@ -12,10 +12,10 @@
 
 ### Nested Optional Within Optional
 
-{{#optional person}}Person: {{name}} {{#optional age}}({{this}} years old){{/optional}}{{else}}No person{{/optional}}
+{{#optional person}}Person: {{name}} {{#optional age}}({{age}} years old){{/optional}}{{else}}No person{{/optional}}
 
 ### Formatted Optional
 
-{{#optional lastVisit}}Last visit: {{this as "MMMM DD, YYYY"}}{{else}}Never visited{{/optional}}
+{{#optional lastVisit}}Last visit: {{lastVisit as "MMMM DD, YYYY"}}{{else}}Never visited{{/optional}}
 
 Complete.
