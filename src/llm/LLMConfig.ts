@@ -58,6 +58,13 @@ export interface BaseProviderConfig {
   topP?: number;
   retries?: number;
   timeoutMs?: number;
+  /**
+   * Extra options merged into the underlying provider SDK's client
+   * constructor, e.g. `{ dangerouslyAllowBrowser: true }` for the OpenAI and
+   * Anthropic SDKs when running client-side. Node consumers never need this;
+   * browser consumers set it once here instead of forking the reasoner.
+   */
+  clientOptions?: Record<string, unknown>;
 }
 
 /**
@@ -159,4 +166,92 @@ export interface LLMExecutorConfig {
   mode: LLMMode;
   provider: LLMProviderConfig;
   verbose?: boolean;
+}
+
+/**
+ * Which tuning knobs a provider's reasoner actually reads off its config —
+ * see `Reasoners.ts`. Lets a caller building a settings UI skip rendering a
+ * control (e.g. Temperature) that the chosen provider would silently ignore.
+ */
+export interface ProviderCapabilities {
+  /** Reasoning-effort levels the provider accepts, or null if it takes none. */
+  effort: readonly ReasoningEffort[] | null;
+  /** Whether {@link BaseProviderConfig.temperature} is read. Currently `groq` only. */
+  temperature: boolean;
+  /** Whether extended thinking can be toggled. Currently `anthropic` only. */
+  thinking: boolean;
+  /** Whether the provider enforces a JSON Schema on its own output. */
+  structuredOutput: boolean;
+}
+
+/**
+ * Capability matrix, keyed by provider id. Kept next to the reasoners it
+ * describes so a change to what a reasoner reads off its config can't drift
+ * from what this table promises.
+ */
+export const PROVIDER_CAPABILITIES: Record<LLMProviderConfig['provider'], ProviderCapabilities> = {
+  groq: {
+    effort: GROQ_EFFORT_LEVELS,
+    temperature: true,
+    thinking: false,
+    structuredOutput: true,
+  },
+  openai: {
+    effort: OPENAI_EFFORT_LEVELS,
+    temperature: false,
+    thinking: false,
+    structuredOutput: true,
+  },
+  anthropic: {
+    effort: ANTHROPIC_EFFORT_LEVELS,
+    temperature: false,
+    thinking: true,
+    structuredOutput: true,
+  },
+  google: { effort: null, temperature: false, thinking: false, structuredOutput: true },
+  mistral: { effort: null, temperature: false, thinking: false, structuredOutput: true },
+  openrouter: { effort: null, temperature: false, thinking: false, structuredOutput: true },
+  // Local models vary wildly in how well they honour a schema, so the executor
+  // falls back to describing the Concerto types in the prompt for these two.
+  ollama: { effort: null, temperature: false, thinking: false, structuredOutput: false },
+  'openai-compatible': { effort: null, temperature: false, thinking: false, structuredOutput: false },
+};
+
+/**
+ * Reads the capabilities of a provider, defaulting to "no tuning knobs" for
+ * an id this table doesn't recognise.
+ * @param provider - a provider id, e.g. from a saved or in-progress config
+ * @returns the provider's capabilities
+ */
+export function getProviderCapabilities(provider: string): ProviderCapabilities {
+  return (
+    PROVIDER_CAPABILITIES[provider as LLMProviderConfig['provider']] ?? {
+      effort: null,
+      temperature: false,
+      thinking: false,
+      structuredOutput: false,
+    }
+  );
+}
+
+/**
+ * Whether a provider configuration — complete, or still being filled in on a
+ * settings form — has everything its reasoner needs to run: a provider, a
+ * model, and (for the providers that require one) an API key or custom
+ * endpoint. Takes a loosely-typed draft rather than {@link LLMProviderConfig}
+ * itself, since a form in progress won't yet satisfy that union.
+ * @param config - the draft configuration to check
+ * @returns true once a provider, model and (where required) credentials are set
+ */
+export function isLLMConfigured(
+  config:
+    | { provider?: string; model?: string; apiKey?: string; customEndpoint?: string }
+    | null
+    | undefined
+): boolean {
+  if (!config?.provider || !config.model) return false;
+  if (config.provider === 'openai-compatible' && !config.customEndpoint) return false;
+  // Ollama runs locally and takes no key.
+  if (config.provider !== 'ollama' && !config.apiKey) return false;
+  return true;
 }

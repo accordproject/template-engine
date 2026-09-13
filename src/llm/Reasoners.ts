@@ -141,7 +141,7 @@ export class GroqReasoner extends BaseReasoner {
       'apiKey' | 'model' | 'baseUrl' | 'temperature' | 'maxTokens' | 'topP' | 'timeoutMs'
     >
   > &
-    Pick<GroqProviderConfig, 'effort'>;
+    Pick<GroqProviderConfig, 'effort' | 'clientOptions'>;
 
   constructor(config: GroqProviderConfig) {
     super();
@@ -160,6 +160,7 @@ export class GroqReasoner extends BaseReasoner {
       topP: config.topP ?? 1,
       effort: resolveEffort(config.effort, GROQ_EFFORT_LEVELS, 'groq'),
       timeoutMs: config.timeoutMs ?? 60000,
+      clientOptions: config.clientOptions ?? {},
     };
   }
 
@@ -184,6 +185,7 @@ export class GroqReasoner extends BaseReasoner {
         return new Groq({
           apiKey: this.config.apiKey,
           baseURL: this.config.baseUrl,
+          ...this.config.clientOptions,
         }) as GroqClient;
       })();
     }
@@ -339,6 +341,7 @@ export class OpenAIReasoner extends BaseReasoner {
   private readonly model: string;
   private readonly maxTokens: number;
   private readonly effort?: OpenAIEffort;
+  private readonly clientOptions: Record<string, unknown>;
 
   constructor(config: OpenAIProviderConfig) {
     super();
@@ -347,6 +350,7 @@ export class OpenAIReasoner extends BaseReasoner {
     this.model = config.model;
     this.maxTokens = config.maxTokens ?? 4096;
     this.effort = resolveEffort(config.effort, OPENAI_EFFORT_LEVELS, 'openai');
+    this.clientOptions = config.clientOptions ?? {};
   }
 
   /**
@@ -366,6 +370,7 @@ export class OpenAIReasoner extends BaseReasoner {
         return new mod.default({
           apiKey: this.apiKey,
           baseURL: 'https://api.openai.com/v1',
+          ...this.clientOptions,
         }) as OpenAIClient;
       })();
     }
@@ -451,6 +456,7 @@ export class AnthropicReasoner extends BaseReasoner {
   private readonly maxTokens: number;
   private readonly effort?: AnthropicEffort;
   private readonly thinking: boolean;
+  private readonly clientOptions: Record<string, unknown>;
 
   constructor(config: AnthropicProviderConfig) {
     super();
@@ -461,6 +467,7 @@ export class AnthropicReasoner extends BaseReasoner {
     this.maxTokens = config.maxTokens ?? 16000;
     this.effort = resolveEffort(config.effort, ANTHROPIC_EFFORT_LEVELS, 'anthropic');
     this.thinking = config.thinking ?? true;
+    this.clientOptions = config.clientOptions ?? {};
   }
 
   /**
@@ -477,7 +484,10 @@ export class AnthropicReasoner extends BaseReasoner {
             "The '@anthropic-ai/sdk' package is required to use the Anthropic provider. Install it with: npm install @anthropic-ai/sdk"
           );
         }
-        return new mod.default({ apiKey: this.apiKey }) as AnthropicClient;
+        return new mod.default({
+          apiKey: this.apiKey,
+          ...this.clientOptions,
+        }) as AnthropicClient;
       })();
     }
     return this.clientPromise;
@@ -552,6 +562,7 @@ export class OpenAICompatibleReasoner extends BaseReasoner {
   protected readonly model: string;
   protected readonly maxTokens: number;
   protected readonly baseUrl: string;
+  protected readonly clientOptions: Record<string, unknown>;
 
   constructor(config: BaseProviderConfig, baseUrl: string, defaultApiKey = '') {
     super();
@@ -561,6 +572,7 @@ export class OpenAICompatibleReasoner extends BaseReasoner {
     this.model = config.model;
     this.maxTokens = config.maxTokens ?? 4096;
     this.baseUrl = baseUrl;
+    this.clientOptions = config.clientOptions ?? {};
   }
 
   /**
@@ -580,6 +592,7 @@ export class OpenAICompatibleReasoner extends BaseReasoner {
         return new mod.default({
           apiKey: this.apiKey,
           baseURL: this.baseUrl,
+          ...this.clientOptions,
         }) as OpenAIClient;
       })();
     }
@@ -630,6 +643,7 @@ export class OpenRouterReasoner extends BaseReasoner {
   private readonly apiKey: string;
   private readonly model: string;
   private readonly maxTokens: number;
+  private readonly clientOptions: Record<string, unknown>;
 
   constructor(config: OpenRouterProviderConfig) {
     super();
@@ -637,6 +651,7 @@ export class OpenRouterReasoner extends BaseReasoner {
     this.apiKey = config.apiKey;
     this.model = config.model;
     this.maxTokens = config.maxTokens ?? 4096;
+    this.clientOptions = config.clientOptions ?? {};
   }
 
   /**
@@ -653,7 +668,10 @@ export class OpenRouterReasoner extends BaseReasoner {
             "The '@openrouter/sdk' package is required to use the OpenRouter provider. Install it with: npm install @openrouter/sdk"
           );
         }
-        return new mod.OpenRouter({ apiKey: this.apiKey }) as OpenRouterClient;
+        return new mod.OpenRouter({
+          apiKey: this.apiKey,
+          ...this.clientOptions,
+        }) as OpenRouterClient;
       })();
     }
     return this.clientPromise;
@@ -729,6 +747,7 @@ export class GoogleReasoner extends BaseReasoner {
   private readonly apiKey: string;
   private readonly model: string;
   private readonly maxTokens: number;
+  private readonly clientOptions: Record<string, unknown>;
 
   constructor(config: GoogleProviderConfig) {
     super();
@@ -736,6 +755,7 @@ export class GoogleReasoner extends BaseReasoner {
     this.apiKey = config.apiKey;
     this.model = config.model;
     this.maxTokens = config.maxTokens ?? 4096;
+    this.clientOptions = config.clientOptions ?? {};
   }
 
   /**
@@ -752,7 +772,10 @@ export class GoogleReasoner extends BaseReasoner {
             "The '@google/genai' package is required to use the Google provider. Install it with: npm install @google/genai"
           );
         }
-        return new mod.GoogleGenAI({ apiKey: this.apiKey }) as GoogleGenAIClient;
+        return new mod.GoogleGenAI({
+          apiKey: this.apiKey,
+          ...this.clientOptions,
+        }) as GoogleGenAIClient;
       })();
     }
     return this.clientPromise;
@@ -811,6 +834,7 @@ export class MistralReasoner extends BaseReasoner {
   private readonly apiKey: string;
   private readonly model: string;
   private readonly maxTokens: number;
+  private readonly clientOptions: Record<string, unknown>;
 
   constructor(config: MistralProviderConfig) {
     super();
@@ -818,6 +842,7 @@ export class MistralReasoner extends BaseReasoner {
     this.apiKey = config.apiKey;
     this.model = config.model;
     this.maxTokens = config.maxTokens ?? 4096;
+    this.clientOptions = config.clientOptions ?? {};
   }
 
   /**
@@ -834,7 +859,10 @@ export class MistralReasoner extends BaseReasoner {
             "The '@mistralai/mistralai' package is required to use the Mistral provider. Install it with: npm install @mistralai/mistralai"
           );
         }
-        return new mod.Mistral({ apiKey: this.apiKey }) as MistralClient;
+        return new mod.Mistral({
+          apiKey: this.apiKey,
+          ...this.clientOptions,
+        }) as MistralClient;
       })();
     }
     return this.clientPromise;
