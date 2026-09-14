@@ -243,6 +243,7 @@ export class JavaScriptEvaluator {
             this.workers.push(worker);
             work.pid = worker.pid;
             let result: any;
+            let resultReceived = false;
             worker.on('error', (err: any) => {       
                 this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
                 const end = new Date().getTime();
@@ -262,26 +263,22 @@ export class JavaScriptEvaluator {
             });
             worker.on('message', (msg: any) => {
                 result = msg;
+                resultReceived = true;
             });
             worker.on('exit', (code: any) => {
-                if (code === null) {
-                    // timeout
+                setImmediate(() => {
                     this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
                     const end = new Date().getTime();
-                    reject({ timeout: true, elapsed: end - start });
-                }
-                else if (code === 0 && result) {
-                    // success!
-                    this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
-                    const end = new Date().getTime();
-                    resolve({ ...result, elapsed: end - start });
-                } else {
-                    // null result or non-zero code from worker means an error
-                    // result will be undefined if the user code calls process.exit()
-                    this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
-                    const end = new Date().getTime();
-                    reject({ code, result, elapsed: end - start });
-                }
+                    if (code === null) {
+                        reject({ timeout: true, elapsed: end - start });
+                    }
+                    else if (code === 0 && resultReceived) {
+                        resolve({ ...result, elapsed: end - start });
+                    } else {
+                        // result is absent when user code exits the process before replying.
+                        reject({ code, result, elapsed: end - start });
+                    }
+                });
             });
             // send the request to the child process
             worker.send(work.request);
