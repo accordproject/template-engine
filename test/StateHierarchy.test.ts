@@ -48,7 +48,7 @@ class HelloWorldStateLogic extends TemplateLogic<ITemplateModel, IHelloWorldStat
     }
     async trigger(data: ITemplateModel, request: IMyRequest, state: IHelloWorldState): Promise<TriggerResponse<IHelloWorldState>> {
         return {
-            result: { $class: '${NS}.MyResponse', $timestamp: new Date() } as unknown as IResponse,
+            result: { $class: '${NS}.MyResponse', $timestamp: new Date().toISOString() },
             state: { $class: '${NS}.HelloWorldState', $identifier: state.$identifier, counter: state.counter + 1 },
             events: [],
         };
@@ -101,8 +101,8 @@ class HelloWorldStateLogic extends TemplateLogic<ITemplateModel, IHelloWorldStat
         return { state: { $class: '${NS}.HelloWorldState', $identifier: data.$identifier, counter: 0 } };
     }
     async trigger(data: ITemplateModel, request: IMyRequest, state: IHelloWorldState): Promise<TriggerResponse<IHelloWorldState>> {
-        const event: IMyPlainEvent = { $class: '${NS}.MyPlainEvent', $timestamp: new Date(), note: 'n' } as unknown as IMyPlainEvent;
-        const result: IMyResponse = { $class: '${NS}.MyResponse', $timestamp: new Date(), output: 'o' } as unknown as IMyResponse;
+        const event: IMyPlainEvent = { $class: '${NS}.MyPlainEvent', $timestamp: new Date().toISOString(), note: 'n' };
+        const result: IMyResponse = { $class: '${NS}.MyResponse', $timestamp: new Date().toISOString(), output: 'o' };
         return {
             result,
             state: { $class: '${NS}.HelloWorldState', $identifier: state.$identifier, counter: state.counter + 1 },
@@ -172,7 +172,7 @@ class L extends TemplateLogic<ITemplateModel, IMyState> {
         return { state: { $class: '${NS}.MyState', $identifier: data.$identifier, counter: 0 } };
     }
     async trigger(data: ITemplateModel, request: IMyRequest, state: IMyState): Promise<TriggerResponse<IMyState>> {
-        const result: IMyResponse = { $class: '${NS}.MyResponse', $timestamp: new Date(), output: 'o' } as unknown as IMyResponse;
+        const result: IMyResponse = { $class: '${NS}.MyResponse', $timestamp: new Date().toISOString(), output: 'o' };
         const event: IMyEvent = { $class: '${NS}.MyEvent', $identifier: 'x', note: 'n' } as unknown as IMyEvent;
         return { result, state, events: [event] };
     }

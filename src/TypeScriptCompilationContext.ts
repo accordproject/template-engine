@@ -116,10 +116,10 @@ interface IConcept {
     $class: string;
 }
 interface ITransaction extends IConcept {
-    $timestamp: Date;
+    $timestamp: string;
 }
 interface IEvent extends IConcept {
-    $timestamp: Date;
+    $timestamp: string;
 }
 interface IState {
     $identifier: string;
