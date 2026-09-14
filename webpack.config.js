@@ -43,8 +43,6 @@ module.exports = {
         extensions: ['.js'],
         mainFields: ['browser', 'module', 'main'],
         alias: {
-            // Force the concerto-core CJS/browser entry so webpack can apply fallbacks.
-            '@accordproject/concerto-core': require.resolve('@accordproject/concerto-core/dist/concerto-core.js'),
             'node:events': require.resolve('events/'),
         },
         fallback: {

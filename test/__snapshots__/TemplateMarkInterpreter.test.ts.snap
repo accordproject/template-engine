@@ -13,7 +13,7 @@ exports[`templatemark interpreter should fail to generate formula-invalid 1`] = 
         "length": 4,
         "line": 140,
         "renderedMessage": "Cannot find name 'THIS'.",
-        "start": 3722,
+        "start": 3726,
       },
       {
         "category": 1,
@@ -23,7 +23,7 @@ exports[`templatemark interpreter should fail to generate formula-invalid 1`] = 
         "length": 2,
         "line": 140,
         "renderedMessage": "Cannot find name 'IS'.",
-        "start": 3727,
+        "start": 3731,
       },
       {
         "category": 1,
@@ -33,7 +33,7 @@ exports[`templatemark interpreter should fail to generate formula-invalid 1`] = 
         "length": 7,
         "line": 140,
         "renderedMessage": "Cannot find name 'GARBAGE'.",
-        "start": 3730,
+        "start": 3734,
       },
       {
         "category": 1,
@@ -43,7 +43,7 @@ exports[`templatemark interpreter should fail to generate formula-invalid 1`] = 
         "length": 4,
         "line": 140,
         "renderedMessage": "Unknown keyword or identifier. Did you mean 'this'?",
-        "start": 3722,
+        "start": 3726,
       },
       {
         "category": 1,
@@ -53,7 +53,7 @@ exports[`templatemark interpreter should fail to generate formula-invalid 1`] = 
         "length": 2,
         "line": 140,
         "renderedMessage": "Unexpected keyword or identifier.",
-        "start": 3727,
+        "start": 3731,
       },
     ],
     "nodeId": "formula_adef0feb9fc1b6e7513409c93d86aa4d9999d35608e1aaeecc07dca99bc591c8",
@@ -74,7 +74,7 @@ exports[`templatemark interpreter should fail to generate formula-no-method 1`] 
         "length": 7,
         "line": 140,
         "renderedMessage": "Property 'missing' does not exist on type 'string'.",
-        "start": 3737,
+        "start": 3741,
       },
     ],
     "nodeId": "formula_4ef52e3adc6e5334e0925838eed0e51a372091d9b3a4499537ccf82fce5b1b25",
