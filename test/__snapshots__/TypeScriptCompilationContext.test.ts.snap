@@ -55,11 +55,11 @@ export interface IParticipant extends IConcept {
 }
 
 export interface ITransaction extends IConcept {
-   $timestamp: Date;
+   $timestamp: string;
 }
 
 export interface IEvent extends IConcept {
-   $timestamp: Date;
+   $timestamp: string;
 }
 
 
@@ -103,7 +103,7 @@ export interface ITemplateData extends IConcept {
    middleNames: string[];
    gender?: Gender;
    active: boolean;
-   lastVisit: Date;
+   lastVisit: string;
    address: IAddress;
    orders: IOrder[];
    loyaltyStatus?: ILoyaltyStatus;
@@ -130,10 +130,10 @@ interface IConcept {
     $class: string;
 }
 interface ITransaction extends IConcept {
-    $timestamp: Date;
+    $timestamp: string;
 }
 interface IEvent extends IConcept {
-    $timestamp: Date;
+    $timestamp: string;
 }
 interface IState {
     $identifier: string;
