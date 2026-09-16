@@ -122,8 +122,8 @@ export class JavaScriptEvaluator {
                 }
                 else {
                     // this is a template logic esm module, so we need to dynamic import it
-                    const dataUri = 'data:text/javascript;base64,'
-                      + btoa(request.code);
+                    const dataUri = 'data:text/javascript;charset=utf-8,'
+                      + encodeURIComponent(request.code);
 
                       dynamicImport<TemplateLogicClassConstructor>(dataUri)
                         .then(templateLogicConstructor => {

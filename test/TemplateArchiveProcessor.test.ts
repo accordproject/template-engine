@@ -210,6 +210,27 @@ export default class PlainLogic {
         '$identifier': 'c88e5ed7-c3e0-4249-a99c-ce9278684ac8'
     };
 
+    test.each(['\u00e9', '\u4f60', '\ud83d\ude80'])('preserves Unicode in template logic: %s', async (text) => {
+        const template = await loadTemplate(`
+// @ts-expect-error TemplateLogic is imported by the runtime
+class UnicodeLogic extends TemplateLogic {
+    async init(data: { $identifier: string }) {
+        return {
+            state: {
+                $class: 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyState',
+                $identifier: data.$identifier,
+                count: ${JSON.stringify(text)}.codePointAt(0)
+            }
+        };
+    }
+}
+export default UnicodeLogic;
+`);
+        const processor = new TemplateArchiveProcessor(template);
+        const response = await processor.init(VALID_DATA);
+        expect((response.state as { count: number }).count).toBe(text.codePointAt(0));
+    });
+
     it('rejects a request whose type does not extend the runtime Request', async () => {
         const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
