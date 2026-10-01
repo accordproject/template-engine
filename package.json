@@ -9,14 +9,22 @@
   },
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "bin": {
+    "template-engine-codegen": "bin/codegen.js"
+  },
   "browser": "umd/template-engine.js",
   "files": [
     "lib",
-    "umd"
+    "umd",
+    "bin",
+    "logic.js",
+    "logic.d.ts",
+    "testing.js",
+    "testing.d.ts"
   ],
   "scripts": {
     "clean": "rimraf lib umd",
-    "prebuild": "npm-run-all clean && npm run updateRuntimeDependencies",
+    "prebuild": "npm-run-all clean && npm run updateRuntimeDependencies && npm run updateLogicDeclarations",
     "build": "tsc -p tsconfig.build.json",
     "webpack": "webpack --config webpack.config.js --mode production",
     "build:dist": "npm run build && npm run webpack",
@@ -30,7 +38,8 @@
     "coverage": "node --experimental-vm-modules node_modules/jest-cli/bin/jest.js --coverage",
     "test:watch": "jest --watchAll",
     "test:e2e": "npm test -w template-engine-e2e",
-    "updateRuntimeDependencies": "node ./scripts/updateRuntimeDependencies"
+    "updateRuntimeDependencies": "node ./scripts/updateRuntimeDependencies",
+    "updateLogicDeclarations": "node ./scripts/updateLogicDeclarations.js"
   },
   "repository": {
     "type": "git",
@@ -45,7 +54,7 @@
   "author": "accordproject.org",
   "license": "Apache-2.0",
   "dependencies": {
-    "@accordproject/cicero-core": "^2.2.0",
+    "@accordproject/cicero-core": "github:accordproject/template-archive#claude/agreement-1.0-dual-runtime-dist",
     "@accordproject/concerto-codegen": "^6.3.0",
     "@accordproject/concerto-core": "^5.0.0",
     "@accordproject/concerto-util": "^5.0.0",

@@ -17,7 +17,7 @@ export default defineConfig([
   },
   tseslint.configs.recommended,
   {
-    files: ["test/llm_executor/**/*.js"],
+    files: ["test/llm_executor/**/*.js", "bin/**/*.js", "logic.js", "testing.js"],
     rules: {
       "@typescript-eslint/no-require-imports": "off",
     },

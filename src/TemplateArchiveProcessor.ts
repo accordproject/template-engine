@@ -34,7 +34,23 @@ import {
     BASE_EVENT_FQN,
     RUNTIME_OBLIGATION_FQN,
     RUNTIME_CONTRACT_FQN,
+    RUNTIME_1_REQUEST_FQN,
+    RUNTIME_1_RESPONSE_FQN,
+    STATE_DATA_FQN,
 } from './utils';
+import type { Logic } from './agreement/logic';
+import { loadLogic, runtimeModules, usesLogicApi } from './agreement/loader';
+import {
+    AGREEMENT_DOCUMENT_FQN, AGREEMENT_FQN, AGREEMENT_STATE_FQN, AgreementJson, DocumentJson, execute, initialise, relationship, StateJson,
+} from './agreement/execute';
+
+/**
+ * The agreement and document a template instance runs in when its logic, written with
+ * the logic API, is triggered through a TemplateArchiveProcessor: one document, holding
+ * the instance, with no clauses composed into it. See AgreementProcessor for more.
+ */
+export const INSTANCE_AGREEMENT_ID = 'agreement';
+export const INSTANCE_DOCUMENT_ID = 'document';
 
 /** The contract state. */
 export type State = object;
@@ -53,6 +69,8 @@ export type TriggerResponse = {
 /** The result of initializing a template: the initial state. */
 export type InitResponse = {
     state: State;
+    /** Events emitted by init, for logic written with the logic API. */
+    events?: Event[];
 }
 
 /**
@@ -65,6 +83,9 @@ export class TemplateArchiveProcessor {
 
     /** Cache of compiled logic, keyed by script identifier. */
     private compiledLogicCache?: Record<string, TwoSlashReturn>;
+
+    /** Loaded logic, for logic written with the logic API. */
+    private logicApiLogic?: Promise<Logic<any, any>>;
 
     /** Optional LLM fallback configuration. */
     llmConfig?: LLMExecutorConfig;
@@ -97,10 +118,14 @@ export class TemplateArchiveProcessor {
 
         // Get the data
         const modelManager = this.template.getModelManager();
-        const engine = new TemplateMarkInterpreter(modelManager, {});
+        // The template model is named explicitly: a template whose models include several
+        // TemplateData types (such as those of the clauses composed into it) has no
+        // single @template type to find.
+        const templateModelFqn = this.template.getTemplateModel().getFullyQualifiedName();
+        const engine = new TemplateMarkInterpreter(modelManager, {}, templateModelFqn);
         const templateMarkTransformer = new TemplateMarkTransformer();
         const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate(
-            { content: this.template.getTemplate() }, modelManager, templateKind);
+            { content: this.template.getTemplate() }, modelManager, templateKind, {}, templateModelFqn);
         const now = currentTime ? currentTime : new Date().toISOString();
         const ciceroMark = await engine.generate(templateMarkDom, data, { now });
         const result = transform(ciceroMark.toJSON(), 'ciceromark', ['ciceromark_unquoted', format], null, options);
@@ -122,6 +147,18 @@ export class TemplateArchiveProcessor {
             const compiledCode: Record<string, TwoSlashReturn> = {};
             const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
             const logicScript = tsFiles.find((tsFile) => tsFile.getIdentifier() === 'logic/logic.ts');
+            if (logicScript && usesLogicApi(logicScript.getContents())) {
+                // Logic written with the logic API is one module: its types come from the
+                // models, and its values from the engine (see agreement/loader.ts).
+                const compiler = new TypeScriptToJavaScriptCompiler(this.template.getModelManager(),
+                    this.template.getTemplateModel().getFullyQualifiedName(), { logicApi: true });
+                await compiler.initialize();
+                compiledCode[logicScript.getIdentifier()] = compiler.compile(logicScript.getContents());
+                if (enableCompiledLogicCache) {
+                    this.compiledLogicCache = compiledCode;
+                }
+                return compiledCode;
+            }
             await this.assertTemplateLogicSubclass(logicScript);
             for (let n = 0; n < tsFiles.length; n++) {
                 const tsFile = tsFiles[n];
@@ -182,15 +219,118 @@ export class TemplateArchiveProcessor {
      * @param {string} role - the payload's role, used in the error message
      * @throws {Error} if the payload's type is not the base type or a subclass of it
      */
-    private assertRuntimeHierarchy(payload: any, baseFqn: string, role: string): void {
+    private assertRuntimeHierarchy(payload: any, baseFqn: string | string[], role: string): void {
         if (!payload || !payload.$class) {
             return;
         }
-        if (!isAssignableTo(this.template.getModelManager(), payload.$class, baseFqn)) {
+        const bases = Array.isArray(baseFqn) ? baseFqn : [baseFqn];
+        if (!bases.some(base => isAssignableTo(this.template.getModelManager(), payload.$class, base))) {
             throw new Error(
                 `Invalid ${role}: '${payload.$class}' must be, or extend, the runtime ` +
-                `${role} type (${baseFqn}).`);
+                `${role} type (${bases.join(' or ')}).`);
         }
+    }
+
+    /**
+     * Whether this template's logic is written with the logic API
+     * ('@accordproject/template-engine/logic'), rather than as a TemplateLogic class.
+     * @returns {boolean} true for logic written with the logic API
+     */
+    usesLogicApi(): boolean {
+        if (!this.template.hasLogic()) {
+            return false;
+        }
+        const logicScript = this.template.getLogicManager().getScriptManager().getScriptsForTarget('typescript')
+            .find((tsFile: Script) => tsFile.getIdentifier() === 'logic/logic.ts');
+        return !!logicScript && usesLogicApi(logicScript.getContents());
+    }
+
+    /**
+     * Compiles and loads this template's logic, written with the logic API, once.
+     * @returns {Promise<Logic>} the logic
+     */
+    loadLogic(): Promise<Logic<any, any>> {
+        if (!this.logicApiLogic) {
+            this.logicApiLogic = this.compileLogic(true)
+                .then(compiled => loadLogic(compiled['logic/logic.ts'].code, runtimeModules(this.template.getModelManager())));
+            this.logicApiLogic.catch(() => { this.logicApiLogic = undefined; });
+        }
+        return this.logicApiLogic;
+    }
+
+    /**
+     * This template instance as the one document of an agreement.
+     * @param {any} data - the instance's data
+     * @returns {object} the agreement and document
+     */
+    private instanceAgreement(data: any): { agreement: AgreementJson, document: DocumentJson } {
+        const metadata = this.template.getMetadata();
+        const document: DocumentJson = {
+            $class: AGREEMENT_DOCUMENT_FQN,
+            documentId: INSTANCE_DOCUMENT_ID,
+            template: {
+                $class: 'org.accordproject.template@1.0.0.TemplateReference',
+                templateId: metadata.getName(),
+                version: metadata.getVersion(),
+            },
+            data,
+        };
+        const agreement: AgreementJson = {
+            $class: AGREEMENT_FQN,
+            agreementId: INSTANCE_AGREEMENT_ID,
+            documents: [relationship(AGREEMENT_DOCUMENT_FQN, INSTANCE_DOCUMENT_ID)],
+            parties: [],
+        };
+        return { agreement, document };
+    }
+
+    /**
+     * Initialises logic written with the logic API, for one instance.
+     * @param {any} data - the instance's data
+     * @param {string} effectiveAt - when the instance takes effect
+     * @returns {Promise<InitResponse>} its state ({} if stateless) and the events init emitted
+     */
+    private async initLogicApi(data: any, effectiveAt: string): Promise<InitResponse> {
+        const logic = await this.loadLogic();
+        const { agreement, document } = this.instanceAgreement(data);
+        const { state, events } = await initialise(agreement, [document], effectiveAt,
+            { [document.template!.templateId]: logic }, { models: this.template.getModelManager() });
+        return { state: state.states?.[INSTANCE_DOCUMENT_ID] ?? {}, events };
+    }
+
+    /**
+     * Triggers logic written with the logic API, for one instance. Its state is that
+     * instance's state, as init() and trigger() return it.
+     * @param {any} data - the instance's data
+     * @param {any} request - the request
+     * @param {any} [priorState] - the instance's state
+     * @returns {Promise<TriggerResponse>} the response, the instance's next state, and events
+     */
+    private async triggerLogicApi(data: any, request: any, priorState?: any): Promise<TriggerResponse> {
+        const logic = await this.loadLogic();
+        const stateful = logic.hasInit;
+        if (stateful && (!priorState || Object.keys(priorState).length === 0)) {
+            throw new Error(
+                'Stateful templates require priorState: call init() first and pass its ' +
+                'returned state (or the state returned by a previous trigger()) as priorState.'
+            );
+        }
+        const { agreement, document } = this.instanceAgreement(data);
+        const state: StateJson = {
+            $class: AGREEMENT_STATE_FQN,
+            stateId: `${INSTANCE_AGREEMENT_ID}-state`,
+            agreement: relationship(AGREEMENT_FQN, INSTANCE_AGREEMENT_ID),
+            revision: 0,
+            effectiveAt: request.$timestamp,
+            states: stateful ? { [INSTANCE_DOCUMENT_ID]: priorState } : undefined,
+        };
+        const outcome = await execute({ agreement, documents: [document], state }, INSTANCE_DOCUMENT_ID, request,
+            { [document.template!.templateId]: logic }, { models: this.template.getModelManager() });
+        return {
+            result: outcome.result,
+            state: outcome.state.states?.[INSTANCE_DOCUMENT_ID] ?? {},
+            events: outcome.events,
+        };
     }
 
     /**
@@ -400,6 +540,13 @@ export class TemplateArchiveProcessor {
         const factory = new Factory(this.template.getModelManager());
         const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true});
 
+        // Logic written with the logic API validates everything as it runs, and takes the
+        // time from the request rather than the clock.
+        if (this.llmConfig?.mode !== 'force' && this.usesLogicApi()) {
+            if (data) serializer.fromJSON(data);
+            return this.triggerLogicApi(data, request, priorState);
+        }
+
         // Stateful templates must always be triggered against the state produced by
         // init() (or a previous trigger()) — there is no implicit "empty" state for
         // a template that declares custom State fields. Stateless templates have no
@@ -419,8 +566,8 @@ export class TemplateArchiveProcessor {
         if (priorState && Object.keys(priorState).length > 0) serializer.fromJSON(priorState);
 
         // enforce the runtime class hierarchy on the inputs
-        this.assertRuntimeHierarchy(request, RUNTIME_REQUEST_FQN, 'request');
-        this.assertRuntimeHierarchy(priorState, RUNTIME_STATE_FQN, 'state');
+        this.assertRuntimeHierarchy(request, [RUNTIME_REQUEST_FQN, RUNTIME_1_REQUEST_FQN], 'request');
+        this.assertRuntimeHierarchy(priorState, [RUNTIME_STATE_FQN, STATE_DATA_FQN], 'state');
 
         let triggerResponse: TriggerResponse;
         const forceLLM = this.llmConfig?.mode === 'force';
@@ -447,8 +594,8 @@ export class TemplateArchiveProcessor {
         }
 
         // enforce the runtime class hierarchy on the outputs
-        this.assertRuntimeHierarchy(triggerResponse.state, RUNTIME_STATE_FQN, 'state');
-        this.assertRuntimeHierarchy(triggerResponse.result, RUNTIME_RESPONSE_FQN, 'response');
+        this.assertRuntimeHierarchy(triggerResponse.state, [RUNTIME_STATE_FQN, STATE_DATA_FQN], 'state');
+        this.assertRuntimeHierarchy(triggerResponse.result, [RUNTIME_RESPONSE_FQN, RUNTIME_1_RESPONSE_FQN], 'response');
         if (triggerResponse.events && Array.isArray(triggerResponse.events)) {
             triggerResponse.events.forEach(e => this.assertRuntimeHierarchy(e, BASE_EVENT_FQN, 'event'));
         }
@@ -470,6 +617,10 @@ export class TemplateArchiveProcessor {
         
         // validate inputs before execution
         if (data) serializer.fromJSON(data);
+
+        if (this.llmConfig?.mode !== 'force' && this.usesLogicApi()) {
+            return this.initLogicApi(data, currentTime ?? new Date().toISOString());
+        }
 
         let initResponse: InitResponse;
         const forceLLM = this.llmConfig?.mode === 'force';
@@ -493,7 +644,7 @@ export class TemplateArchiveProcessor {
 
         // enforce the runtime class hierarchy on the output state (skipped for the empty
         // state of a stateless template, which has no $class)
-        this.assertRuntimeHierarchy(initResponse.state, RUNTIME_STATE_FQN, 'state');
+        this.assertRuntimeHierarchy(initResponse.state, [RUNTIME_STATE_FQN, STATE_DATA_FQN], 'state');
 
         return initResponse;
     }

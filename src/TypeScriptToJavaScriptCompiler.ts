@@ -17,8 +17,9 @@
 import { createDefaultMapFromNodeModules, createDefaultMapFromCDN } from '@typescript/vfs';
 import { twoslasher, TwoSlashOptions, TwoSlashReturn } from '@typescript/twoslash';
 import { ModelManager } from '@accordproject/concerto-core';
-import { TypeScriptCompilationContext } from './TypeScriptCompilationContext';
+import { CompilationOptions, TypeScriptCompilationContext } from './TypeScriptCompilationContext';
 import { DAYJS_BASE64, JSONPATH_BASE64 } from './runtime/declarations';
+import { LOGIC_DECLARATIONS } from './runtime/logicDeclarations';
 import * as lzstring from 'lz-string';
 
 /**
@@ -84,8 +85,8 @@ export class TypeScriptToJavaScriptCompiler {
     ts: any;
     typescriptUrl: string;
 
-    constructor(modelManager: ModelManager, templateConceptFqn?: string) {
-        this.context = new TypeScriptCompilationContext(modelManager, templateConceptFqn).getCompilationContext();
+    constructor(modelManager: ModelManager, templateConceptFqn?: string, options: CompilationOptions = {}) {
+        this.context = new TypeScriptCompilationContext(modelManager, templateConceptFqn, options).getCompilationContext();
         this.typescriptUrl = TYPESCRIPT_URL;
     }
 
@@ -117,6 +118,8 @@ export class TypeScriptToJavaScriptCompiler {
         }
         this.fsMap.set('/node_modules/@types/dayjs/index.d.ts', Buffer.from(DAYJS_BASE64, 'base64').toString());
         this.fsMap.set('/node_modules/@types/jsonpath/index.d.ts', Buffer.from(JSONPATH_BASE64, 'base64').toString());
+        // The logic API, for logic that imports '@accordproject/template-engine/logic'.
+        this.fsMap.set('/node_modules/@accordproject/template-engine/logic.d.ts', LOGIC_DECLARATIONS);
     }
 
     compile(typescript: string): TwoSlashReturn {
