@@ -77,6 +77,60 @@ const SCRIPT_TARGET = 9
 
 const MODULE_KIND = 6;
 
+type TypeScriptLibrary = {
+    ts: any;
+    fsMap: Map<string,string>;
+};
+
+/**
+ * Loading the typescript module and its lib.*.d.ts files is expensive (in the browser
+ * the lib files are fetched from a CDN), so it is done once per module and shared by
+ * every compiler instance. Callers must copy fsMap before handing it to twoslash,
+ * because twoslash writes the files it compiles into the map it is given.
+ */
+let typeScriptLibrary: Promise<TypeScriptLibrary> | undefined;
+
+async function loadTypeScriptLibrary(): Promise<TypeScriptLibrary> {
+    let ts: any;
+    let fsMap: Map<string,string>;
+    if(typeof window === 'undefined') {
+        // node does not (yet) support http(s) imports
+        // see: https://nodejs.org/api/esm.html#https-and-http-imports
+        ts = (await import ('typescript')).default;
+        if(!ts) {
+            throw new Error('Failed to load typescript module');
+        }
+        fsMap = createDefaultMapFromNodeModules({
+            target: SCRIPT_TARGET,
+        });
+    }
+    else {
+        // Use the bundled typescript in the browser rather than a dynamic CDN module
+        // import: webpack cannot resolve the runtime CDN URL ('Cannot find module
+        // https://...'), and twoslash already pulls typescript into the browser bundle.
+        ts = (await import('typescript')).default;
+        if(!ts) {
+            throw new Error('Failed to load typescript module');
+        }
+        // lib.d.ts files are still fetched from the CDN at runtime (a browser fetch).
+        fsMap = await createDefaultMapFromCDN({ target: SCRIPT_TARGET }, ts.version, false, ts);
+    }
+    fsMap.set('/node_modules/@types/dayjs/index.d.ts', Buffer.from(DAYJS_BASE64, 'base64').toString());
+    fsMap.set('/node_modules/@types/jsonpath/index.d.ts', Buffer.from(JSONPATH_BASE64, 'base64').toString());
+    return { ts, fsMap };
+}
+
+function getTypeScriptLibrary(): Promise<TypeScriptLibrary> {
+    if(!typeScriptLibrary) {
+        typeScriptLibrary = loadTypeScriptLibrary().catch((err) => {
+            // don't cache a failed load, so that a later call can retry
+            typeScriptLibrary = undefined;
+            throw err;
+        });
+    }
+    return typeScriptLibrary;
+}
+
 export class TypeScriptToJavaScriptCompiler {
     context: string;
     fsMap: Map<string,string>|undefined;
@@ -93,30 +147,9 @@ export class TypeScriptToJavaScriptCompiler {
         if(typescriptUrl) {
             this.typescriptUrl = typescriptUrl;
         }
-        if(typeof window === 'undefined') {
-            // node does not (yet) support http(s) imports
-            // see: https://nodejs.org/api/esm.html#https-and-http-imports
-            this.ts = (await import ('typescript')).default;
-            if(!this.ts) {
-                throw new Error('Failed to load typescript module');
-            }
-            this.fsMap = createDefaultMapFromNodeModules({
-                target: SCRIPT_TARGET,
-            });
-        }
-        else {
-            // Use the bundled typescript in the browser rather than a dynamic CDN module
-            // import: webpack cannot resolve the runtime CDN URL ('Cannot find module
-            // https://...'), and twoslash already pulls typescript into the browser bundle.
-            this.ts = (await import('typescript')).default;
-            if(!this.ts) {
-                throw new Error('Failed to load typescript module');
-            }
-            // lib.d.ts files are still fetched from the CDN at runtime (a browser fetch).
-            this.fsMap = await createDefaultMapFromCDN({ target: SCRIPT_TARGET }, this.ts.version, false, this.ts);
-        }
-        this.fsMap.set('/node_modules/@types/dayjs/index.d.ts', Buffer.from(DAYJS_BASE64, 'base64').toString());
-        this.fsMap.set('/node_modules/@types/jsonpath/index.d.ts', Buffer.from(JSONPATH_BASE64, 'base64').toString());
+        const library = await getTypeScriptLibrary();
+        this.ts = library.ts;
+        this.fsMap = new Map(library.fsMap);
     }
 
     compile(typescript: string): TwoSlashReturn {
@@ -129,7 +162,8 @@ ${typescript}
 `;
 
         const options: TwoSlashOptions = {
-            fsMap: this.fsMap,
+            // twoslash writes the compiled files into the map, so give it a fresh copy
+            fsMap: new Map(this.fsMap),
             tsModule: this.ts,
             defaultCompilerOptions: {
                 target: SCRIPT_TARGET,
