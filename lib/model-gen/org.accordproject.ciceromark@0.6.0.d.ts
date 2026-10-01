@@ -1,0 +1,49 @@
+import { IChild } from './org.accordproject.commonmark@0.5.0';
+import { IDecorator } from './concerto.metamodel@1.0.0';
+export interface IElement extends IChild {
+    name: string;
+    elementType?: string;
+    decorators?: IDecorator[];
+}
+export type ElementUnion = IVariable | IFormula | IBlock;
+export interface IVariable extends IElement {
+    value: string;
+    identifiedBy?: string;
+}
+export type VariableUnion = IFormattedVariable | IEnumVariable;
+export interface IFormattedVariable extends IVariable {
+    format: string;
+}
+export interface IEnumVariable extends IVariable {
+    enumValues: string[];
+}
+export interface IFormula extends IElement {
+    value: string;
+    dependencies?: string[];
+    code?: string;
+}
+export interface IBlock extends IElement {
+}
+export type BlockUnion = IClause | IContract | IConditional | IOptional | IListBlock;
+export interface IClause extends IBlock {
+    src?: string;
+}
+export interface IContract extends IBlock {
+    src?: string;
+}
+export interface IConditional extends IBlock {
+    isTrue: boolean;
+    whenTrue: IChild[];
+    whenFalse: IChild[];
+}
+export interface IOptional extends IBlock {
+    hasSome: boolean;
+    whenSome: IChild[];
+    whenNone: IChild[];
+}
+export interface IListBlock extends IBlock {
+    type: string;
+    tight: string;
+    start?: string;
+    delimiter?: string;
+}

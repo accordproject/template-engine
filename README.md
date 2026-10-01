@@ -1,0 +1,274 @@
+# Template Engine
+
+This is the [Accord Project](https://accordproject.org) template engine. Rich-text templates are defined in TemplateMark (either as markdown files, or JSON documents) and are then merged with JSON data to produce output documents. Templates may contain [TypeScript](https://www.typescriptlang.org) expressions.
+
+## Resources
+
+- [Getting Started Video](https://vimeo.com/manage/videos/845273411)
+- [Template Playground](https://playground.accordproject.org)
+- [Running Code](https://replit.com/@dselman/AccordProjectTemplateEngine-Hello-World)
+
+The core template engine is a JSON to JSON transformation that converts TemplateMark JSON + agreement data (JSON) to AgreementMark JSON.
+
+> Note: Use the `@accordproject/markdown-transform` project to convert markdown templates to TemplateMark JSON and to convert AgreementMark JSON to output formats (HTML, PDF, DOCX etc.). For command-line usage please use `@accordproject/template-cli`.
+
+TemplateMark is a document object model that describes a rich-text template, with embedded variables, conditional sections, formulae etc. TemplateMark uses embedded TypeScript expressions for conditionals and calculations.
+
+> The format of both TemplateMark and AgreementMark is specified using the [Concerto](https://concerto.accordproject.org) data modeling language.
+
+At a high-level the template engine converts a TemplateMark DOM to an AgreementMark DOM, evaluating TypeScript expressions for conditional sections and formulae, and replaces variable references with variable values from the supplied agreement data.
+
+![Template Interpreter](./assets/template-interpreter.png)
+
+## Execution Pipeline Overview
+
+Internally, the Template Engine evaluates templates through a structured execution pipeline:
+
+1. **Type Validation**  
+   The TemplateMark JSON document and the incoming agreement data are validated against their respective Concerto models to ensure structural and type correctness.
+
+2. **TypeScript Compilation**  
+   Embedded TypeScript expressions (such as conditionals, clauses, and formulae) are compiled into JavaScript using the `TemplateMarkToJavaScriptCompiler`.
+
+3. **User Code Evaluation**  
+   During agreement generation, compiled JavaScript expressions are evaluated using the `JavaScriptEvaluator`.  
+   The evaluator supports two execution strategies:
+   - `evalDangerously()` — Executes JavaScript directly within the current       process. 
+   This should only be used with trusted code or in a sandboxed environment (e.g., browser).
+   - `evalChildProcess()` — Executes JavaScript in an isolated Node.js child process for improved safety and isolation and is recommended for untrusted template content on the server.
+
+4. **AgreementMark Generation**  
+   The TemplateMark document is traversed, evaluated values are inserted into the document structure, and an AgreementMark JSON document is produced.
+
+5. **Output Validation**  
+   The generated AgreementMark document is validated before being returned.
+
+This layered architecture ensures type-safety, deterministic execution of template logic, and isolation during runtime evaluation.
+
+## Hello World Template
+
+Let's create the simplest template imaginable, the infamous "hello world"!
+
+> The code for this test is available at: https://github.com/accordproject/template-engine/blob/main/test/HelloWorld.test.ts
+
+### Template Data Model
+
+First create a template data model in Concerto syntax. The data model defines the structure of the data to be merged with the template. In this case the template model contains a single property `message` of type `String`. The property is required (it is not `optional`).
+
+```javascript
+namespace helloworld@1.0.0
+
+@template
+concept TemplateData {
+    o String message
+}
+```
+
+### TemplateMark (extended markdown)
+
+Next define the TemplateMark for the template. In this case it is the plain-text world `"Hello"` followed by a space, then the variable `message` followed by `"."`.
+
+```markdown
+Hello {{message}}.
+```
+
+> Note that in this case the template is defined using an extended markdown syntax (rich-text with embedded variables etc.). The `@accordproject/markdown-transform` packages are used to convert the markdown to TemplateMark JSON, for use by the template engine.
+
+### Generate AgreementMark from Data (JSON)
+
+Define an **instance** of the `helloworld@1.0.0.TemplateData` data model. In this case setting the value of the `message` property to the string "World".
+
+```typescript
+const data = {
+    $class: 'helloworld@1.0.0.TemplateData',
+    message: 'World',
+};
+```
+### Output AgreementMark (JSON)
+
+When the TemplateMark and the data JSON is passed to the Template Engine it merges the two, in this case by simply replacing the reference to the `message` variable with its value from the data JSON and to produce an AgreementMark JSON document.
+
+This AgreementMark JSON document can then be passed to the `@accordproject/markdown-transform` modules for conversion to markdown, PDF, HTML.
+
+```json
+{
+    "$class": "org.accordproject.commonmark@0.5.0.Document",
+    "xmlns": "http://commonmark.org/xml/1.0",
+    "nodes": [
+        {
+        "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+        "nodes": [
+            {
+            "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+            "nodes": [
+                {
+                "$class": "org.accordproject.commonmark@0.5.0.Text",
+                "text": "Hello "
+                },
+                {
+                "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                "value": "World",
+                "name": "message",
+                "elementType": "String"
+                },
+                {
+                "$class": "org.accordproject.commonmark@0.5.0.Text",
+                "text": "."
+                }
+            ]
+            }
+        ]
+        }
+    ]
+}
+```
+
+## Next Steps
+
+The Hello World example just scratches the surface of what can be accomplished! TemplateMark can define optional sections, conditional sections, TypeScript formulae/calculations and even reference external data.
+
+Refer to the [full](https://github.com/accordproject/template-engine/tree/main/test/templates/good/full) example for details. 
+
+> More detailed syntax documentation is to come!
+Read the existing documentation at: https://docs.accordproject.org/docs/markup-templatemark.html
+
+## Why create a new template engine?
+
+There are many great Open Source template engines available, such as [Mustache](https://mustache.github.io), [Handlebars](https://handlebarsjs.com) or [EJS](https://ejs.co), so why create yet another?
+
+### 1. Input and Output Format Agnostic
+
+Most template engines are fundamentally **text based** — i.e. they treat templates as text strings and are glorified "find and replace" machines. This approach creates a coupling between the input format of the template, say, a DOCX file, and the output of the template engine, which in the case of a DOCX template, has to be a DOCX file. This makes supporting multiple input and output formats difficult.
+
+The Accord Project template engine breaks the coupling between the template input format and the engine output format, and moves data format conversion outside of the core template engine. Templates at the engine level are TemplateMark JSON documents and the output from the template engine is an AgreementMark JSON document. Separate libraries are used to convert source templates into TemplateMark JSON, or to render AgreementMark JSON to an output format.
+
+This flexibility allows a markdown template to be created that is used to create HTML, PDF or DOCX. One can even imagine using DOCX templates to create HTML or PDF files, or other scenarios.
+
+### 2. TemplateMark as a Defined Format
+
+TemplateMark JSON is a well-defined file format, meaning that powerful template editors can be created to define it: including widgets and user-experience for defining conditional sections, and formulae, and offering template preview and integrated testing. Template editing is closer to programming in our opinion than word-processing.
+
+We encourage community and commercial innovation in this area!
+
+### 3. Full Logic Support
+
+Unlike some templating systems which prohibit, or minimize, logic in templates, Accord Project templates fully embrace templates that may contain sophisticated logic: conditional logic to determine what text to include, or even calculations, for example to calculate the monthly payments for a mortgage based on the term of the mortgage, the amount and the interest rate.
+
+### 4. Type-safety
+
+Given the ability for templates to contain logic there's an imperative to ensure that the templates are **safe** - i.e. when a template is merged with well-structured data it is guaranteed to produce well-structured output.
+
+Too many templating engines fail in unpredictable ways at runtime, or silently generate invalid output, when presented with data — unacceptable for enterprise usage.
+
+Accord Project templates are therefore **strongly-typed**. The logic in templates is expressed in [TypeScript](https://www.typescriptlang.org). TypeScript is a strongly-typed, general purpose programming language, supported by a vibrant Open Source and enterprise community. TypeScript compiles to JavaScript for easy execution on most platforms.
+
+### 5. Data Model
+
+The rich-text with variables of a template is associated with a [Concerto data model](https://concerto.accordproject.org). The Concerto data model defines the structure of the data required for the template, and is used to statically compile the template and verify type-safety, and is also used at runtime to ensure that incoming data is well structured.
+
+### 6. Compilation
+
+Templates may be statically compiled to TypeScript programs, enforcing type-safety, ensuring that no unsafe code evaluation ("eval") is required at runtime, and easing integration into applications.
+
+The template compiler is a separate project, hosted here: https://github.com/accordproject/template-compiler
+
+## Agreement logic (org.accordproject 1.0.0)
+
+Templates whose models extend `org.accordproject.templatedata@1.0.0` (`TemplateData`
+for data, `StateData` for state) and `org.accordproject.runtime@1.0.0` (`Request`,
+`Response`) can write their logic with the logic API instead of a `TemplateLogic` class:
+
+```ts
+import { defineLogic, Self } from '@accordproject/template-engine/logic';
+import { ILatePaymentData, ILatePaymentState } from './generated/poc.accordproject.latepayment@0.1.0';
+import { LatePaymentState, PaymentOverdue, PaymentReminder, ReminderSent } from './generated/types';
+
+export type LatePaymentClause = Self<ILatePaymentData, ILatePaymentState>;
+
+export default defineLogic<LatePaymentClause>()
+    .init(clause => clause.setState(LatePaymentState.create({ remindersSent: 0, discharged: false })))
+    .on(PaymentOverdue, async (request, clause) => {
+        const remindersSent = clause.state.remindersSent + 1;
+        clause.setState({ ...clause.state, remindersSent });
+        clause.emit(PaymentReminder.create({ $timestamp: request.$timestamp, reminderNumber: remindersSent, gracePeriodDays: clause.data.gracePeriodDays }));
+        return ReminderSent.create({ $timestamp: request.$timestamp, remindersSent });
+    });
+```
+
+- Each handler takes `(request, self)`. `self` is this template instance: a node in an
+  `org.accordproject.agreement@1.0.0` Agreement, whose other documents and clauses it
+  can read but not write. It writes only its own state (`setState`), events (`emit`),
+  and, by triggering them, the clauses composed into it (`self.clauses`, typed with
+  `Clause<ApiOf<typeof thatClausesLogic>>`).
+- The engine runs each request in a transaction: everything a handler writes commits as
+  one revision of the agreement's `AgreementState`, or nothing does if it throws. A
+  composed clause runs in a nested transaction. Logic takes its time from the request
+  and data, never the clock, so replaying the same inputs gives the same outcome.
+- `./generated/types` holds one factory per concrete model type (`PayOut.create({...})`
+  fills in the `$class`). Generate it, with Concerto's interfaces, by running
+  `template-engine-codegen [templateDir] [--offline]`.
+- `TemplateArchiveProcessor` runs such a template as the one document of an agreement:
+  `init(data)` returns the instance's state and events, and `trigger(data, request,
+  state)` its response, next state and events. `AgreementProcessor` runs a whole
+  agreement over several templates, from JSON to JSON:
+  `initialise(agreement, documents, effectiveAt)` and
+  `execute({ agreement, documents, state }, documentId, request)`.
+- `@accordproject/template-engine/testing` has `testInstance` (a `self` for unit tests,
+  with `committed` showing what would commit) and `stubClause` (a stand-in for a
+  composed clause, typed by its API).
+- A template whose models include several `TemplateData` types (for instance those of
+  the clauses its logic uses) names its template model in package.json, as
+  `accordproject.templateModel`.
+
+## Install
+
+Note that this module is primarily intended for tool authors, or developers embedding template engines within applications. For command-line usage please refer to the `@accordproject/template-cli` package which implements a full pipeline to convert markdown templates plus JSON data to supported output formats, such as HTML, DOCX or PDF.
+
+```
+npm install @accordproject/template-engine --save
+```
+
+Requires Node.js >= 22.
+
+## Browser usage
+
+The package is published with two entry points:
+
+- `lib/index.js` — the Node.js build (`tsc` output, typed via `lib/index.d.ts`).
+- `umd/template-engine.js` — a pre-built UMD browser bundle (referenced by the `browser`
+  field, so bundlers pick it up automatically for web builds).
+
+The full author-and-run loop works **in the browser** — parse a template to TemplateMark,
+type-check it, compile its embedded TypeScript logic to JavaScript, and evaluate it — which
+is what powers the [Template Playground](https://playground.accordproject.org). For
+convenience the bundle also re-exports `ModelManager` (concerto) and `TemplateMarkTransformer`
+(markdown-template), so a single bundle can run the whole `model -> template -> agreement` flow
+with one concerto instance:
+
+```html
+<script src="https://unpkg.com/@accordproject/template-engine/umd/template-engine.js"></script>
+<script>
+  const { ModelManager, TemplateMarkTransformer, TemplateMarkInterpreter } = window['template-engine'];
+  const modelManager = new ModelManager();
+  modelManager.addCTOModel('namespace test@1.0.0\n@template\nconcept TemplateData { o String name }');
+  const templateMark = new TemplateMarkTransformer()
+    .fromMarkdownTemplate({ content: 'Hello {{name}}!' }, modelManager, 'contract');
+  const engine = new TemplateMarkInterpreter(modelManager, {});
+  const agreement = await engine.generate(templateMark, { $class: 'test@1.0.0.TemplateData', name: 'World' });
+</script>
+```
+
+Notes on browser limitations:
+
+- Logic that imports **arbitrary** 3rd-party packages must be shipped as a **compiled archive**
+  (JavaScript logic, dependencies already bundled — produced offline in Node.js). In the browser,
+  source archives (TypeScript logic) compile against a fixed set of supported runtime dependencies.
+- `Template.fromDirectory()`/`fromUrl()` and child-process logic evaluation are Node-only; in the
+  browser load templates via `Template.fromArchive(buffer)` and use the default in-process evaluator.
+
+The browser bundle is exercised by the Playwright tests in the `e2e/` workspace, which load
+`umd/template-engine.js` into a headless Chromium and run a real `generate()`.
+
+## License <a name="license"></a>
+Accord Project source code files are made available under the Apache License, Version 2.0 (Apache-2.0), located in the LICENSE file. Accord Project documentation files are made available under the Creative Commons Attribution 4.0 International License (CC-BY-4.0), available at http://creativecommons.org/licenses/by/4.0/.
+
