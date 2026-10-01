@@ -35,7 +35,7 @@ async function inject(page: Page): Promise<void> {
 function trackLibRequests(page: Page): string[] {
     const urls: string[] = [];
     page.on('request', request => {
-        if (request.url().includes('playgroundcdn.typescriptlang.org')) {
+        if (new URL(request.url()).hostname === 'playgroundcdn.typescriptlang.org') {
             urls.push(request.url());
         }
     });
@@ -89,6 +89,9 @@ test.describe('@accordproject/template-engine UMD', () => {
     // Full browser flow: parse -> type-check -> compile the template's TypeScript logic to
     // JS (twoslash, using the bundled TypeScript) -> evaluate, all in headless Chromium.
     test('compiles template formulas in the browser, loading the lib files once', async ({ page }) => {
+        // The first compile fetches the lib files from the TypeScript CDN, so this test's
+        // duration depends on that CDN's latency until the lib files are bundled.
+        test.setTimeout(120000);
         const libRequests = trackLibRequests(page);
         await inject(page);
         const results = await page.evaluate(async () => {
