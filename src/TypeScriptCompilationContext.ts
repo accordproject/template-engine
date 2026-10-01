@@ -22,6 +22,16 @@ import {
     RUNTIME_RESPONSE_FQN,
     BASE_EVENT_FQN,
 } from './utils';
+import { typesSource } from './agreement/types';
+
+/** How a template's logic is written. */
+export type CompilationOptions = {
+    /**
+     * True for logic written with the logic API ('@accordproject/template-engine/logic'),
+     * which imports its factories from './generated/types'.
+     */
+    logicApi?: boolean;
+}
 
 /**
  * This class creates the typescript types
@@ -34,10 +44,12 @@ export class TypeScriptCompilationContext {
 
     modelManager:ModelManager;
     templateClass:ClassDeclaration;
+    options:CompilationOptions;
 
-    constructor(modelManager:ModelManager,templateConceptFqn?: string) {
+    constructor(modelManager:ModelManager,templateConceptFqn?: string, options: CompilationOptions = {}) {
         this.modelManager = modelManager;
         this.templateClass = getTemplateClassDeclaration(this.modelManager, templateConceptFqn);
+        this.options = options;
     }
 
     getTypeScriptFiles() : Record<string,string> {
@@ -184,6 +196,13 @@ abstract class TemplateLogic<T extends TemplateData, S extends RuntimeState = Ru
 ${content}
 `;
         });
+
+        if (this.options.logicApi) {
+            result += `
+// @filename: generated/types.ts
+${typesSource(this.modelManager)}
+`;
+        }
 
         result += `
 // @filename: code.ts

@@ -34,6 +34,14 @@ export const BASE_EVENT_FQN = 'concerto@1.0.0.Event';
 export const RUNTIME_OBLIGATION_FQN = 'org.accordproject.runtime@0.2.0.Obligation';
 export const RUNTIME_CONTRACT_FQN = 'org.accordproject.contract@0.2.0.Contract';
 
+// The same base types in org.accordproject.runtime@1.0.0, where a template's data and state
+// extend org.accordproject.templatedata@1.0.0 TemplateData and StateData. A template uses
+// one runtime or the other; the archive processor accepts either.
+export const RUNTIME_1_REQUEST_FQN = 'org.accordproject.runtime@1.0.0.Request';
+export const RUNTIME_1_RESPONSE_FQN = 'org.accordproject.runtime@1.0.0.Response';
+export const TEMPLATE_DATA_FQN = 'org.accordproject.templatedata@1.0.0.TemplateData';
+export const STATE_DATA_FQN = 'org.accordproject.templatedata@1.0.0.StateData';
+
 /**
  * Returns the concrete (non-abstract) class declarations assignable to baseFqn: the base
  * type itself (when concrete) plus every subclass of it. Returns an empty array when

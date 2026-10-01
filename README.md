@@ -172,6 +172,54 @@ Templates may be statically compiled to TypeScript programs, enforcing type-safe
 
 The template compiler is a separate project, hosted here: https://github.com/accordproject/template-compiler
 
+## Agreement logic (org.accordproject 1.0.0)
+
+Templates whose models extend `org.accordproject.templatedata@1.0.0` (`TemplateData`
+for data, `StateData` for state) and `org.accordproject.runtime@1.0.0` (`Request`,
+`Response`) can write their logic with the logic API instead of a `TemplateLogic` class:
+
+```ts
+import { defineLogic, Self } from '@accordproject/template-engine/logic';
+import { ILatePaymentData, ILatePaymentState } from './generated/poc.accordproject.latepayment@0.1.0';
+import { LatePaymentState, PaymentOverdue, PaymentReminder, ReminderSent } from './generated/types';
+
+export type LatePaymentClause = Self<ILatePaymentData, ILatePaymentState>;
+
+export default defineLogic<LatePaymentClause>()
+    .init(clause => clause.setState(LatePaymentState.create({ remindersSent: 0, discharged: false })))
+    .on(PaymentOverdue, async (request, clause) => {
+        const remindersSent = clause.state.remindersSent + 1;
+        clause.setState({ ...clause.state, remindersSent });
+        clause.emit(PaymentReminder.create({ $timestamp: request.$timestamp, reminderNumber: remindersSent, gracePeriodDays: clause.data.gracePeriodDays }));
+        return ReminderSent.create({ $timestamp: request.$timestamp, remindersSent });
+    });
+```
+
+- Each handler takes `(request, self)`. `self` is this template instance: a node in an
+  `org.accordproject.agreement@1.0.0` Agreement, whose other documents and clauses it
+  can read but not write. It writes only its own state (`setState`), events (`emit`),
+  and, by triggering them, the clauses composed into it (`self.clauses`, typed with
+  `Clause<ApiOf<typeof thatClausesLogic>>`).
+- The engine runs each request in a transaction: everything a handler writes commits as
+  one revision of the agreement's `AgreementState`, or nothing does if it throws. A
+  composed clause runs in a nested transaction. Logic takes its time from the request
+  and data, never the clock, so replaying the same inputs gives the same outcome.
+- `./generated/types` holds one factory per concrete model type (`PayOut.create({...})`
+  fills in the `$class`). Generate it, with Concerto's interfaces, by running
+  `template-engine-codegen [templateDir] [--offline]`.
+- `TemplateArchiveProcessor` runs such a template as the one document of an agreement:
+  `init(data)` returns the instance's state and events, and `trigger(data, request,
+  state)` its response, next state and events. `AgreementProcessor` runs a whole
+  agreement over several templates, from JSON to JSON:
+  `initialise(agreement, documents, effectiveAt)` and
+  `execute({ agreement, documents, state }, documentId, request)`.
+- `@accordproject/template-engine/testing` has `testInstance` (a `self` for unit tests,
+  with `committed` showing what would commit) and `stubClause` (a stand-in for a
+  composed clause, typed by its API).
+- A template whose models include several `TemplateData` types (for instance those of
+  the clauses its logic uses) names its template model in package.json, as
+  `accordproject.templateModel`.
+
 ## Install
 
 Note that this module is primarily intended for tool authors, or developers embedding template engines within applications. For command-line usage please refer to the `@accordproject/template-cli` package which implements a full pipeline to convert markdown templates plus JSON data to supported output formats, such as HTML, DOCX or PDF.
