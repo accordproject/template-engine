@@ -126,6 +126,8 @@ new TemplateArchiveProcessor(template, llmConfig, {
 
 `ollama` and `openai-compatible` use the `openai` SDK, so they take their own loader if given and otherwise the `openai` one. If a supplied loader rejects, the reasoner throws an error naming the provider and the loader's failure.
 
+In the browser, the OpenAI SDK (used by `openai`, `ollama` and `openai-compatible`) and the Anthropic SDK also refuse to construct a client unless the provider config sets `clientOptions: { dangerouslyAllowBrowser: true }`. That exposes the API key to anyone using the page, so only enable it when that is acceptable, such as when users supply their own key.
+
 | Provider | Structured output | Effort levels | Notes |
 | --- | --- | --- | --- |
 | `anthropic` | `output_config.format` | `low`, `medium`, `high`, `xhigh`, `max` | Adaptive thinking on by default; `maxTokens` defaults to 16000. |

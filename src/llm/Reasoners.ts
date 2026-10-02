@@ -611,16 +611,25 @@ export class OpenAICompatibleReasoner extends BaseReasoner {
   protected readonly baseUrl: string;
   protected readonly clientOptions: Record<string, unknown>;
   protected readonly sdkLoader?: SdkLoader;
+  protected readonly providerLabel: string;
 
   /**
    * @param config - provider configuration
    * @param baseUrl - base URL of the OpenAI-compatible endpoint
    * @param defaultApiKey - API key used when the config has none
    * @param sdkLoader - optional loader for `openai`; defaults to importing it by name
+   * @param providerLabel - provider name used in error messages
    */
-  constructor(config: BaseProviderConfig, baseUrl: string, defaultApiKey = '', sdkLoader?: SdkLoader) {
+  constructor(
+    config: BaseProviderConfig,
+    baseUrl: string,
+    defaultApiKey = '',
+    sdkLoader?: SdkLoader,
+    providerLabel = 'OpenAI-compatible'
+  ) {
     super();
     this.sdkLoader = sdkLoader;
+    this.providerLabel = providerLabel;
     const apiKey = config.apiKey || defaultApiKey;
     if (!apiKey) throw new Error('Missing apiKey for OpenAI-compatible provider');
     this.apiKey = apiKey;
@@ -636,7 +645,7 @@ export class OpenAICompatibleReasoner extends BaseReasoner {
   private getClient(): Promise<OpenAIClient> {
     if (!this.clientPromise) {
       this.clientPromise = (async () => {
-        const mod = await loadSdk('openai', 'this provider', this.sdkLoader);
+        const mod = await loadSdk('openai', `the ${this.providerLabel} provider`, this.sdkLoader);
         return new mod.default({
           apiKey: this.apiKey,
           baseURL: this.baseUrl,
@@ -764,7 +773,7 @@ export class OllamaReasoner extends OpenAICompatibleReasoner {
    * @param sdkLoader - optional loader for `openai`; defaults to importing it by name
    */
   constructor(config: OllamaProviderConfig, sdkLoader?: SdkLoader) {
-    super(config, config.baseUrl ?? 'http://localhost:11434/v1', 'ollama', sdkLoader);
+    super(config, config.baseUrl ?? 'http://localhost:11434/v1', 'ollama', sdkLoader, 'Ollama');
   }
 }
 

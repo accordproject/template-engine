@@ -254,6 +254,12 @@ const processor = new TemplateArchiveProcessor(template, llmConfig, {
 The same loaders are accepted by `new LLMExecutor(template, config, sdkLoaders)` and
 `createReasoner(providerConfig, sdkLoaders)`.
 
+The `openai` SDK (also used by `ollama` and `openai-compatible`) and the `@anthropic-ai/sdk` SDK
+refuse to run in a browser unless the provider config opts in with
+`clientOptions: { dangerouslyAllowBrowser: true }`. Only do this if you accept that the API key
+is visible to anyone using the page, for example when users supply their own key; otherwise call
+the provider from a server.
+
 ## License <a name="license"></a>
 Accord Project source code files are made available under the Apache License, Version 2.0 (Apache-2.0), located in the LICENSE file. Accord Project documentation files are made available under the Creative Commons Attribution 4.0 International License (CC-BY-4.0), available at http://creativecommons.org/licenses/by/4.0/.
 

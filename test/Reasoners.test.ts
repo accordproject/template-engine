@@ -113,6 +113,17 @@ describe('reasoner SDK loading', () => {
         );
     });
 
+    test.each([
+        ['Ollama', { provider: 'ollama' as const, model: 'llama3' }],
+        ['OpenAI-compatible', { provider: 'openai-compatible' as const, apiKey: 'k', model: 'm', customEndpoint: 'http://localhost:1234/v1' }],
+    ])('names the %s provider when its openai fallback loader rejects', async (label, config) => {
+        const reasoner = createReasoner(config, { openai: () => Promise.reject(new Error('chunk failed to load')) });
+
+        await expect(reasoner.complete(MESSAGES)).rejects.toThrow(
+            `The SDK loader supplied for the ${label} provider failed to load 'openai': chunk failed to load`
+        );
+    });
+
     test('loads the installed SDK by name when no loader is given', async () => {
         const fetch = jest.fn(async () => new Response(
             JSON.stringify({
