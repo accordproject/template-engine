@@ -24,7 +24,7 @@ import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler
 import Script from '@accordproject/cicero-core/types/src/script';
 import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
-import { LLMExecutor } from './llm/LLMExecutor';
+import { LLMExecutor, LLMExecutorOptions } from './llm/LLMExecutor';
 import { LLMExecutorConfig } from './llm/LLMConfig';
 import {
     isAssignableTo,
@@ -69,6 +69,9 @@ export class TemplateArchiveProcessor {
     /** Optional LLM fallback configuration. */
     llmConfig?: LLMExecutorConfig;
 
+    /** Optional LLM runtime options, e.g. SDK loaders for bundled environments. */
+    private llmOptions?: LLMExecutorOptions;
+
     /** Lazily-created LLM executor reused across debug/init/trigger calls. */
     private llmExecutor?: LLMExecutor;
 
@@ -76,10 +79,12 @@ export class TemplateArchiveProcessor {
      * Creates a template archive processor
      * @param {Template} template - the template to be used by the processor
      * @param {LLMExecutorConfig} [llmConfig] - optional LLM fallback configuration
+     * @param {LLMExecutorOptions} [llmOptions] - optional LLM runtime options, e.g. `sdkLoaders`
      */
-    constructor(template: Template, llmConfig?: LLMExecutorConfig) {
+    constructor(template: Template, llmConfig?: LLMExecutorConfig, llmOptions?: LLMExecutorOptions) {
         this.template = template;
         this.llmConfig = llmConfig;
+        this.llmOptions = llmOptions;
     }
 
     /**
@@ -302,7 +307,7 @@ export class TemplateArchiveProcessor {
             throw new Error('LLM fallback requested but llmConfig is missing');
         }
         if (!this.llmExecutor) {
-            this.llmExecutor = new LLMExecutor(this.template, this.llmConfig);
+            this.llmExecutor = new LLMExecutor(this.template, this.llmConfig, this.llmOptions);
         }
         return this.llmExecutor;
     }

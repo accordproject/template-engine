@@ -221,6 +221,41 @@ Notes on browser limitations:
 The browser bundle is exercised by the Playwright tests in the `e2e/` workspace, which load
 `umd/template-engine.js` into a headless Chromium and run a real `generate()`.
 
+## LLM providers
+
+The optional [LLM executor](docs/llm-executor.md) talks to providers through their official
+SDKs. These are **optional peer dependencies** — they are not installed with the template
+engine, so install the SDK for each provider you use:
+
+| Provider | Package |
+| --- | --- |
+| `anthropic` | `@anthropic-ai/sdk` |
+| `openai`, `ollama`, `openai-compatible` | `openai` |
+| `groq` | `groq-sdk` |
+| `google` | `@google/genai` |
+| `mistral` | `@mistralai/mistralai` |
+| `openrouter` | `@openrouter/sdk` |
+
+```
+npm install @anthropic-ai/sdk
+```
+
+In Node.js the SDK is loaded by package name on first use. Bundlers (Vite, webpack, ...) cannot
+resolve that runtime lookup, so browser apps should pass `sdkLoaders` — one literal `import()`
+per provider they support — so their bundler includes the SDK:
+
+```ts
+const processor = new TemplateArchiveProcessor(template, llmConfig, {
+  sdkLoaders: {
+    anthropic: () => import('@anthropic-ai/sdk'),
+    openai: () => import('openai'), // also used by `ollama` and `openai-compatible`
+  },
+});
+```
+
+The same options are accepted by `new LLMExecutor(template, config, { sdkLoaders })` and
+`createReasoner(providerConfig, { sdkLoaders })`.
+
 ## License <a name="license"></a>
 Accord Project source code files are made available under the Apache License, Version 2.0 (Apache-2.0), located in the LICENSE file. Accord Project documentation files are made available under the Creative Commons Attribution 4.0 International License (CC-BY-4.0), available at http://creativecommons.org/licenses/by/4.0/.
 
