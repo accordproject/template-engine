@@ -6,6 +6,7 @@ umd
 .DS_Store
 scripts/external/tmp/
 src/externalModels
+src/runtime/typescriptLibs.ts
 output.html
 output
 test.html

@@ -9,7 +9,6 @@ jest.mock('@typescript/vfs', () => {
     return {
         ...actual,
         createDefaultMapFromNodeModules: jest.fn(actual.createDefaultMapFromNodeModules),
-        createDefaultMapFromCDN: jest.fn(actual.createDefaultMapFromCDN),
     };
 });
 
@@ -55,7 +54,6 @@ describe('typescript compiler reuse', () => {
         const third = await other.generate(templateMark, data, { now });
 
         expect(modules.vfs.createDefaultMapFromNodeModules).toHaveBeenCalledTimes(1);
-        expect(modules.vfs.createDefaultMapFromCDN).not.toHaveBeenCalled();
         expect(second.toJSON()).toEqual(first.toJSON());
         expect(third.toJSON()).toEqual(first.toJSON());
     });
@@ -93,7 +91,6 @@ describe('typescript compiler reuse', () => {
         const ciceroMark = await engine.generate(templateMark, data, { now });
 
         expect(modules.vfs.createDefaultMapFromNodeModules).not.toHaveBeenCalled();
-        expect(modules.vfs.createDefaultMapFromCDN).not.toHaveBeenCalled();
         expect(engine.compilers.size).toBe(0);
         expect(JSON.stringify(ciceroMark.toJSON())).toContain('World');
         // generate() must not modify the caller's TemplateMark

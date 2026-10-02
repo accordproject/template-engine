@@ -28,14 +28,16 @@ async function inject(page: Page): Promise<void> {
 }
 
 /**
- * Records the TypeScript lib.*.d.ts requests the page makes to the TypeScript CDN.
+ * Records the network requests the page makes. The bundle is injected inline, so a
+ * request means the engine fetched something at runtime (such as TypeScript lib files).
  * @param page - the Playwright page
  * @returns the requested URLs, updated as requests are made
  */
-function trackLibRequests(page: Page): string[] {
+function trackNetworkRequests(page: Page): string[] {
     const urls: string[] = [];
     page.on('request', request => {
-        if (new URL(request.url()).hostname === 'playgroundcdn.typescriptlang.org') {
+        const { protocol } = new URL(request.url());
+        if (protocol === 'http:' || protocol === 'https:') {
             urls.push(request.url());
         }
     });
@@ -61,9 +63,9 @@ test.describe('@accordproject/template-engine UMD', () => {
     });
 
     // Browser flow for a template without code: parse -> type-check -> generate. There is
-    // nothing to compile, so the TypeScript lib files must not be loaded.
+    // nothing to compile, so the TypeScript compiler is not used.
     test('generates an agreement in the browser', async ({ page }) => {
-        const libRequests = trackLibRequests(page);
+        const requests = trackNetworkRequests(page);
         await inject(page);
         const json = await page.evaluate(async () => {
             const { ModelManager, TemplateMarkTransformer, TemplateMarkInterpreter } =
@@ -83,16 +85,14 @@ test.describe('@accordproject/template-engine UMD', () => {
         });
         expect(json).toContain('Hello ');
         expect(json).toContain('World');
-        expect(libRequests).toEqual([]);
+        expect(requests).toEqual([]);
     });
 
     // Full browser flow: parse -> type-check -> compile the template's TypeScript logic to
-    // JS (twoslash, using the bundled TypeScript) -> evaluate, all in headless Chromium.
-    test('compiles template formulas in the browser, loading the lib files once', async ({ page }) => {
-        // The first compile fetches the lib files from the TypeScript CDN, so this test's
-        // duration depends on that CDN's latency until the lib files are bundled.
-        test.setTimeout(120000);
-        const libRequests = trackLibRequests(page);
+    // JS (twoslash, using the bundled TypeScript and lib files) -> evaluate, all in headless
+    // Chromium, without any network requests.
+    test('compiles template formulas in the browser without network requests', async ({ page }) => {
+        const requests = trackNetworkRequests(page);
         await inject(page);
         const results = await page.evaluate(async () => {
             const { ModelManager, TemplateMarkTransformer, TemplateMarkInterpreter } =
@@ -116,8 +116,6 @@ test.describe('@accordproject/template-engine UMD', () => {
         expect(results[0]).toContain('"value":"5"');
         expect(results[1]).toBe(results[0]);
         expect(results[2]).toBe(results[0]);
-        // each lib file is requested once, not once per generate()
-        expect(libRequests.length).toBeGreaterThan(0);
-        expect(new Set(libRequests).size).toBe(libRequests.length);
+        expect(requests).toEqual([]);
     });
 });

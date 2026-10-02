@@ -69,3 +69,36 @@ export const DAYJS_BASE64 = '${dayjs}';
 export const JSONPATH_BASE64 = '${jsonpath}';
 `
 );
+
+/**
+ * Package the TypeScript lib files that user code is compiled against in the browser,
+ * so that the browser doesn't fetch them from the TypeScript CDN at runtime. This is
+ * the ES2022 lib (the 'lib' compiler option in TypeScriptToJavaScriptCompiler) and every
+ * lib file it references. The DOM and web worker libs are deliberately left out.
+ */
+const TYPESCRIPT_LIB_DIR = path.dirname(require.resolve('typescript/lib/lib.d.ts'));
+const TYPESCRIPT_ROOT_LIB = 'lib.es2022.d.ts';
+const typescriptLibs = {};
+function addTypeScriptLib(fileName) {
+  const key = `/${fileName}`;
+  if (typescriptLibs[key] !== undefined) {
+    return;
+  }
+  const contents = readFileSync(path.join(TYPESCRIPT_LIB_DIR, fileName), 'utf-8');
+  typescriptLibs[key] = contents;
+  for (const match of contents.matchAll(/\/\/\/\s*<reference\s+lib="([^"]+)"/g)) {
+    addTypeScriptLib(`lib.${match[1].toLowerCase()}.d.ts`);
+  }
+}
+addTypeScriptLib(TYPESCRIPT_ROOT_LIB);
+const typescriptVersion = require('typescript/package.json').version;
+
+writeFileSync(
+  './src/runtime/typescriptLibs.ts',
+  `
+${HEADER}
+
+export const TYPESCRIPT_LIBS_VERSION = '${typescriptVersion}';
+export const TYPESCRIPT_LIBS: Record<string, string> = ${JSON.stringify(typescriptLibs)};
+`
+);
