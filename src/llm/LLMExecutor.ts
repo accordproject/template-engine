@@ -13,7 +13,7 @@
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Template } from '@accordproject/cicero-core';
-import { BaseReasoner, ChatMessage, JsonSchema, ReasonerOptions, createReasoner } from './Reasoners';
+import { BaseReasoner, ChatMessage, JsonSchema, SdkLoaders, createReasoner } from './Reasoners';
 import { LLMExecutorConfig } from './LLMConfig';
 import { treeShakeModel } from './ModelManagerSchema';
 import type { TriggerResponse, InitResponse } from '../TemplateArchiveProcessor';
@@ -485,13 +485,6 @@ function injectRuntimeMetadata<T extends { state?: any; result?: any; events?: a
 }
 
 /**
- * Runtime options for {@link LLMExecutor}, passed through to
- * {@link createReasoner}. Not part of {@link LLMExecutorConfig}, which stays
- * plain serialisable data.
- */
-export type LLMExecutorOptions = ReasonerOptions;
-
-/**
  * Executes an Accord Project template's `init` / `trigger` operations using an
  * LLM, deriving the request/response/state/event schemas from the template's own
  * ModelManager. Used as a fallback when a template carries no executable logic,
@@ -524,12 +517,12 @@ export class LLMExecutor {
    * Creates an executor for a template.
    * @param template - template to execute
    * @param config - LLM configuration
-   * @param options - runtime options, e.g. `sdkLoaders` for bundled environments
+   * @param sdkLoaders - optional SDK loaders, for bundled environments
    */
-  constructor(template: Template, config: LLMExecutorConfig, options: LLMExecutorOptions = {}) {
+  constructor(template: Template, config: LLMExecutorConfig, sdkLoaders: SdkLoaders = {}) {
     this.template = template;
     this.config = config;
-    this.reasoner = createReasoner(config.provider, options);
+    this.reasoner = createReasoner(config.provider, sdkLoaders);
     this.fullSchema = config.provider.isStructuredOutputSupported ?? false;
     this.stateless = isStatelessTemplate(template);
 

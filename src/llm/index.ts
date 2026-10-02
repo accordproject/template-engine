@@ -55,7 +55,6 @@ export {
 // live on the archive processor, not here, but are re-exported for
 // convenience since every executor caller needs them.
 export { LLMExecutor } from './LLMExecutor';
-export type { LLMExecutorOptions } from './LLMExecutor';
 export type { TriggerResponse, InitResponse } from '../TemplateArchiveProcessor';
 
 // ModelManager tree-shaking: reduces a template's full Concerto model down to
@@ -84,7 +83,6 @@ export type {
   ChatMessage,
   ReasonerResult,
   JsonSchema,
-  ReasonerOptions,
   SdkLoader,
   SdkLoaders,
 } from './Reasoners';

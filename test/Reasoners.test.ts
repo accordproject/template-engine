@@ -57,7 +57,7 @@ describe('reasoner SDK loading', () => {
         const loader = jest.fn<ReturnType<SdkLoader>, []>(async () => module);
         const reasoner = createReasoner(
             { provider: 'openai', apiKey: 'test-key', model: 'test-model' },
-            { sdkLoaders: { openai: loader } }
+            { openai: loader }
         );
 
         await expect(reasoner.complete(MESSAGES)).resolves.toEqual({ content: 'from injected loader' });
@@ -73,7 +73,7 @@ describe('reasoner SDK loading', () => {
         ['openai-compatible', { provider: 'openai-compatible' as const, apiKey: 'k', model: 'm', customEndpoint: 'http://localhost:1234/v1' }],
     ])('%s falls back to the openai loader', async (_name, config) => {
         const { module, constructed } = fakeOpenAIModule('compatible');
-        const reasoner = createReasoner(config, { sdkLoaders: { openai: async () => module } });
+        const reasoner = createReasoner(config, { openai: async () => module });
 
         await expect(reasoner.complete(MESSAGES)).resolves.toEqual({ content: 'compatible' });
         expect(constructed).toHaveBeenCalledTimes(1);
@@ -84,7 +84,7 @@ describe('reasoner SDK loading', () => {
         const openai = jest.fn<ReturnType<SdkLoader>, []>();
         const reasoner = createReasoner(
             { provider: 'ollama', model: 'llama3' },
-            { sdkLoaders: { ollama: async () => ollama.module, openai } }
+            { ollama: async () => ollama.module, openai }
         );
 
         await expect(reasoner.complete(MESSAGES)).resolves.toEqual({ content: 'ollama' });
@@ -95,7 +95,7 @@ describe('reasoner SDK loading', () => {
         const anthropic = jest.fn<ReturnType<SdkLoader>, []>();
         const reasoner = createReasoner(
             { provider: 'mistral', apiKey: 'k', model: 'm' },
-            { sdkLoaders: { anthropic } }
+            { anthropic }
         );
 
         await expect(reasoner.complete(MESSAGES)).rejects.toThrow("The '@mistralai/mistralai' package is required");
@@ -149,7 +149,7 @@ describe('reasoner SDK loading', () => {
         const processor = new TemplateArchiveProcessor(
             template,
             { mode: 'force', provider: { provider: 'openai', apiKey: 'k', model: 'm', retries: 0 } },
-            { sdkLoaders: { openai: loader } }
+            { openai: loader }
         );
         const data = {
             '$class': 'io.clause.latedeliveryandpenalty@0.1.0.TemplateModel',

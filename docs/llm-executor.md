@@ -112,16 +112,16 @@ The timestamp is the request's own `$timestamp` when present, then `currentTime`
 
 ## Providers
 
-`createReasoner(config, options?)` switches on `config.provider`. All of them lazy-load their SDK on first call and throw an install hint if it's missing.
+`createReasoner(config, sdkLoaders?)` switches on `config.provider`. All of them lazy-load their SDK on first call and throw an install hint if it's missing.
 
 The SDKs are optional peer dependencies — consumers install the ones they use. By default each reasoner imports its SDK by package name, which works in Node but not in bundled browser code. Bundled apps pass `sdkLoaders`, keyed by provider id, with literal `import()`s their bundler can resolve:
 
 ```ts
 new TemplateArchiveProcessor(template, llmConfig, {
-  sdkLoaders: { openai: () => import('openai') },
+  openai: () => import('openai'),
 });
-// or: new LLMExecutor(template, llmConfig, { sdkLoaders })
-// or: createReasoner(llmConfig.provider, { sdkLoaders })
+// or: new LLMExecutor(template, llmConfig, sdkLoaders)
+// or: createReasoner(llmConfig.provider, sdkLoaders)
 ```
 
 `ollama` and `openai-compatible` use the `openai` SDK, so they take their own loader if given and otherwise the `openai` one. If a supplied loader rejects, the reasoner throws an error naming the provider and the loader's failure.

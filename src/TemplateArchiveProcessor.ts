@@ -24,8 +24,9 @@ import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler
 import Script from '@accordproject/cicero-core/types/src/script';
 import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
-import { LLMExecutor, LLMExecutorOptions } from './llm/LLMExecutor';
+import { LLMExecutor } from './llm/LLMExecutor';
 import { LLMExecutorConfig } from './llm/LLMConfig';
+import { SdkLoaders } from './llm/Reasoners';
 import {
     isAssignableTo,
     RUNTIME_REQUEST_FQN,
@@ -69,8 +70,8 @@ export class TemplateArchiveProcessor {
     /** Optional LLM fallback configuration. */
     llmConfig?: LLMExecutorConfig;
 
-    /** Optional LLM runtime options, e.g. SDK loaders for bundled environments. */
-    private llmOptions?: LLMExecutorOptions;
+    /** Optional LLM SDK loaders, for bundled environments. */
+    private sdkLoaders?: SdkLoaders;
 
     /** Lazily-created LLM executor reused across debug/init/trigger calls. */
     private llmExecutor?: LLMExecutor;
@@ -79,12 +80,12 @@ export class TemplateArchiveProcessor {
      * Creates a template archive processor
      * @param {Template} template - the template to be used by the processor
      * @param {LLMExecutorConfig} [llmConfig] - optional LLM fallback configuration
-     * @param {LLMExecutorOptions} [llmOptions] - optional LLM runtime options, e.g. `sdkLoaders`
+     * @param {SdkLoaders} [sdkLoaders] - optional LLM SDK loaders, for bundled environments
      */
-    constructor(template: Template, llmConfig?: LLMExecutorConfig, llmOptions?: LLMExecutorOptions) {
+    constructor(template: Template, llmConfig?: LLMExecutorConfig, sdkLoaders?: SdkLoaders) {
         this.template = template;
         this.llmConfig = llmConfig;
-        this.llmOptions = llmOptions;
+        this.sdkLoaders = sdkLoaders;
     }
 
     /**
@@ -307,7 +308,7 @@ export class TemplateArchiveProcessor {
             throw new Error('LLM fallback requested but llmConfig is missing');
         }
         if (!this.llmExecutor) {
-            this.llmExecutor = new LLMExecutor(this.template, this.llmConfig, this.llmOptions);
+            this.llmExecutor = new LLMExecutor(this.template, this.llmConfig, this.sdkLoaders);
         }
         return this.llmExecutor;
     }

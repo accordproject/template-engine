@@ -87,15 +87,6 @@ export type SdkLoader = () => Promise<unknown>;
 export type SdkLoaders = Partial<Record<LLMProviderConfig['provider'], SdkLoader>>;
 
 /**
- * Runtime options for constructing reasoners. Kept separate from
- * {@link LLMProviderConfig}, which is plain serialisable data.
- */
-export interface ReasonerOptions {
-  /** Overrides for how each provider's SDK is loaded. */
-  sdkLoaders?: SdkLoaders;
-}
-
-/**
  * Loads an optional dependency at runtime.
  * @param specifier - module specifier
  * @returns imported module
@@ -964,33 +955,32 @@ export class MistralReasoner extends BaseReasoner {
 /**
  * Creates a provider-specific reasoner.
  * @param config - provider configuration
- * @param options - runtime options, e.g. SDK loaders for bundled environments
+ * @param sdkLoaders - optional SDK loaders, for bundled environments
  * @returns a reasoner for the selected provider
  */
 export function createReasoner(
   config: LLMProviderConfig,
-  options: ReasonerOptions = {}
+  sdkLoaders: SdkLoaders = {}
 ): BaseReasoner {
-  const loaders = options.sdkLoaders ?? {};
   switch (config.provider) {
     case 'groq':
-      return new GroqReasoner(config, loaders.groq);
+      return new GroqReasoner(config, sdkLoaders.groq);
     case 'openai':
-      return new OpenAIReasoner(config, loaders.openai);
+      return new OpenAIReasoner(config, sdkLoaders.openai);
     case 'anthropic':
-      return new AnthropicReasoner(config, loaders.anthropic);
+      return new AnthropicReasoner(config, sdkLoaders.anthropic);
     case 'google':
-      return new GoogleReasoner(config, loaders.google);
+      return new GoogleReasoner(config, sdkLoaders.google);
     case 'mistral':
-      return new MistralReasoner(config, loaders.mistral);
+      return new MistralReasoner(config, sdkLoaders.mistral);
     case 'openrouter':
-      return new OpenRouterReasoner(config, loaders.openrouter);
+      return new OpenRouterReasoner(config, sdkLoaders.openrouter);
     case 'ollama':
-      return new OllamaReasoner(config, loaders.ollama ?? loaders.openai);
+      return new OllamaReasoner(config, sdkLoaders.ollama ?? sdkLoaders.openai);
     case 'openai-compatible':
       return new OpenAICompatibleCustomReasoner(
         config,
-        loaders['openai-compatible'] ?? loaders.openai
+        sdkLoaders['openai-compatible'] ?? sdkLoaders.openai
       );
     default: {
       const _exhaustive: never = config;

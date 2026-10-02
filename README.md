@@ -246,15 +246,13 @@ per provider they support — so their bundler includes the SDK:
 
 ```ts
 const processor = new TemplateArchiveProcessor(template, llmConfig, {
-  sdkLoaders: {
-    anthropic: () => import('@anthropic-ai/sdk'),
-    openai: () => import('openai'), // also used by `ollama` and `openai-compatible`
-  },
+  anthropic: () => import('@anthropic-ai/sdk'),
+  openai: () => import('openai'), // also used by `ollama` and `openai-compatible`
 });
 ```
 
-The same options are accepted by `new LLMExecutor(template, config, { sdkLoaders })` and
-`createReasoner(providerConfig, { sdkLoaders })`.
+The same loaders are accepted by `new LLMExecutor(template, config, sdkLoaders)` and
+`createReasoner(providerConfig, sdkLoaders)`.
 
 ## License <a name="license"></a>
 Accord Project source code files are made available under the Apache License, Version 2.0 (Apache-2.0), located in the LICENSE file. Accord Project documentation files are made available under the Creative Commons Attribution 4.0 International License (CC-BY-4.0), available at http://creativecommons.org/licenses/by/4.0/.
