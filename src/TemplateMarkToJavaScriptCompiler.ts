@@ -122,7 +122,16 @@ export class TemplateMarkToJavaScriptCompiler {
             return compiled;
         }
         else {
-            throw errors;
+            const messages = errors.map(e => {
+                const details = e.errors.map(d => {
+                    const pos = d.line !== undefined ? ` (line ${d.line}, col ${d.character})` : '';
+                    return `${d.renderedMessage}${pos}`;
+                });
+                return `Compilation error in '${e.nodeId}': ${details.join('; ')}`;
+            });
+            const error = new Error(messages.join('\n'));
+            (error as any).errors = errors;
+            throw error;
         }
     }
 }
