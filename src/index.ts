@@ -12,11 +12,25 @@
  * limitations under the License.
  */
 
-import type { TemplateLogic } from './slc/SmartLegalContract.d.ts';
+export type {
+    IConcept,
+    ITransaction,
+    IEvent,
+    IState,
+    EngineResponse,
+    IRequest,
+    IResponse,
+    IAsset,
+    IContract,
+    IClause,
+    TriggerResponse,
+    InitResponse,
+    TemplateData,
+} from './slc/SmartLegalContract';
+export { TemplateLogic } from './slc/SmartLegalContract';
 
 export { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 export { TemplateArchiveProcessor } from './TemplateArchiveProcessor';
-export { TemplateLogic }
 export * from './utils';
 
 // Re-exported for convenience so a single browser bundle can run the full
