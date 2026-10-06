@@ -1,6 +1,6 @@
 import { ModelManager } from '@accordproject/concerto-core';
 import { CommonMarkModel } from '@accordproject/markdown-common';
-import { TemplateMarkInterpreter } from '../src';
+import { TemplateCompilationError, TemplateMarkInterpreter } from '../src';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { readFileSync, readdirSync } from 'fs';
 import * as path from 'path';
@@ -120,7 +120,12 @@ describe('templatemark interpreter', () => {
                 const now = '2023-03-17T00:00:00.000Z';
                 return engine.generate(templateMarkDom, data, {now});
             };
-            await expect(f()).rejects.toMatchSnapshot();
+            const err = await f().then(() => undefined, e => e);
+            expect(err).toBeInstanceOf(Error);
+            expect(err).toMatchSnapshot();
+            if (err instanceof TemplateCompilationError) {
+                expect(err.errors).toMatchSnapshot('compilation errors');
+            }
         });
     });
 

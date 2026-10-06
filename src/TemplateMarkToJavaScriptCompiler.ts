@@ -35,6 +35,40 @@ export type CompilerError = {
 };
 
 /**
+ * Thrown when user code in a template fails to compile. The message is a
+ * human-readable summary; the full structured diagnostics for every failing
+ * node are available on the errors property inherited from AggregateError.
+ */
+export class TemplateCompilationError extends AggregateError {
+    declare errors: CompilerError[];
+
+    /**
+     * Creates a new TemplateCompilationError
+     * @param {CompilerError[]} errors the compilation errors, one per failing node
+     */
+    constructor(errors: CompilerError[]) {
+        super(errors, errors.map(e => {
+            const details = e.errors.map(d => {
+                const pos = d.line !== undefined ? ` (line ${d.line}, col ${d.character})` : '';
+                return `${d.renderedMessage}${pos}`;
+            });
+            return `Compilation error in '${e.nodeId}': ${details.join('; ')}`;
+        }).join('\n'));
+        this.name = 'TemplateCompilationError';
+    }
+
+    /**
+     * Returns a plain object for JSON.stringify. Error's message and
+     * AggregateError's errors are non-enumerable, so they would otherwise
+     * be omitted.
+     * @returns {object} the name, message and structured compilation errors
+     */
+    toJSON(): { name: string; message: string; errors: CompilerError[] } {
+        return { name: this.name, message: this.message, errors: this.errors };
+    }
+}
+
+/**
  * Returns true if the TemplateMark JSON contains any user code (formulas,
  * conditions or clause conditions) that needs to be compiled.
  * @param {*} templateJson the TemplateMark JSON object
@@ -122,7 +156,7 @@ export class TemplateMarkToJavaScriptCompiler {
             return compiled;
         }
         else {
-            throw errors;
+            throw new TemplateCompilationError(errors);
         }
     }
 }

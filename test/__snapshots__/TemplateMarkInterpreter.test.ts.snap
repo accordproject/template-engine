@@ -1,6 +1,8 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`templatemark interpreter should fail to generate formula-invalid 1`] = `
+exports[`templatemark interpreter should fail to generate formula-invalid 1`] = `[TemplateCompilationError: Compilation error in 'formula_adef0feb9fc1b6e7513409c93d86aa4d9999d35608e1aaeecc07dca99bc591c8': Cannot find name 'THIS'. (line 140, col 3); Cannot find name 'IS'. (line 140, col 8); Cannot find name 'GARBAGE'. (line 140, col 11); Unknown keyword or identifier. Did you mean 'this'? (line 140, col 3); Unexpected keyword or identifier. (line 140, col 8)]`;
+
+exports[`templatemark interpreter should fail to generate formula-invalid: compilation errors 1`] = `
 [
   {
     "code": " THIS IS GARBAGE ",
@@ -61,7 +63,9 @@ exports[`templatemark interpreter should fail to generate formula-invalid 1`] = 
 ]
 `;
 
-exports[`templatemark interpreter should fail to generate formula-no-method 1`] = `
+exports[`templatemark interpreter should fail to generate formula-no-method 1`] = `[TemplateCompilationError: Compilation error in 'formula_4ef52e3adc6e5334e0925838eed0e51a372091d9b3a4499537ccf82fce5b1b25': Property 'missing' does not exist on type 'string'. (line 140, col 18)]`;
+
+exports[`templatemark interpreter should fail to generate formula-no-method: compilation errors 1`] = `
 [
   {
     "code": " return message.missing() ",
