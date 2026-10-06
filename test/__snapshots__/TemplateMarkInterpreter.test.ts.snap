@@ -82,6 +82,8 @@ exports[`templatemark interpreter should fail to generate formula-no-method 1`] 
 ]
 `;
 
+exports[`templatemark interpreter should fail to generate formula-no-return 1`] = `[Error: Formula 'formula_787ca956238a2672ec47a27211357acf5e26caa3acf5273c48e5115b6fd774ef' did not return a value. Formulas must be an expression or use 'return' to produce a value.]`;
+
 exports[`templatemark interpreter should fail to generate formula-optional-noguard 1`] = `[Error: Optional properties used without guards: message]`;
 
 exports[`templatemark interpreter should fail to generate optional-noguard 1`] = `[Error: Optional properties used without guards: nickname]`;
@@ -1290,6 +1292,64 @@ exports[`templatemark interpreter should generate helloformula 1`] = `
             {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": " characters long.",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate helloformula-implicit-return 1`] = `
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": [
+    {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Hello ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "message",
+              "value": "World",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "! Half of ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "Double",
+              "name": "importerLOCAmount",
+              "value": "1000.0",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": " is ",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Strong",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": [],
+                  "name": "formula_6a1c6cfe8791ac1da78736898d0ee7ead395e709aa1c4f3e890f2fff0b51497f",
+                  "value": "500",
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": ".",
             },
           ],
         },

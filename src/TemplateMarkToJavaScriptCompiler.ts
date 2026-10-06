@@ -85,7 +85,7 @@ export class TemplateMarkToJavaScriptCompiler {
             if (x && CODE_NODES.includes(x.$class)) {
                 if (x.code) {  // formula
                     checkCode(x.code);
-                    const result = that.compiler.compile(writeFunctionToString(that.templateClass, x.name, 'any', x.code.contents));
+                    const result = that.compiler.compile(writeFunctionToString(that.templateClass, x.name, 'any', x.code.contents, that.compiler.ts));
                     if(result.errors.length === 0) {
                         x.code.contents = result.code;
                         x.code.type = CodeType.ES_2020;
@@ -101,7 +101,7 @@ export class TemplateMarkToJavaScriptCompiler {
                 }
                 else if (x.condition) {  // condition or clause (boolean condition)
                     checkCode(x.condition);
-                    const result = that.compiler.compile(writeFunctionToString(that.templateClass, x.functionName, 'boolean', x.condition.contents));
+                    const result = that.compiler.compile(writeFunctionToString(that.templateClass, x.functionName, 'boolean', x.condition.contents, that.compiler.ts));
                     if(result.errors.length === 0) {
                         x.condition.contents = result.code;
                         x.condition.type = CodeType.ES_2020;
