@@ -62,7 +62,8 @@ export interface InitResponse<S extends IState> extends EngineResponse<S> {}
 
 export type TemplateData = IContract|IClause;
 
-export declare abstract class TemplateLogic<T extends TemplateData, S extends IState = IState> {
+export abstract class TemplateLogic<T extends TemplateData, S extends IState = IState> {
     abstract trigger(data: T, request: IRequest, state:S) : Promise<TriggerResponse<S>>;
-    init(data: T) : Promise<InitResponse<S>|undefined>;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    init(data: T) : Promise<InitResponse<S>|undefined> { return Promise.resolve(undefined); }
 }
