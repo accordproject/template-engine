@@ -37,6 +37,7 @@ describe('templatemark to javascript compiler', () => {
         }
 
         expect(thrown).toBeInstanceOf(TemplateCompilationError);
+        expect(thrown).toBeInstanceOf(AggregateError);
         expect(thrown).toBeInstanceOf(Error);
         const err = thrown as TemplateCompilationError;
         expect(err.name).toBe('TemplateCompilationError');

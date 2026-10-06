@@ -37,17 +37,17 @@ export type CompilerError = {
 /**
  * Thrown when user code in a template fails to compile. The message is a
  * human-readable summary; the full structured diagnostics for every failing
- * node are available on the errors property.
+ * node are available on the errors property inherited from AggregateError.
  */
-export class TemplateCompilationError extends Error {
-    readonly errors: CompilerError[];
+export class TemplateCompilationError extends AggregateError {
+    declare errors: CompilerError[];
 
     /**
      * Creates a new TemplateCompilationError
      * @param {CompilerError[]} errors the compilation errors, one per failing node
      */
     constructor(errors: CompilerError[]) {
-        super(errors.map(e => {
+        super(errors, errors.map(e => {
             const details = e.errors.map(d => {
                 const pos = d.line !== undefined ? ` (line ${d.line}, col ${d.character})` : '';
                 return `${d.renderedMessage}${pos}`;
@@ -55,7 +55,6 @@ export class TemplateCompilationError extends Error {
             return `Compilation error in '${e.nodeId}': ${details.join('; ')}`;
         }).join('\n'));
         this.name = 'TemplateCompilationError';
-        this.errors = errors;
     }
 }
 
