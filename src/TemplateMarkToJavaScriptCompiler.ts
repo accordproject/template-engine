@@ -56,6 +56,16 @@ export class TemplateCompilationError extends AggregateError {
         }).join('\n'));
         this.name = 'TemplateCompilationError';
     }
+
+    /**
+     * Returns a plain object for JSON.stringify. Error's message and
+     * AggregateError's errors are non-enumerable, so they would otherwise
+     * be omitted.
+     * @returns {object} the name, message and structured compilation errors
+     */
+    toJSON(): { name: string; message: string; errors: CompilerError[] } {
+        return { name: this.name, message: this.message, errors: this.errors };
+    }
 }
 
 /**

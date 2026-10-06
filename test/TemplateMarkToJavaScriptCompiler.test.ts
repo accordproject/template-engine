@@ -50,5 +50,11 @@ describe('templatemark to javascript compiler', () => {
         expect(err.errors[0].errors[0].renderedMessage).toBe("Property 'missing' does not exist on type 'string'.");
         expect(err.errors[0].errors[0].line).toBe(140);
         expect(err.errors[0].errors[0].character).toBe(18);
+
+        expect(JSON.parse(JSON.stringify(err))).toEqual({
+            name: 'TemplateCompilationError',
+            message: err.message,
+            errors: err.errors,
+        });
     });
 });
