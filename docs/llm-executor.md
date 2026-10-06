@@ -112,7 +112,21 @@ The timestamp is the request's own `$timestamp` when present, then `currentTime`
 
 ## Providers
 
-`createReasoner(config)` switches on `config.provider`. All of them lazy-load their SDK on first call and throw an install hint if it's missing.
+`createReasoner(config, sdkLoaders?)` switches on `config.provider`. All of them lazy-load their SDK on first call and throw an install hint if it's missing.
+
+The SDKs are optional peer dependencies — consumers install the ones they use. By default each reasoner imports its SDK by package name, which works in Node but not in bundled browser code. Bundled apps pass `sdkLoaders`, keyed by provider id, with literal `import()`s their bundler can resolve:
+
+```ts
+new TemplateArchiveProcessor(template, llmConfig, {
+  openai: () => import('openai'),
+});
+// or: new LLMExecutor(template, llmConfig, sdkLoaders)
+// or: createReasoner(llmConfig.provider, sdkLoaders)
+```
+
+`ollama` and `openai-compatible` use the `openai` SDK, so they take their own loader if given and otherwise the `openai` one. If a supplied loader rejects, the reasoner throws an error naming the provider and the loader's failure.
+
+In the browser, the OpenAI SDK (used by `openai`, `ollama` and `openai-compatible`) and the Anthropic SDK also refuse to construct a client unless the provider config sets `clientOptions: { dangerouslyAllowBrowser: true }`. That exposes the API key to anyone using the page, so only enable it when that is acceptable, such as when users supply their own key.
 
 | Provider | Structured output | Effort levels | Notes |
 | --- | --- | --- | --- |
