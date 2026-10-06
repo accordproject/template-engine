@@ -265,20 +265,21 @@ export class JavaScriptEvaluator {
                 result = msg;
                 resultReceived = true;
             });
-            worker.on('exit', (code: any) => {
-                setImmediate(() => {
-                    this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
-                    const end = new Date().getTime();
-                    if (code === null) {
-                        reject({ timeout: true, elapsed: end - start });
-                    }
-                    else if (code === 0 && resultReceived) {
-                        resolve({ ...result, elapsed: end - start });
-                    } else {
-                        // result is absent when user code exits the process before replying.
-                        reject({ code, result, elapsed: end - start });
-                    }
-                });
+            // settle on 'close' rather than 'exit': 'exit' can fire before the
+            // worker's final IPC message is delivered, whereas 'close' waits for
+            // the IPC channel to close, so any result has been received by then.
+            worker.on('close', (code: any) => {
+                this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
+                const end = new Date().getTime();
+                if (code === null) {
+                    reject({ timeout: true, elapsed: end - start });
+                }
+                else if (code === 0 && resultReceived) {
+                    resolve({ ...result, elapsed: end - start });
+                } else {
+                    // result is absent when user code exits the process before replying.
+                    reject({ code, result, elapsed: end - start });
+                }
             });
             // send the request to the child process
             worker.send(work.request);
