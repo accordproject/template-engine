@@ -82,6 +82,8 @@ exports[`templatemark interpreter should fail to generate formula-no-method 1`] 
 ]
 `;
 
+exports[`templatemark interpreter should fail to generate formula-no-return 1`] = `[Error: Formula 'formula_787ca956238a2672ec47a27211357acf5e26caa3acf5273c48e5115b6fd774ef' did not return a value. Formulas must be an expression or use 'return' to produce a value.]`;
+
 exports[`templatemark interpreter should fail to generate formula-optional-noguard 1`] = `[Error: Optional properties used without guards: message]`;
 
 exports[`templatemark interpreter should fail to generate optional-noguard 1`] = `[Error: Optional properties used without guards: nickname]`;

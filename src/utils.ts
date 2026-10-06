@@ -20,7 +20,6 @@ import { templatemarkutil } from '@accordproject/markdown-template';
 
 import { existsSync, mkdirSync, rmSync } from 'fs';
 import traverse from 'traverse';
-import * as ts from 'typescript';
 
 // Fully-qualified names of the runtime base types that logic types must be, or extend.
 // Request / Response / State are concrete in org.accordproject.runtime@0.2.0, so a template
@@ -82,7 +81,18 @@ export function removeSync(path:string) {
     rmSync(path, { recursive: true, force: true });
 }
 
-export function writeFunctionToString(templateClass:ClassDeclaration, functionName: string, returnType: string, code: string): string {
+/**
+ * Writes user code (a formula or condition) as a TypeScript function.
+ * @param {ClassDeclaration} templateClass - the template model class
+ * @param {string} functionName - the name of the generated function
+ * @param {string} returnType - the TypeScript return type of the generated function
+ * @param {string} code - the user code
+ * @param {any} [tsModule] - the typescript module. When supplied, a bare trailing
+ * expression is wrapped with `return` (see wrapExpressionWithReturn). It is passed in,
+ * rather than imported here, so that loading utils does not load the TypeScript compiler.
+ * @returns {string} the TypeScript source of the function
+ */
+export function writeFunctionToString(templateClass:ClassDeclaration, functionName: string, returnType: string, code: string, tsModule?: any): string {
     let result = '';
     result += '/// ---cut---\n';
     result += `export function ${functionName}(data:TemplateModel.I${templateClass.getName()}, library:any, options:GenerationOptions) : ${returnType} {\n`;
@@ -91,7 +101,7 @@ export function writeFunctionToString(templateClass:ClassDeclaration, functionNa
     templateClass.getProperties().forEach((p: Property) => {
         result += `   const ${p.getName()} = data.${p.getName()};\n`;
     });
-    result += '   ' + wrapExpressionWithReturn(code) + '\n';
+    result += '   ' + (tsModule ? wrapExpressionWithReturn(tsModule, code) : code) + '\n';
     result += '}\n';
     result += '\n';
 
@@ -107,13 +117,25 @@ export function writeFunctionToString(templateClass:ClassDeclaration, functionNa
  * Uses the TypeScript AST to inspect only top-level statements, so a nested
  * function/arrow that contains its own `return` does not confuse the outer
  * detection (e.g. `[1,2,3].map(x => { return x*2 })[0]`).
+ *
+ * Code with syntax errors is returned unchanged, so that the compiler reports
+ * those errors against the user's original code.
+ *
+ * The typescript module is passed in so that it is only loaded on the
+ * compilation path (see TypeScriptToJavaScriptCompiler).
  */
-export function wrapExpressionWithReturn(code: string): string {
+export function wrapExpressionWithReturn(ts: any, code: string): string {
     const trimmed = code.trim();
     if (trimmed.length === 0) {
         return trimmed;
     }
     const sourceFile = ts.createSourceFile('formula.ts', trimmed, ts.ScriptTarget.Latest, false, ts.ScriptKind.TS);
+    // parseDiagnostics is internal to the TypeScript API, but is the only way to
+    // get syntax errors from createSourceFile without creating a Program
+    const parseDiagnostics = (sourceFile as any).parseDiagnostics;
+    if (parseDiagnostics && parseDiagnostics.length > 0) {
+        return trimmed;
+    }
     const statements = sourceFile.statements;
     if (statements.length === 0) {
         return trimmed;
@@ -129,7 +151,7 @@ export function wrapExpressionWithReturn(code: string): string {
     }
     const prefix = statements
         .slice(0, -1)
-        .map(s => s.getText(sourceFile))
+        .map((s: any) => s.getText(sourceFile))
         .join('\n');
     const expr = last.expression.getText(sourceFile);
     return prefix.length > 0 ? `${prefix}\nreturn ${expr};` : `return ${expr};`;
