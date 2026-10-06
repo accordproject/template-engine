@@ -27,6 +27,23 @@ async function inject(page: Page): Promise<void> {
     await page.waitForFunction(() => typeof (window as any)['template-engine'] !== 'undefined');
 }
 
+/**
+ * Records the network requests the page makes. The bundle is injected inline, so a
+ * request means the engine fetched something at runtime (such as TypeScript lib files).
+ * @param page - the Playwright page
+ * @returns the requested URLs, updated as requests are made
+ */
+function trackNetworkRequests(page: Page): string[] {
+    const urls: string[] = [];
+    page.on('request', request => {
+        const { protocol } = new URL(request.url());
+        if (protocol === 'http:' || protocol === 'https:') {
+            urls.push(request.url());
+        }
+    });
+    return urls;
+}
+
 test.describe('@accordproject/template-engine UMD', () => {
     test('exposes the public API on the global', async ({ page }) => {
         await inject(page);
@@ -45,9 +62,10 @@ test.describe('@accordproject/template-engine UMD', () => {
         expect(api.transformer).toBe('function');
     });
 
-    // Full browser flow: parse -> type-check -> compile the template's TypeScript logic to
-    // JS (twoslash, using the bundled TypeScript) -> evaluate, all in headless Chromium.
+    // Browser flow for a template without code: parse -> type-check -> generate. There is
+    // nothing to compile, so the TypeScript compiler is not used.
     test('generates an agreement in the browser', async ({ page }) => {
+        const requests = trackNetworkRequests(page);
         await inject(page);
         const json = await page.evaluate(async () => {
             const { ModelManager, TemplateMarkTransformer, TemplateMarkInterpreter } =
@@ -67,5 +85,37 @@ test.describe('@accordproject/template-engine UMD', () => {
         });
         expect(json).toContain('Hello ');
         expect(json).toContain('World');
+        expect(requests).toEqual([]);
+    });
+
+    // Full browser flow: parse -> type-check -> compile the template's TypeScript logic to
+    // JS (twoslash, using the bundled TypeScript and lib files) -> evaluate, all in headless
+    // Chromium, without any network requests.
+    test('compiles template formulas in the browser without network requests', async ({ page }) => {
+        const requests = trackNetworkRequests(page);
+        await inject(page);
+        const results = await page.evaluate(async () => {
+            const { ModelManager, TemplateMarkTransformer, TemplateMarkInterpreter } =
+                (window as any)['template-engine'];
+            const MODEL = 'namespace test@1.0.0\n@template\nconcept TemplateData {\n  o String name\n}';
+            const mm = new ModelManager();
+            mm.addCTOModel(MODEL, undefined, true);
+            const tmt = new TemplateMarkTransformer();
+            const templateMark = tmt.fromMarkdownTemplate(
+                { content: 'Hello {{name}}! Your name is {{% return name.length %}} characters long.' },
+                mm, 'contract', { verbose: false });
+            const data = { $class: 'test@1.0.0.TemplateData', name: 'World' };
+            const options = { now: '2023-03-17T00:00:00.000Z' };
+            const engine = new TemplateMarkInterpreter(mm, {});
+            const first = await engine.generate(templateMark, data, options);
+            const second = await engine.generate(templateMark, data, options);
+            // template-playground creates a new interpreter on every render
+            const third = await new TemplateMarkInterpreter(mm, {}).generate(templateMark, data, options);
+            return [first, second, third].map(result => JSON.stringify(result.toJSON()));
+        });
+        expect(results[0]).toContain('"value":"5"');
+        expect(results[1]).toBe(results[0]);
+        expect(results[2]).toBe(results[0]);
+        expect(requests).toEqual([]);
     });
 });
