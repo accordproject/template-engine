@@ -1,7 +1,7 @@
 import { ModelManager } from '@accordproject/concerto-core';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { readFileSync } from 'fs';
-import { TemplateMarkToJavaScriptCompiler } from '../src/TemplateMarkToJavaScriptCompiler';
+import { CompilerError, TemplateMarkToJavaScriptCompiler } from '../src/TemplateMarkToJavaScriptCompiler';
 
 describe('templatemark to javascript compiler', () => {
     test('should compile templatemark containing typescript to javascript', async () => {
@@ -29,19 +29,22 @@ describe('templatemark to javascript compiler', () => {
         const templateMarkTransformer = new TemplateMarkTransformer();
         const templateMarkJson = templateMarkTransformer.fromMarkdownTemplate({ content: templateMd }, modelManager, 'contract', { verbose: false });
 
+        let thrown: unknown;
         try {
             compiler.compile(templateMarkJson);
-            throw new Error('Expected compile to throw an error');
-        } catch (err: any) {
-            expect(err).toBeInstanceOf(Error);
-            expect(err.message).toMatch(/Compilation error in 'formula_/);
-            expect(err.message).toContain("Property 'missing' does not exist on type 'string'. (line 140, col 18)");
-            expect(Array.isArray(err.errors)).toBe(true);
-            expect(err.errors.length).toBe(1);
-            expect(err.errors[0].nodeId).toMatch(/^formula_/);
-            expect(err.errors[0].errors[0].renderedMessage).toBe("Property 'missing' does not exist on type 'string'.");
-            expect(err.errors[0].errors[0].line).toBe(140);
-            expect(err.errors[0].errors[0].character).toBe(18);
+        } catch (err) {
+            thrown = err;
         }
+
+        expect(thrown).toBeInstanceOf(Error);
+        const err = thrown as Error & { errors: CompilerError[] };
+        expect(err.message).toMatch(/Compilation error in 'formula_/);
+        expect(err.message).toContain("Property 'missing' does not exist on type 'string'. (line 140, col 18)");
+        expect(Array.isArray(err.errors)).toBe(true);
+        expect(err.errors.length).toBe(1);
+        expect(err.errors[0].nodeId).toMatch(/^formula_/);
+        expect(err.errors[0].errors[0].renderedMessage).toBe("Property 'missing' does not exist on type 'string'.");
+        expect(err.errors[0].errors[0].line).toBe(140);
+        expect(err.errors[0].errors[0].character).toBe(18);
     });
 });
