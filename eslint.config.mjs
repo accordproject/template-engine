@@ -4,7 +4,7 @@ import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 
 export default defineConfig([
-  globalIgnores(["dist/", "scripts/", "**/model-gen/**"]),
+  globalIgnores(["dist/", "lib/", "umd/", "coverage/", "scripts/", "**/model-gen/**", "**/node_modules/**", "e2e/", "webpack.config.js"]),
   { files: ["**/*.{js,mjs,cjs,ts}"] },
   {
     files: ["**/*.{js,mjs,cjs,ts}"],
@@ -16,4 +16,10 @@ export default defineConfig([
     extends: ["js/recommended"],
   },
   tseslint.configs.recommended,
+  {
+    files: ["test/llm_executor/**/*.js"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ]);

@@ -47,6 +47,7 @@ export type EvalResponse = {
     timeout?: boolean // if true the promise is rejected due to timeout
     starvation?: boolean // if true the promise is rejected due to lack of child process
     message?: string; // if promise rejected due to a caught exception this will be set
+    stack?: string;
     elapsed?: number; // the elapsed time in ms to process the work item
     maxQueueDepthExceeded?: boolean // if true the promise is rejected because the queue is full
 }
@@ -135,18 +136,33 @@ export class JavaScriptEvaluator {
                             resolve({ result, elapsed: end - start });
                         })
                         .catch(err => {
-                            console.log(err);
-                            reject({
-                                message: err.message
-                            });
+                            console.error(err);
+                            if(err instanceof Error){
+                                reject({
+                                    message: err.message,
+                                    stack: err.stack,
+                                });
+                            }else{
+                                reject({
+                                    message: String(err),
+                                });
+                            }
+                            
                         });
                 }
             }
             catch (err: any) {
-                console.log(err);
-                reject({
-                    message: err.message
-                });
+                console.error(err);
+                if(err instanceof Error){
+                    reject({
+                        message: err.message,
+                        stack: err.stack,
+                    });
+                }else{
+                    reject({
+                        message: String(err),
+                    })
+                }
             }
         });
     }
@@ -169,6 +185,7 @@ export class JavaScriptEvaluator {
             };
             if(this.queue.length >= this.options.maxQueueDepth) {
                 reject({ maxQueueDepthExceeded: true, elapsed: 0 });
+                return;
             }
             this.queue.push(workItem);
             this.processQueue(options);
@@ -206,7 +223,7 @@ export class JavaScriptEvaluator {
         } catch(err) { // eslint-disable-line @typescript-eslint/no-unused-vars
             // if we cannot load the module it likely means we are running
             // a unit test inside the module...
-            return path.join(__dirname, '..', 'dist', 'worker.js');
+            return path.join(__dirname, '..', 'lib', 'worker.js');
         }
     }
     private doWork(work: WorkItem, options: EvalOptions): Promise<EvalResponse> {
@@ -220,39 +237,48 @@ export class JavaScriptEvaluator {
             const workerPath = this.getWorkerPath();
             // console.debug(`Worker path: ${workerPath}`);
             const worker = child_process.fork(workerPath, { timeout: options.timeout, env: {} });
-            if (!worker.pid) {
+            if (worker.pid === undefined || worker.pid === null) {
                 throw new Error('Failed to fork child process');
             }
             this.workers.push(worker);
             work.pid = worker.pid;
             let result: any;
-            worker.on('error', (err: any) => {
+            let resultReceived = false;
+            worker.on('error', (err: any) => {       
                 this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
                 const end = new Date().getTime();
-                reject({ message: err.message, elapsed: end - start });
+                
+                if (err instanceof Error) {
+                    reject({
+                        message: err.message,
+                        stack: err.stack,
+                        elapsed: end - start
+                    });
+                }else{
+                    reject({
+                        message: String(err),
+                        elapsed: end - start
+                    });
+                }
             });
             worker.on('message', (msg: any) => {
                 result = msg;
+                resultReceived = true;
             });
             worker.on('exit', (code: any) => {
-                if (code === null) {
-                    // timeout
+                setImmediate(() => {
                     this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
                     const end = new Date().getTime();
-                    reject({ timeout: true, elapsed: end - start });
-                }
-                else if (code === 0 && result) {
-                    // success!
-                    this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
-                    const end = new Date().getTime();
-                    resolve({ ...result, elapsed: end - start });
-                } else {
-                    // null result or non-zero code from worker means an error
-                    // result will be undefined if the user code calls process.exit()
-                    this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
-                    const end = new Date().getTime();
-                    reject({ code, result, elapsed: end - start });
-                }
+                    if (code === null) {
+                        reject({ timeout: true, elapsed: end - start });
+                    }
+                    else if (code === 0 && resultReceived) {
+                        resolve({ ...result, elapsed: end - start });
+                    } else {
+                        // result is absent when user code exits the process before replying.
+                        reject({ code, result, elapsed: end - start });
+                    }
+                });
             });
             // send the request to the child process
             worker.send(work.request);

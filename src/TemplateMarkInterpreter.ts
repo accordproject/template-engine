@@ -41,7 +41,7 @@ import {
     TemplateData,
     NAVIGATION_NODES
 } from './TemplateMarkNodes';
-import { TemplateMarkToJavaScriptCompiler } from './TemplateMarkToJavaScriptCompiler';
+import { TemplateMarkToJavaScriptCompiler, hasUserCode } from './TemplateMarkToJavaScriptCompiler';
 import { CodeType, ICode } from './model-gen/org.accordproject.templatemark@0.5.0';
 import { GenerationOptions, joinList } from './TypeScriptRuntime';
 import { getTemplateClassDeclaration } from './utils';
@@ -613,6 +613,7 @@ export class TemplateMarkInterpreter {
     modelManager: ModelManager;
     templateClass: ClassDeclaration;
     clauseLibrary: object;
+    compilers: Map<string, Promise<TemplateMarkToJavaScriptCompiler>> = new Map();
 
     constructor(modelManager: ModelManager, clauseLibrary: object, templateConceptFqn?: string) {
         this.modelManager = modelManager;
@@ -723,9 +724,35 @@ export class TemplateMarkInterpreter {
         if(firstChild.name !== 'top') {
             throw new Error('First child is not named "top"!');
         }
-        const compiler = new TemplateMarkToJavaScriptCompiler(this.modelManager, templateConcept);
-        await compiler.initialize();
+        if(!hasUserCode(templateMark)) {
+            // nothing to compile, so don't load the TypeScript compiler
+            return templateMark;
+        }
+        const compiler = await this.getCompiler(templateConcept);
         return compiler.compile(templateMark);
+    }
+
+    /**
+     * Returns an initialized compiler for a template concept, creating it
+     * on first use and reusing it for later calls.
+     * @param {string} templateConcept the fully qualified name of the template concept
+     * @returns {Promise<TemplateMarkToJavaScriptCompiler>} the compiler
+     */
+    getCompiler(templateConcept: string): Promise<TemplateMarkToJavaScriptCompiler> {
+        let compiler = this.compilers.get(templateConcept);
+        if(!compiler) {
+            const created = new TemplateMarkToJavaScriptCompiler(this.modelManager, templateConcept);
+            const initialized = created.initialize().then(() => created);
+            initialized.catch(() => {
+                // don't cache a failed initialization, so that a later call can retry
+                if(this.compilers.get(templateConcept) === initialized) {
+                    this.compilers.delete(templateConcept);
+                }
+            });
+            this.compilers.set(templateConcept, initialized);
+            compiler = initialized;
+        }
+        return compiler;
     }
 
     validateCiceroMark(ciceroMark: object): object {

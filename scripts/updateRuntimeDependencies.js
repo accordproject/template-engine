@@ -42,17 +42,20 @@ const HEADER = `/*
 `;
 
 /**
- * Package the TypeScript declarations for dayjs, jsonpath and SmartLegalContract
- * These are needed at runtime to compile user TypeScript code and template logic to JS
+ * Package the TypeScript declarations for dayjs and jsonpath.
+ * These are needed at runtime to type-check user TypeScript code and template logic
+ * against the dayjs / jsonpath libraries when compiling to JS.
+ *
+ * Note: the runtime SmartLegalContract declarations (TemplateLogic, EngineResponse,
+ * etc.) are no longer bundled here. They are emitted directly by
+ * TypeScriptCompilationContext with model-derived State/Request/Response/Event bounds
+ * so that the class hierarchy is enforced at compile time.
  */
 const dayjs = readFileSync('./node_modules/dayjs/index.d.ts').toString(
   'base64'
 );
 const jsonpath = readFileSync(
   './node_modules/@types/jsonpath/index.d.ts'
-).toString('base64');
-const smartLegalContract = readFileSync(
-  './src/slc/SmartLegalContract.d.ts'
 ).toString('base64');
 
 removeSync('./src/runtime/');
@@ -64,6 +67,38 @@ ${HEADER}
 
 export const DAYJS_BASE64 = '${dayjs}';
 export const JSONPATH_BASE64 = '${jsonpath}';
-export const SMART_LEGAL_CONTRACT_BASE64 = '${smartLegalContract}';
+`
+);
+
+/**
+ * Package the TypeScript lib files that user code is compiled against in the browser,
+ * so that the browser doesn't fetch them from the TypeScript CDN at runtime. This is
+ * the ES2022 lib (the 'lib' compiler option in TypeScriptToJavaScriptCompiler) and every
+ * lib file it references. The DOM and web worker libs are deliberately left out.
+ */
+const TYPESCRIPT_LIB_DIR = path.dirname(require.resolve('typescript/lib/lib.d.ts'));
+const TYPESCRIPT_ROOT_LIB = 'lib.es2022.d.ts';
+const typescriptLibs = {};
+function addTypeScriptLib(fileName) {
+  const key = `/${fileName}`;
+  if (typescriptLibs[key] !== undefined) {
+    return;
+  }
+  const contents = readFileSync(path.join(TYPESCRIPT_LIB_DIR, fileName), 'utf-8');
+  typescriptLibs[key] = contents;
+  for (const match of contents.matchAll(/\/\/\/\s*<reference\s+lib="([^"]+)"/g)) {
+    addTypeScriptLib(`lib.${match[1].toLowerCase()}.d.ts`);
+  }
+}
+addTypeScriptLib(TYPESCRIPT_ROOT_LIB);
+const typescriptVersion = require('typescript/package.json').version;
+
+writeFileSync(
+  './src/runtime/typescriptLibs.ts',
+  `
+${HEADER}
+
+export const TYPESCRIPT_LIBS_VERSION = '${typescriptVersion}';
+export const TYPESCRIPT_LIBS: Record<string, string> = ${JSON.stringify(typescriptLibs)};
 `
 );
