@@ -14,14 +14,12 @@
 
 import { ModelManager } from '@accordproject/concerto-core';
 import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler';
-import { SMART_LEGAL_CONTRACT_BASE64 } from './runtime/declarations';
 
 /**
  * The result of compiling the user-authored logic.ts that ships
- * with a template archive. Used by both
- * TemplateArchiveProcessor.trigger/init (to execute the logic class)
- * and TemplateArchiveProcessor.draft (to expose helper symbols to
- * formula expressions like {{% helperFn(...) %}}).
+ * with a template archive. Used by TemplateArchiveProcessor.draft
+ * to expose helper symbols to formula expressions like
+ * {{% helperFn(...) %}}.
  */
 export type CompiledUserLogic = {
     /** Raw TypeScript source from logic/logic.ts */
@@ -30,7 +28,7 @@ export type CompiledUserLogic = {
     compiledJs: string;
     /**
      * Top-level identifiers (functions, classes, const/let/var bindings)
-     * declared by the compiled JS. Used to populate `declare const X: any`
+     * declared by logic.ts. Used to populate `declare const X: any`
      * stubs when compiling inline formulas, so user helper functions
      * type-check.
      */
@@ -43,9 +41,12 @@ export type CompiledUserLogic = {
 };
 
 /**
- * Compiles the template's logic/logic.ts to JavaScript. Mirrors what
- * TemplateArchiveProcessor.trigger() has always done, but as a shared
- * helper so draft() can also load logic helpers (see issue #147).
+ * Compiles the template's logic/logic.ts to JavaScript, using the same
+ * compilation context as TemplateArchiveProcessor.compileLogic (see issue #147).
+ * @param {ModelManager} modelManager the template's model manager
+ * @param {string} templateConceptFqn the fully qualified name of the template concept
+ * @param {string} source the TypeScript source of logic/logic.ts
+ * @returns {Promise<CompiledUserLogic>} the compiled user logic
  */
 export async function compileUserLogic(
     modelManager: ModelManager,
@@ -54,12 +55,19 @@ export async function compileUserLogic(
 ): Promise<CompiledUserLogic> {
     const compiler = new TypeScriptToJavaScriptCompiler(modelManager, templateConceptFqn);
     await compiler.initialize();
-    const code = `${Buffer.from(SMART_LEGAL_CONTRACT_BASE64, 'base64').toString()}
-${source}`;
-    const result = compiler.compile(code);
-    const compiledJs = result.code || '';
+    const result = compiler.compile(source);
+    return toCompiledUserLogic(source, result.code || '');
+}
+
+/**
+ * Builds a CompiledUserLogic from logic.ts source and its already compiled JavaScript.
+ * @param {string} source the TypeScript source of logic/logic.ts
+ * @param {string} compiledJs the compiled JavaScript for the source
+ * @returns {Promise<CompiledUserLogic>} the compiled user logic
+ */
+export async function toCompiledUserLogic(source: string, compiledJs: string): Promise<CompiledUserLogic> {
     const prelude = stripModuleSyntax(compiledJs);
-    const symbols = extractTopLevelSymbols(prelude);
+    const symbols = await extractTopLevelSymbols(source);
     return { source, compiledJs, symbols, prelude };
 }
 
@@ -69,6 +77,8 @@ ${source}`;
  * a function body via `new Function(...)`. The compiled output of
  * logic.ts is an ES module; both `import` and `export` are syntax
  * errors inside a `new Function` body.
+ * @param {string} js the JavaScript source
+ * @returns {string} the JavaScript without module syntax
  */
 export function stripModuleSyntax(js: string): string {
     let result = js;
@@ -83,21 +93,31 @@ export function stripModuleSyntax(js: string): string {
 }
 
 /**
- * Extracts top-level identifier names declared in the JS source.
- * Heuristic, regex-based — good enough for the common case of helper
- * functions and constants in a template's logic.ts.
+ * Returns the names of the top-level runtime values (functions, classes and
+ * const/let/var bindings) declared by a TypeScript source file. Ambient
+ * (`declare`) declarations and type-only declarations are ignored.
+ * @param {string} source the TypeScript source
+ * @returns {Promise<string[]>} the declared names
  */
-export function extractTopLevelSymbols(js: string): string[] {
+export async function extractTopLevelSymbols(source: string): Promise<string[]> {
+    const tsImport = await import('typescript');
+    const ts = ('default' in tsImport && tsImport.default ? tsImport.default : tsImport);
+    const sourceFile = ts.createSourceFile('logic.ts', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
     const names = new Set<string>();
-    const patterns = [
-        /^\s*(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)/gm,
-        /^\s*(?:abstract\s+)?class\s+([A-Za-z_$][\w$]*)/gm,
-        /^\s*(?:const|let|var)\s+([A-Za-z_$][\w$]*)/gm,
-    ];
-    for (const re of patterns) {
-        let m: RegExpExecArray | null;
-        while ((m = re.exec(js)) !== null) {
-            names.add(m[1]);
+    for (const statement of sourceFile.statements) {
+        const modifiers = ts.canHaveModifiers(statement) ? ts.getModifiers(statement) : undefined;
+        if (modifiers?.some(m => m.kind === ts.SyntaxKind.DeclareKeyword)) {
+            continue;
+        }
+        if ((ts.isFunctionDeclaration(statement) || ts.isClassDeclaration(statement)) && statement.name) {
+            names.add(statement.name.text);
+        }
+        else if (ts.isVariableStatement(statement)) {
+            for (const declaration of statement.declarationList.declarations) {
+                if (ts.isIdentifier(declaration.name)) {
+                    names.add(declaration.name.text);
+                }
+            }
         }
     }
     return Array.from(names);

@@ -15,23 +15,45 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Template } from '@accordproject/cicero-core';
+import { Factory, Serializer } from '@accordproject/concerto-core';
 import { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { transform } from '@accordproject/markdown-transform';
+import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler';
+// @ts-expect-error - this type export is missing in recent cicero-core versions but is still required for TypeScript AST
 import Script from '@accordproject/cicero-core/types/src/script';
+import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
-import { compileUserLogic, CompiledUserLogic } from './UserLogic';
+import { compileUserLogic, CompiledUserLogic, toCompiledUserLogic } from './UserLogic';
+import { hasUserCode } from './TemplateMarkToJavaScriptCompiler';
+import { LLMExecutor } from './llm/LLMExecutor';
+import { LLMExecutorConfig } from './llm/LLMConfig';
+import { SdkLoaders } from './llm/Reasoners';
+import {
+    isAssignableTo,
+    RUNTIME_REQUEST_FQN,
+    RUNTIME_RESPONSE_FQN,
+    RUNTIME_STATE_FQN,
+    BASE_EVENT_FQN,
+    RUNTIME_OBLIGATION_FQN,
+    RUNTIME_CONTRACT_FQN,
+} from './utils';
 
+/** The contract state. */
 export type State = object;
+/** A response/result returned by the contract logic. */
 export type Response = object;
+/** An event emitted by the contract logic. */
 export type Event = object;
 
+/** The result of triggering a template: the response, updated state, and events. */
 export type TriggerResponse = {
     result: Response;
     state: State;
     events: Event[];
 }
 
+/** The result of initializing a template: the initial state. */
 export type InitResponse = {
     state: State;
 }
@@ -41,14 +63,31 @@ export type InitResponse = {
  * templatemark for the archive and trigger the logic of the archive
  */
 export class TemplateArchiveProcessor {
+    /** The template used by the processor. */
     template: Template;
+
+    /** Cache of compiled logic, keyed by script identifier. */
+    private compiledLogicCache?: Record<string, TwoSlashReturn>;
+
+    /** Optional LLM fallback configuration. */
+    llmConfig?: LLMExecutorConfig;
+
+    /** Optional LLM SDK loaders, for bundled environments. */
+    private sdkLoaders?: SdkLoaders;
+
+    /** Lazily-created LLM executor reused across debug/init/trigger calls. */
+    private llmExecutor?: LLMExecutor;
 
     /**
      * Creates a template archive processor
      * @param {Template} template - the template to be used by the processor
+     * @param {LLMExecutorConfig} [llmConfig] - optional LLM fallback configuration
+     * @param {SdkLoaders} [sdkLoaders] - optional LLM SDK loaders, for bundled environments
      */
-    constructor(template: Template) {
+    constructor(template: Template, llmConfig?: LLMExecutorConfig, sdkLoaders?: SdkLoaders) {
         this.template = template;
+        this.llmConfig = llmConfig;
+        this.sdkLoaders = sdkLoaders;
     }
 
     /**
@@ -64,65 +103,268 @@ export class TemplateArchiveProcessor {
         const metadata = this.template.getMetadata();
         const templateKind = metadata.getTemplateType() !== 0 ? 'clause' : 'contract';
 
-        // Compile the template's logic/logic.ts (when present) so that
-        // inline formulas {{% expr %}} can call helpers like
-        // monthlyPaymentFormula(...) declared in user code (issue #147).
-        const userLogic = await this.compileLogic();
-
         // Get the data
         const modelManager = this.template.getModelManager();
-        const engine = new TemplateMarkInterpreter(modelManager, {}, undefined, userLogic);
         const templateMarkTransformer = new TemplateMarkTransformer();
         const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate(
-            { content: this.template.getTemplate() }, modelManager, templateKind, {options});
-        const now = currentTime ? currentTime : new Date().toISOString();
-        // console.log(JSON.stringify(templateMarkDom, null, 2));
-        const ciceroMark = await engine.generate(templateMarkDom, data, { now });
-        // console.log(JSON.stringify(ciceroMark));
-        const result = transform(ciceroMark.toJSON(), 'ciceromark', ['ciceromark_unquoted', format], null, options);
-        // console.log(result);
-        return result;
+            { content: this.template.getTemplate() }, modelManager, templateKind);
 
+        // Compile the template's logic/logic.ts (when present) so that inline
+        // formulas {{% expr %}} can call helpers declared in user code (issue #147).
+        // Skipped when the template has no formulas or conditions to evaluate.
+        const userLogic = hasUserCode(templateMarkDom) ? await this.compileUserLogicForDraft() : undefined;
+        const engine = new TemplateMarkInterpreter(modelManager, {}, undefined, userLogic);
+        const now = currentTime ? currentTime : new Date().toISOString();
+        const ciceroMark = await engine.generate(templateMarkDom, data, { now });
+        const result = transform(ciceroMark.toJSON(), 'ciceromark', ['ciceromark_unquoted', format], null, options);
+        return result;
     }
 
     /**
-     * Compiles the template's `logic/logic.ts` using the same TypeScript
-     * compilation pipeline that {@link trigger} and {@link init} use, but
-     * returns the result via {@link CompiledUserLogic} so it can also be
-     * consumed by {@link draft} (so inline formulas can call helpers from
-     * logic.ts — see issue #147). Returns `undefined` for non-TypeScript
-     * runtimes or when the template ships no logic.
+     * Compiles the template's `logic/logic.ts` so that its top-level helpers can be
+     * used by inline formulas when drafting. Unlike {@link compileLogic} this never
+     * throws for templates without logic: drafting does not require it, so this
+     * returns `undefined` when the template has no TypeScript logic or does not ship
+     * a `logic/logic.ts` file (other scripts, such as generated model files, are
+     * never used in its place). Reuses the compiled logic cache when it is populated.
+     * @returns {Promise<CompiledUserLogic | undefined>} the compiled user logic, if any
      */
-    private async compileLogic(): Promise<CompiledUserLogic | undefined> {
+    private async compileUserLogicForDraft(): Promise<CompiledUserLogic | undefined> {
+        if (!this.template.hasLogic()) {
+            return undefined;
+        }
         const logicManager = this.template.getLogicManager();
         if (logicManager.getLanguage() !== 'typescript') {
             return undefined;
         }
         const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
-        const logicFile = tsFiles.find(f => f.getIdentifier() === 'logic/logic.ts') ?? tsFiles[0];
-        if (!logicFile) {
+        const logicScript = tsFiles.find((tsFile) => tsFile.getIdentifier() === 'logic/logic.ts');
+        if (!logicScript) {
             return undefined;
+        }
+        const cached = this.compiledLogicCache?.['logic/logic.ts'];
+        if (cached) {
+            return toCompiledUserLogic(logicScript.getContents(), cached.code);
         }
         return compileUserLogic(
             this.template.getModelManager(),
             this.template.getTemplateModel().getFullyQualifiedName(),
-            logicFile.getContents(),
+            logicScript.getContents(),
         );
     }
 
     /**
-     * Trigger the logic of a template
-     * @param {object} request - the request to send to the template logic
-     * @param {object} state - the current state of the template
-     * @param {[string]} currentTime - the current time, defaults to now
-     * @param {[number]} utcOffset - the UTC offset, defaults to zero
-     * @returns {Promise} the response and any events
+     * Compile the logic of a template
+     * @param {boolean} [enableCompiledLogicCache] - whether to cache the compiled logic for future use
+     * @returns {Promise<Record<string, TwoSlashReturn>>} the compiled code for each typescript file
      */
-    async trigger(data: any, request: any, state?: any, currentTime?: string, utcOffset?: number): Promise<TriggerResponse> {
-        const userLogic = await this.compileLogic();
-        if (!userLogic) {
+    async compileLogic(enableCompiledLogicCache: boolean = false): Promise<Record<string, TwoSlashReturn>> {
+        if (enableCompiledLogicCache && this.compiledLogicCache) {
+            return this.compiledLogicCache;
+        }
+
+        const logicManager = this.template.getLogicManager();
+        if (logicManager.getLanguage() === 'typescript') {
+            const compiledCode: Record<string, TwoSlashReturn> = {};
+            const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
+            const logicScript = tsFiles.find((tsFile) => tsFile.getIdentifier() === 'logic/logic.ts');
+            await this.assertTemplateLogicSubclass(logicScript);
+            for (let n = 0; n < tsFiles.length; n++) {
+                const tsFile = tsFiles[n];
+
+                const compiler = new TypeScriptToJavaScriptCompiler(this.template.getModelManager(),
+                    this.template.getTemplateModel().getFullyQualifiedName());
+
+                await compiler.initialize();
+
+                // The runtime type declarations (IConcept, TemplateLogic, etc.) are
+                // provided by the compilation context, with the State / Request / Response /
+                // Event type positions bound to the model-derived Runtime* unions (the
+                // concrete base plus its subclasses).
+                const result = compiler.compile(tsFile.getContents());
+
+                // Surface the runtime-hierarchy constraint violation (TS2344) as a hard
+                // error. The state type argument must satisfy the RuntimeState union; a type
+                // that is structurally incompatible with the base (e.g. a concept with no
+                // $identifier used as state, or an emit that is not assignable to the base
+                // Event) fails the constraint. Structural matches to the bare base are
+                // allowed here and are instead checked nominally at runtime
+                // (assertRuntimeHierarchy). Scoped to the logic entry point and to TS2344 so
+                // that unrelated diagnostics (and non-logic scripts such as README.md) do
+                // not turn into hard failures.
+                const isLogicEntry = tsFile.getIdentifier().endsWith('logic.ts');
+                if (isLogicEntry) {
+                    const hierarchyErrors = (result.errors || [])
+                        .filter(e => e.category === 1 && e.code === 2344);
+                    if (hierarchyErrors.length > 0) {
+                        const message = hierarchyErrors.map(e => e.renderedMessage).join('\n');
+                        throw new Error(
+                            'Invalid template: State, Request, Response and Event declarations must ' +
+                            'be, or extend, their runtime base types (org.accordproject.runtime ' +
+                            `State / Request / Response and the Concerto Event).\n${message}`);
+                    }
+                }
+
+                compiledCode[tsFile.getIdentifier()] = result;
+            }
+            if (enableCompiledLogicCache) {
+                this.compiledLogicCache = compiledCode;
+            }
+            return compiledCode;
+        } else {
             throw new Error('Only TypeScript is supported at this time');
         }
+    }
+
+    /**
+     * Asserts that a runtime payload's declared type is, or extends, the given runtime
+     * base type. This enforces the runtime class hierarchy nominally (by `$class`), which
+     * the type system cannot: request is a bivariant `trigger` parameter, and State's
+     * generated interface is structurally satisfied by any identified concept. Using the
+     * model's own assignability, the bare base type and any subclass are accepted while a
+     * plain concept that does not extend the base is rejected.
+     * @param {any} payload - a serialized Concerto object (has a `$class`), or undefined
+     * @param {string} baseFqn - the fully-qualified name of the runtime base type
+     * @param {string} role - the payload's role, used in the error message
+     * @throws {Error} if the payload's type is not the base type or a subclass of it
+     */
+    private assertRuntimeHierarchy(payload: any, baseFqn: string, role: string): void {
+        if (!payload || !payload.$class) {
+            return;
+        }
+        if (!isAssignableTo(this.template.getModelManager(), payload.$class, baseFqn)) {
+            throw new Error(
+                `Invalid ${role}: '${payload.$class}' must be, or extend, the runtime ` +
+                `${role} type (${baseFqn}).`);
+        }
+    }
+
+    /**
+     * Populates the `contract` back-reference that `org.accordproject.runtime.Obligation`
+     * (and therefore any event that extends it, e.g. a template's `PaymentObligationEvent`)
+     * requires, so that template logic never has to set it explicitly.
+     *
+     * Only events whose `contract` field is not already set are touched, so template logic
+     * that deliberately points an obligation at a different contract is left alone. Filling
+     * the field in is only meaningful when the template's own data model is itself a
+     * `Contract` (or a subtype of it) - that's the only instance in scope at `trigger()` time
+     * that the relationship is allowed to point to. The `Serializer` this class uses is
+     * constructed with `acceptResourcesForRelationships: true`, so handing it the full `data`
+     * resource is enough for it to resolve the relationship from that resource's own
+     * `$class`/identifier.
+     * @param {Event[]} events - the events returned by the template logic, mutated in place
+     * @param {any} data - the contract/clause data instance passed into trigger()
+     * @throws {Error} if an Obligation-derived event is missing `contract` and the template's
+     * data model does not extend Contract, so there is nothing valid to auto-populate with
+     */
+    private populateObligationBackReferences(events: Event[], data: any): void {
+        const modelManager = this.template.getModelManager();
+        events.forEach((event: any) => {
+            if (!event || !event.$class || event.contract) {
+                return;
+            }
+            if (!isAssignableTo(modelManager, event.$class, RUNTIME_OBLIGATION_FQN)) {
+                return;
+            }
+            if (data && data.$class && isAssignableTo(modelManager, data.$class, RUNTIME_CONTRACT_FQN)) {
+                // Relationship fields must be a "<fq-class>#<id>" string, not the full resource.
+                // Assigning `data` directly (as before) satisfies acceptResourcesForRelationships
+                // during population, but validate() then rejects it: that flag only relaxes what
+                // the populator will accept as *input*, it doesn't change what a relationship field
+                // is allowed to *hold* afterward - it still must be a Relationship, not a Resource.
+                const classDecl = modelManager.getType(data.$class);
+                const idField = classDecl.getIdentifierFieldName();
+                const idValue = idField ? data[idField] : undefined;
+                if (!idField || idValue === undefined) {
+                    throw new Error(
+                        `Cannot populate the required 'contract' back-reference on event '${event.$class}': ` +
+                        `the data model '${data.$class}' has no resolvable identifier value for field '${idField}'.`
+                    );
+                }
+                event.contract = `${idValue}`;
+                return;
+            }
+            throw new Error(
+                `Cannot populate the required 'contract' back-reference on event '${event.$class}': ` +
+                `it extends ${RUNTIME_OBLIGATION_FQN}, but this template's data model ` +
+                `('${data?.$class ?? 'undefined'}') does not extend ${RUNTIME_CONTRACT_FQN}. Either ` +
+                "change the template model to extend Contract, or have the template logic set " +
+                "'contract' explicitly on the event before returning it."
+            );
+        });
+    }
+
+    private async assertTemplateLogicSubclass(tsFile?: Script): Promise<void> {
+        if (!tsFile) {
+            throw new Error('Template logic compilation requires a logic/logic.ts file.');
+        }
+
+        const tsImport = await import('typescript');
+        const tsModule = ('default' in tsImport && tsImport.default ? tsImport.default : tsImport);
+
+        const sourceFile = tsModule.createSourceFile(
+            tsFile.getIdentifier(),
+            tsFile.getContents(),
+            tsModule.ScriptTarget.Latest,
+            true,
+            tsModule.ScriptKind.TS
+        );
+
+        const hasTemplateLogicSubclass = sourceFile.statements.some((statement) => {
+            if (!tsModule.isClassDeclaration(statement) || !statement.heritageClauses) {
+                return false;
+            }
+
+            return statement.heritageClauses.some((clause) =>
+                clause.token === tsModule.SyntaxKind.ExtendsKeyword &&
+                clause.types.some((heritageType) => {
+                    const expression = heritageType.expression;
+                    return (tsModule.isIdentifier(expression) && expression.text === 'TemplateLogic') ||
+                        (tsModule.isPropertyAccessExpression(expression) && expression.name.text === 'TemplateLogic');
+                })
+            );
+        });
+
+        if (!hasTemplateLogicSubclass) {
+            throw new Error(`Template logic compilation requires ${tsFile.getIdentifier()} to define a class extending TemplateLogic.`);
+        }
+    }
+
+    /**
+     * Determines whether LLM fallback is enabled.
+     * @returns {boolean} true if an LLM config is present and not disabled
+     */
+    private shouldUseLLM(): boolean {
+        return !!this.llmConfig && this.llmConfig.mode !== 'disabled';
+    }
+
+    /**
+     * Constructs an LLM executor for this template.
+     * @returns {LLMExecutor} the LLM executor
+     * @throws {Error} if no LLM config is present
+     */
+    private makeLLMExecutor(): LLMExecutor {
+        if (!this.llmConfig) {
+            throw new Error('LLM fallback requested but llmConfig is missing');
+        }
+        if (!this.llmExecutor) {
+            this.llmExecutor = new LLMExecutor(this.template, this.llmConfig, this.sdkLoaders);
+        }
+        return this.llmExecutor;
+    }
+
+    /**
+     * Executes the template's compiled TypeScript trigger logic.
+     * @param {any} data - the data for the template
+     * @param {any} request - the request to send to the template logic
+     * @param {any} [priorState] - the state produced by init() (or a previous
+     * trigger()); required for stateful templates, ignored for stateless ones
+     * @param {string} [currentTime] - the current time, defaults to now
+     * @param {number} [utcOffset] - the UTC offset, defaults to zero
+     * @returns {Promise<TriggerResponse>} the response and any events
+     */
+    private async executeTypeScriptTrigger(data: any, request: any, priorState?: any, currentTime?: string, utcOffset?: number): Promise<TriggerResponse> {
+        const compiledCode = await this.compileLogic();
         const resolvedTime = currentTime ?? new Date().toISOString();
         const resolvedOffset = utcOffset ?? 0;
         const evaluator = new JavaScriptEvaluator();
@@ -130,27 +372,35 @@ export class TemplateArchiveProcessor {
             templateLogic: true,
             verbose: false,
             functionName: 'trigger',
-            code: userLogic.compiledJs,
+            code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
             argumentNames: ['data', 'request', 'state'],
-            arguments: [data, request, state, resolvedTime, resolvedOffset]
+            arguments: [data, request, priorState, resolvedTime, resolvedOffset]
         });
         if (evalResponse.result) {
-            return evalResponse.result;
+            return evalResponse.result as TriggerResponse;
+        } else {
+            throw new Error('Trigger failed with message: ' + evalResponse.message);
         }
-        throw new Error('Trigger failed with message: ' + evalResponse.message);
     }
 
     /**
-     * Init the logic of a template
-     * @param {[string]} currentTime - the current time, defaults to now
-     * @param {[number]} utcOffset - the UTC offset, defaults to zero
+     * Executes the template's compiled TypeScript init logic. Returns an empty
+     * state when the compiled logic defines no `init` method (stateless template).
+     * @param {any} data - the data for the template
+     * @param {string} [currentTime] - the current time, defaults to now
+     * @param {number} [utcOffset] - the UTC offset, defaults to zero
      * @returns {Promise<InitResponse>} the new state
      */
-    async init(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
-        const userLogic = await this.compileLogic();
-        if (!userLogic) {
-            throw new Error('Only TypeScript is supported at this time');
+    private async executeTypeScriptInit(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
+        const compiledCode = await this.compileLogic();
+        const logicCode = compiledCode['logic/logic.ts']?.code;
+
+        // Check if the compiled code even contains an `init` method before calling it
+        if (!logicCode || (!logicCode.includes('init(') && !logicCode.includes('init ('))) {
+            // Stateless template — no init method defined, return empty state
+            return { state: {} };
         }
+
         const resolvedTime = currentTime ?? new Date().toISOString();
         const resolvedOffset = utcOffset ?? 0;
         const evaluator = new JavaScriptEvaluator();
@@ -158,13 +408,139 @@ export class TemplateArchiveProcessor {
             templateLogic: true,
             verbose: false,
             functionName: 'init',
-            code: userLogic.compiledJs,
+            code: logicCode, // TODO DCS - how to find the code to run?
             argumentNames: ['data'],
             arguments: [data, resolvedTime, resolvedOffset]
         });
         if (evalResponse.result) {
-            return evalResponse.result;
+            return evalResponse.result as InitResponse;
+        } else {
+            throw new Error('Init failed with message: ' + evalResponse.message);
         }
-        throw new Error('Init failed with message: ' + evalResponse.message);
+    }
+
+    /**
+     * Trigger the logic of a template.
+     *
+     * Stateful templates (`this.template.isStateful()`) carry state across
+     * executions, so they must always be seeded with `priorState` — the state
+     * returned by a prior call to {@link init} (or by a prior call to
+     * `trigger`) — before a request can be evaluated. There is no implicit
+     * "empty" state for a template that declares custom State fields; calling
+     * `trigger` without `priorState` for such a template throws. Stateless
+     * templates ignore `priorState` entirely.
+     * @param {object} data - the data for the template
+     * @param {object} request - the request to send to the template logic
+     * @param {object} priorState - the state to evaluate the request against.
+     * For stateful templates this is required and must be the state produced
+     * by init() or a previous trigger(); for stateless templates it is ignored.
+     * @param {[string]} currentTime - the current time, defaults to now
+     * @param {[number]} utcOffset - the UTC offset, defaults to zero
+     * @param {boolean} [enableCompiledLogicCache] - whether to use the compiled logic cache
+     * @returns {Promise<TriggerResponse>} the response and any events
+     * @throws {Error} if the template is stateful and no priorState is supplied, or if an
+     * emitted event extends `org.accordproject.runtime.Obligation` and its `contract`
+     * back-reference can't be auto-populated (see {@link populateObligationBackReferences})
+     */
+    async trigger(data: any, request: any, priorState?: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<TriggerResponse> {
+        const factory = new Factory(this.template.getModelManager());
+        const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true});
+
+        // Stateful templates must always be triggered against the state produced by
+        // init() (or a previous trigger()) — there is no implicit "empty" state for
+        // a template that declares custom State fields. Stateless templates have no
+        // persistent state, so priorState is not required for them.
+        if (this.template.isStateful() && (!priorState || Object.keys(priorState).length === 0)) {
+            throw new Error(
+                'Stateful templates require priorState: call init() first and pass its ' +
+                'returned state (or the state returned by a previous trigger()) as priorState.'
+            );
+        }
+
+        // validate inputs before execution. A stateless template's init returns an empty
+        // placeholder state ({}); skip only that. Any other state - including a non-empty
+        // object with no $class - is validated normally (and fails if malformed).
+        if (data) serializer.fromJSON(data);
+        if (request) serializer.fromJSON(request);
+        if (priorState && Object.keys(priorState).length > 0) serializer.fromJSON(priorState);
+
+        // enforce the runtime class hierarchy on the inputs
+        this.assertRuntimeHierarchy(request, RUNTIME_REQUEST_FQN, 'request');
+        this.assertRuntimeHierarchy(priorState, RUNTIME_STATE_FQN, 'state');
+
+        let triggerResponse: TriggerResponse;
+        const forceLLM = this.llmConfig?.mode === 'force';
+
+        // Run the template's TypeScript logic unless the caller forces the LLM path.
+        if (!forceLLM && this.template.hasLogic()) {
+            if (enableCompiledLogicCache) {
+                await this.compileLogic(true);
+            }
+            triggerResponse = await this.executeTypeScriptTrigger(data, request, priorState, currentTime, utcOffset);
+        } else if (forceLLM || this.shouldUseLLM()) {
+            // Otherwise use the LLM executor
+            triggerResponse = await this.makeLLMExecutor().trigger(data, request, priorState, currentTime, utcOffset);
+        } else {
+            throw new Error('No executable logic found and LLM fallback is disabled');
+        }
+
+        // validate outputs after execution (skip only the empty {} placeholder state)
+        if (triggerResponse.state && Object.keys(triggerResponse.state).length > 0) serializer.fromJSON(triggerResponse.state);
+        if (triggerResponse.result) serializer.fromJSON(triggerResponse.result);
+        if (triggerResponse.events && Array.isArray(triggerResponse.events)) {
+            this.populateObligationBackReferences(triggerResponse.events, data);
+            triggerResponse.events.forEach(e => serializer.fromJSON(e));
+        }
+
+        // enforce the runtime class hierarchy on the outputs
+        this.assertRuntimeHierarchy(triggerResponse.state, RUNTIME_STATE_FQN, 'state');
+        this.assertRuntimeHierarchy(triggerResponse.result, RUNTIME_RESPONSE_FQN, 'response');
+        if (triggerResponse.events && Array.isArray(triggerResponse.events)) {
+            triggerResponse.events.forEach(e => this.assertRuntimeHierarchy(e, BASE_EVENT_FQN, 'event'));
+        }
+
+        return triggerResponse;
+    }
+
+    /**
+     * Init the logic of a template.
+     * @param {object} data - the data for the template
+     * @param {[string]} currentTime - the current time, defaults to now
+     * @param {[number]} utcOffset - the UTC offset, defaults to zero
+     * @param {boolean} [enableCompiledLogicCache] - whether to use the compiled logic cache
+     * @returns {Promise<InitResponse>} the new state
+     */
+    async init(data: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<InitResponse> {
+        const factory = new Factory(this.template.getModelManager());
+        const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true});
+        
+        // validate inputs before execution
+        if (data) serializer.fromJSON(data);
+
+        let initResponse: InitResponse;
+        const forceLLM = this.llmConfig?.mode === 'force';
+
+        // Run the template's TypeScript logic unless the caller forces the LLM path.
+        if (!forceLLM && this.template.hasLogic()) {
+            if (enableCompiledLogicCache) {
+                await this.compileLogic(true);
+            }
+            initResponse = await this.executeTypeScriptInit(data, currentTime, utcOffset);
+        } else if (forceLLM || this.shouldUseLLM()) {
+            // Otherwise use the LLM executor
+            initResponse = await this.makeLLMExecutor().init(data, currentTime, utcOffset);
+        } else {
+            throw new Error('No executable logic found and LLM fallback is disabled');
+        }
+
+        // validate outputs after execution. A stateless template returns an empty
+        // placeholder state ({}); skip only that - any other state is validated normally.
+        if (initResponse.state && Object.keys(initResponse.state).length > 0) serializer.fromJSON(initResponse.state);
+
+        // enforce the runtime class hierarchy on the output state (skipped for the empty
+        // state of a stateless template, which has no $class)
+        this.assertRuntimeHierarchy(initResponse.state, RUNTIME_STATE_FQN, 'state');
+
+        return initResponse;
     }
 }

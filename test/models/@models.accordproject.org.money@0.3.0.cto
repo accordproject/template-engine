@@ -12,4 +12,23 @@
  * limitations under the License.
  */
 
-declare module '@accordproject/markdown-transform';
+concerto version "^3.0.0"
+
+namespace org.accordproject.money@0.3.0
+
+/**
+ * Represents an amount of money.
+ */
+concept MonetaryAmount {
+  o Double doubleValue
+  o CurrencyCode currencyCode
+}
+
+/**
+ * Currency codes required by the offline template fixtures.
+ */
+enum CurrencyCode {
+  o EUR
+  o GBP
+  o USD
+}

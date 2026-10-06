@@ -21,19 +21,39 @@ import integerDrafter from './Integer';
 import durationDrafter from './Duration';
 import longDrafter from './Long';
 import monetaryAmountDrafter from './MonetaryAmount';
+import preciseAmountDrafter from './PreciseAmount';
 import { DraftFormat } from './DraftFormat';
 import stringDrafter from './String';
+import { ModelUtil } from '@accordproject/concerto-core';
+
+function drafterKey(fqn: string): string {
+    if (ModelUtil.isPrimitiveType(fqn)) {
+        return fqn; // Boolean, String, Integer, ...
+    }
+    try {
+        const ns = ModelUtil.getNamespace(fqn);
+        const name = ModelUtil.getShortName(fqn);
+        const { name: nsName, version } = ModelUtil.parseNamespace(ns);
+        const major = version ? version.split('.')[0] : '';
+        return `${nsName}@${major}.${name}`;
+    } catch {
+        // Not a versioned namespace type (e.g. user-defined concept without a version).
+        // Return as-is so it hits the default: null branch in getDrafter.
+        return fqn;
+    }
+}
 
 export function getDrafter(typeName: string) : ((value:any, format?:DraftFormat) => string)|null  {
-    switch(typeName) {
+    switch(drafterKey(typeName)) {
     case 'Boolean': return booleanDrafter;
     case 'DateTime': return dateTimeDrafter;
     case 'Double': return doubleDrafter;
     case 'Integer': return integerDrafter;
     case 'Long': return longDrafter;
-    case 'org.accordproject.money@0.3.0.MonetaryAmount': return monetaryAmountDrafter;
-    case 'org.accordproject.time@0.3.0.Duration': return durationDrafter;
-    case 'org.accordproject.time@0.3.0.Period': return durationDrafter;
+    case 'org.accordproject.money@0.MonetaryAmount': return monetaryAmountDrafter;
+    case 'org.accordproject.money@1.PreciseAmount': return preciseAmountDrafter;
+    case 'org.accordproject.time@0.Duration': return durationDrafter;
+    case 'org.accordproject.time@0.Period': return durationDrafter;
     case 'String': return stringDrafter;
     default: return null;
     }

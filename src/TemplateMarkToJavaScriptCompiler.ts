@@ -34,6 +34,23 @@ export type CompilerError = {
     errors:TwoSlashReturn['errors'];
 };
 
+/**
+ * Returns true if the TemplateMark JSON contains any user code (formulas,
+ * conditions or clause conditions) that needs to be compiled.
+ * @param {*} templateJson the TemplateMark JSON object
+ * @returns {boolean} true if there is code to compile
+ */
+export function hasUserCode(templateJson: any): boolean {
+    let found = false;
+    traverse(templateJson).forEach(function (x) {
+        if (x && CODE_NODES.includes(x.$class) && (x.code || x.condition)) {
+            found = true;
+            this.stop();
+        }
+    });
+    return found;
+}
+
 function checkCode(code:ICode) {
     if(code.type !== CodeType.TYPESCRIPT) {
         throw new Error(`Cannot compile ${code.contents} as it is not Typescript.`);
