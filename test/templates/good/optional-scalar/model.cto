@@ -1,0 +1,25 @@
+namespace test@1.0.0
+
+enum Color {
+    o RED
+    o GREEN
+    o BLUE
+}
+
+concept Person {
+    o String name
+    o Integer age optional
+    o Color favoriteColor optional
+}
+
+@template
+concept TemplateData {
+    o String name
+    o Integer age optional
+    o String middleName optional
+    o Boolean active optional
+    o Color favoriteColor optional
+    o Color secondColor optional
+    o Person person optional
+    o DateTime lastVisit optional
+}

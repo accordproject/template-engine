@@ -1,0 +1,14 @@
+{
+  "$class": "test@1.0.0.TemplateData",
+  "name": "Bob",
+  "age": 30,
+  "active": true,
+  "favoriteColor": "GREEN",
+  "person": {
+    "$class": "test@1.0.0.Person",
+    "name": "Alice",
+    "age": 25,
+    "favoriteColor": "BLUE"
+  },
+  "lastVisit": "2023-12-01T10:30:00.000Z"
+}

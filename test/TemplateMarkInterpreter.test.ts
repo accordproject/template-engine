@@ -215,4 +215,90 @@ concept TemplateData {
             );
         });
     });
+
+    // Optional blocks guarding scalar values (primitives and enums) have no property
+    // scope to navigate into: named variables inside them resolve from the parent data
+    // context, while {{this}} refers to the optional value itself. The TemplateMark is
+    // built by hand because the parser does not yet accept named variables (or enum
+    // {{this}}) inside scalar optionals.
+    describe('scalar optional blocks', () => {
+        const NS = 'test@1.0.0';
+        const MODEL = `namespace ${NS}
+enum Color {
+    o RED
+    o GREEN
+}
+concept Person {
+    o String name
+    o Integer age optional
+}
+@template
+concept TemplateData {
+    o String name
+    o Integer age optional
+    o Color favoriteColor optional
+    o Person person optional
+}`;
+        const DATA = {
+            $class: `${NS}.TemplateData`,
+            name: 'Bob',
+            age: 30,
+            favoriteColor: 'GREEN',
+            person: { $class: `${NS}.Person`, name: 'Alice', age: 25 }
+        };
+        const TM = 'org.accordproject.templatemark@0.5.0';
+        const text = (t: string) => ({ $class: `${CommonMarkModel.NAMESPACE}.Text`, text: t });
+        const variable = (name: string, elementType: string) => ({ $class: `${TM}.VariableDefinition`, name, elementType });
+        const enumVariable = (name: string) => ({ $class: `${TM}.EnumVariableDefinition`, name, elementType: `${NS}.Color`, enumValues: ['RED', 'GREEN'] });
+        const optional = (name: string, elementType: string, whenSome: any[]) => ({
+            $class: `${TM}.OptionalDefinition`, name, elementType, whenSome, whenNone: [text('none')]
+        });
+
+        async function render(nodes: any[]): Promise<string> {
+            const modelManager = new ModelManager();
+            modelManager.addCTOModel(MODEL);
+            const engine = new TemplateMarkInterpreter(modelManager, {});
+            const templateMark = {
+                $class: `${CommonMarkModel.NAMESPACE}.Document`,
+                xmlns: 'http://commonmark.org/xml/1.0',
+                nodes: [{
+                    $class: `${TM}.ClauseDefinition`,
+                    name: 'top',
+                    elementType: `${NS}.TemplateData`,
+                    nodes: [{ $class: `${CommonMarkModel.NAMESPACE}.Paragraph`, nodes }]
+                }]
+            };
+            const ciceroMark = await engine.generate(templateMark, DATA, { now: '2023-03-17T00:00:00.000Z' });
+            const out: string[] = [];
+            (function walk(n: any) {
+                if (!n) return;
+                if (typeof n.text === 'string') out.push(n.text);
+                if (typeof n.value === 'string') out.push(n.value);
+                if (Array.isArray(n.nodes)) n.nodes.forEach(walk);
+            })(ciceroMark.toJSON());
+            return out.join('');
+        }
+
+        test('named variables resolve from the parent context inside a primitive optional', async () => {
+            expect(await render([optional('age', 'Integer', [variable('name', 'String'), text(' is '), variable('age', 'Integer')])]))
+                .toBe('Bob is 30');
+        });
+
+        test('{{this}} still refers to the value of a primitive optional', async () => {
+            expect(await render([optional('age', 'Integer', [text('Age '), variable('this', 'Integer')])]))
+                .toBe('Age 30');
+        });
+
+        test('named variables and {{this}} resolve inside an enum optional', async () => {
+            expect(await render([optional('favoriteColor', `${NS}.Color`, [enumVariable('favoriteColor'), text(' / '), enumVariable('this')])]))
+                .toBe('GREEN / GREEN');
+        });
+
+        test('primitive optionals nested in an object optional resolve against the object', async () => {
+            expect(await render([optional('person', `${NS}.Person`, [
+                variable('name', 'String'),
+                optional('age', 'Integer', [text(' '), variable('age', 'Integer'), text(' '), variable('this', 'Integer')])
+            ])])).toBe('Alice 25 25');
+        });
+    });
 });
