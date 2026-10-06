@@ -1,8 +1,8 @@
-import { cpSync, mkdtempSync, writeFileSync } from 'fs';
+import { cpSync, mkdtempSync, renameSync, writeFileSync } from 'fs';
 import os from 'os';
 import path from 'path';
 import {Template} from '@accordproject/cicero-core';
-import { TemplateArchiveProcessor, InitResponse, TriggerResponse } from '../src/TemplateArchiveProcessor';
+import { TemplateArchiveProcessor, InitResponse, TriggerResponse, resolveLogicEntryPoint } from '../src/TemplateArchiveProcessor';
 
 const TEMPLATE_DIR = 'test/archives/latedeliveryandpenalty-typescript';
 
@@ -15,6 +15,14 @@ async function loadTemplate(logicSource?: string): Promise<Template> {
     const tempDir = path.join(tempRoot, 'template');
     cpSync(TEMPLATE_DIR, tempDir, { recursive: true });
     writeFileSync(path.join(tempDir, 'logic', 'logic.ts'), logicSource);
+    return Template.fromDirectory(tempDir, {offline: true});
+}
+
+async function loadTemplateWithLogicFile(logicFileName: string): Promise<Template> {
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'template-engine-logic-'));
+    const tempDir = path.join(tempRoot, 'template');
+    cpSync(TEMPLATE_DIR, tempDir, { recursive: true });
+    renameSync(path.join(tempDir, 'logic', 'logic.ts'), path.join(tempDir, 'logic', logicFileName));
     return Template.fromDirectory(tempDir, {offline: true});
 }
 
@@ -246,5 +254,55 @@ export default class PlainLogic {
         jest.spyOn(templateArchiveProcessor as unknown as { executeTypeScriptInit: () => Promise<InitResponse> },
             'executeTypeScriptInit').mockResolvedValue({ state: { count: 1 } });
         await expect(templateArchiveProcessor.init(VALID_DATA)).rejects.toThrow();
+    });
+
+    describe('logic entry point resolution', () => {
+        test('prefers logic/logic.ts', () => {
+            expect(resolveLogicEntryPoint(['logic/README.md', 'logic/helpers.ts', 'logic/logic.ts'])).toBe('logic/logic.ts');
+        });
+
+        test('accepts a single non-standard logic file name', () => {
+            expect(resolveLogicEntryPoint(['logic/mycontract.ts'])).toBe('logic/mycontract.ts');
+        });
+
+        test('ignores generated code, nested files and non-TypeScript files', () => {
+            expect(resolveLogicEntryPoint([
+                'logic/README.md',
+                'logic/generated/concerto@1.0.0.ts',
+                'logic/generated/io.clause.latedeliveryandpenalty@0.1.0.ts',
+                'logic/utils/helpers.ts',
+                'logic/mycontract.ts',
+            ])).toBe('logic/mycontract.ts');
+        });
+
+        test('throws when there is no entry point', () => {
+            expect(() => resolveLogicEntryPoint(['logic/README.md', 'logic/generated/concerto.ts']))
+                .toThrow(/requires a TypeScript entry point/);
+        });
+
+        test('throws when the entry point is ambiguous', () => {
+            expect(() => resolveLogicEntryPoint(['logic/a.ts', 'logic/b.ts']))
+                .toThrow(/multiple candidate entry points \(logic\/a\.ts, logic\/b\.ts\)/);
+        });
+
+        test('should init and trigger a template whose logic is not named logic.ts', async () => {
+            const template = await loadTemplateWithLogicFile('mycontract.ts');
+            const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+            const request = {
+                "$class": "io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyRequest",
+                "forceMajeure": false,
+                "agreedDelivery": "2017-10-07T16:38:01.412Z",
+                "goodsValue": 100,
+                "$timestamp": "2017-10-07T16:38:01.412Z"
+            };
+
+            const compiledCode = await templateArchiveProcessor.compileLogic();
+            expect(compiledCode['logic/logic.ts']).toBeUndefined();
+            expect(compiledCode['logic/mycontract.ts'].code).toContain('LateDeliveryAndPenalty');
+
+            const stateResponse = await templateArchiveProcessor.init(VALID_DATA);
+            const response = await templateArchiveProcessor.trigger(VALID_DATA, request, stateResponse.state);
+            expect((response.result as { penalty?: number }).penalty).toBe(2625);
+        });
     });
 });
