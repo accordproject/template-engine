@@ -119,6 +119,32 @@ async function evaluateJavaScript(clauseLibrary: object, data: TemplateData, fn:
 }
 
 /**
+ * Returns true if an element type is a scalar (a primitive or an enum), i.e.
+ * a type whose value is not an object that can be navigated into.
+ * @param {ModelManager} [modelManager] the model manager used to resolve enums
+ * @param {string} [elementType] the fully-qualified element type
+ * @returns {boolean} true if the type is a primitive or an enum
+ */
+function isScalarType(modelManager: ModelManager | undefined, elementType: string | undefined): boolean {
+    if (!elementType) {
+        return false;
+    }
+    if ((ModelUtil as any).isPrimitiveType(elementType)) {
+        return true;
+    }
+    if (!modelManager) {
+        return false;
+    }
+    try {
+        const type = new Introspector(modelManager).getClassDeclaration(elementType);
+        return !!(type && type.isEnum());
+    }
+    catch {
+        return false;
+    }
+}
+
+/**
  * Calculates a JSON path to use to retrieve data, based on a TemplatemMark tree.
  * For example, if we hit a VariableDefinition {{city}} that is nested inside a
  * WithDefinition {{#with address}} then the JSON path returned should be '$.address.city'.
@@ -127,9 +153,10 @@ async function evaluateJavaScript(clauseLibrary: object, data: TemplateData, fn:
  * @param {*} rootData the root of the JSON document, typically this is a TemplateMark JSON
  * @param {*} currentNode the current TemplateMark node we are processing
  * @param {string[]} paths the traverse path to the current node
+ * @param {ModelManager} [modelManager] the model manager, used to detect optionals guarding enums
  * @returns {string} the JSON path to use to retrieve data
  */
-function getJsonPath(rootData: any, currentNode: any, paths: string[]): string {
+function getJsonPath(rootData: any, currentNode: any, paths: string[], modelManager?: ModelManager): string {
     if (!currentNode) {
         throw new Error('Node must be supplied');
     }
@@ -144,6 +171,9 @@ function getJsonPath(rootData: any, currentNode: any, paths: string[]): string {
         throw new Error('Paths must be supplied');
     }
     const withPath = [];
+    // the innermost enclosing optional that guards a scalar (primitive or enum) value, if
+    // it is also the innermost enclosing navigation node
+    let scalarOptional: string | null = null;
     for (let n = 1; n < paths.length; n++) {
         const sub = paths.slice(0, n);
         const obj = traverse.get(rootData, sub);
@@ -154,13 +184,28 @@ function getJsonPath(rootData: any, currentNode: any, paths: string[]): string {
         if (obj && obj.$class) {
             if (NAVIGATION_NODES.indexOf(obj.$class) >= 0) {
                 if(obj.name !== 'top') { // HACK!!
-                    withPath.push(`['${obj.name}']`);
+                    // A scalar optional has no property scope to navigate into, so named
+                    // variables inside it (e.g. {{age}} in {{#optional age}}) resolve from
+                    // the parent data context rather than as $['age']['age']
+                    if (OPTIONAL_DEFINITION_RE.test(obj.$class) && isScalarType(modelManager, obj.elementType)) {
+                        scalarOptional = obj.name;
+                    }
+                    else {
+                        withPath.push(`['${obj.name}']`);
+                        scalarOptional = null;
+                    }
                 }
             }
         }
     }
 
-    if (currentNode.name !== 'this' && currentNode.name !== 'top') {
+    if (currentNode.name === 'this') {
+        // {{this}} directly inside a scalar optional refers to the optional value itself
+        if (scalarOptional) {
+            withPath.push(`['${scalarOptional}']`);
+        }
+    }
+    else if (currentNode.name !== 'top') {
         withPath.push(`['${currentNode.name}']`);
     }
 
@@ -238,12 +283,21 @@ async function generateOptionalBlocks(modelManager: ModelManager, clauseLibrary:
 
             // evaluate optional blocks, processing the whenSome content with the optional property value as context
             if (OPTIONAL_DEFINITION_RE.test(nodeClass)) {
-                const path = getJsonPath(templateMark, context, thisPath);
+                const path = getJsonPath(templateMark, context, thisPath, modelManager);
                 const variableValues = jp.query(data, path, 1);
 
                 if (variableValues.length > 0) {
                     // Optional property exists, process whenSome with the property value as context
                     const optionalPropertyValue = variableValues[0];
+
+                    // Scalar optional values (primitives and enums) are not pre-processed: the
+                    // normal traverse handles them with the full parent data context, so that
+                    // both {{this}} and named variables like {{age}} resolve inside
+                    // {{#optional age}}...{{/optional}}.
+                    if (typeof optionalPropertyValue !== 'object' || optionalPropertyValue === null) {
+                        continue;
+                    }
+
                     if (context.whenSome && context.whenSome.length > 0) {
                         // Create a paragraph wrapper for the whenSome content
                         const whenSomeParagraph = {
@@ -288,7 +342,7 @@ async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary
 
             // evaluate nodes, recursing on each child item
             if (nodeRegExp.test(nodeClass)) {
-                const path = getJsonPath(templateMark, context, thisPath);
+                const path = getJsonPath(templateMark, context, thisPath, modelManager);
                 const variableValues = jp.query(data, path, 1);
 
                 if (variableValues.length === 0) {
@@ -420,7 +474,7 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
 
             // map over an array of items, joining them into a Text node
             else if (JOIN_DEFINITION_RE.test(nodeClass)) {
-                const path = getJsonPath(templateMark, context, this.path);
+                const path = getJsonPath(templateMark, context, this.path, modelManager);
                 const variableValues = jp.query(data, path, 1);
 
                 if (variableValues.length === 0) {
@@ -464,7 +518,7 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                 ENUM_VARIABLE_DEFINITION_RE.test(nodeClass) ||
                 FORMATTED_VARIABLE_DEFINITION_RE.test(nodeClass)) {
                 if (typeof data === 'object') {
-                    const path = getJsonPath(templateMark, context, this.path);
+                    const path = getJsonPath(templateMark, context, this.path, modelManager);
                     const variableValues = jp.query(data, path, 1);
                     if (variableValues.length === 0) {
                         throw new Error(`No values found for path '${path}' in data ${JSON.stringify(data)}.`);
@@ -507,7 +561,7 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                     }
                 }
                 else {
-                    const path = getJsonPath(templateMark, context, this.path);
+                    const path = getJsonPath(templateMark, context, this.path, modelManager);
                     const variableValues = jp.query(data, path, 1);
                     if (variableValues && variableValues.length) {
                         if (variableValues.length === 1) {
@@ -529,7 +583,7 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
 
             // only include the children of a clause if its condition is true
             else if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
-                const path = getJsonPath(templateMark, context, this.path);
+                const path = getJsonPath(templateMark, context, this.path, modelManager);
                 const variableValues = jp.query(data, path, 1);
 
                 // If there's an explicit condition, evaluate it first (takes precedence over implicit check).
@@ -569,7 +623,7 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
 
             // add a 'hasSome' property to OptionalDefinition
             else if (OPTIONAL_DEFINITION_RE.test(nodeClass)) {
-                const path = getJsonPath(templateMark, context, this.path);
+                const path = getJsonPath(templateMark, context, this.path, modelManager);
                 const variableValues = jp.query(data, path, 1);
                 if (variableValues && variableValues.length) {
                     if (variableValues.length === 1) {
@@ -582,7 +636,9 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                             context.whenSome = [];
                             stopHere = true; // do not process child nodes, we've already done it above...
                         } else {
+                            // scalar optionals are processed in place, with the parent data context
                             context.nodes = context.whenSome;
+                            context.whenSome = [];
                         }
                     }
                     else {
