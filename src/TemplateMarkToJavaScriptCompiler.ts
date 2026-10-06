@@ -34,6 +34,23 @@ export type CompilerError = {
     errors:TwoSlashReturn['errors'];
 };
 
+/**
+ * Returns true if the TemplateMark JSON contains any user code (formulas,
+ * conditions or clause conditions) that needs to be compiled.
+ * @param {*} templateJson the TemplateMark JSON object
+ * @returns {boolean} true if there is code to compile
+ */
+export function hasUserCode(templateJson: any): boolean {
+    let found = false;
+    traverse(templateJson).forEach(function (x) {
+        if (x && CODE_NODES.includes(x.$class) && (x.code || x.condition)) {
+            found = true;
+            this.stop();
+        }
+    });
+    return found;
+}
+
 function checkCode(code:ICode) {
     if(code.type !== CodeType.TYPESCRIPT) {
         throw new Error(`Cannot compile ${code.contents} as it is not Typescript.`);
@@ -68,7 +85,7 @@ export class TemplateMarkToJavaScriptCompiler {
             if (x && CODE_NODES.includes(x.$class)) {
                 if (x.code) {  // formula
                     checkCode(x.code);
-                    const result = that.compiler.compile(writeFunctionToString(that.templateClass, x.name, 'any', x.code.contents));
+                    const result = that.compiler.compile(writeFunctionToString(that.templateClass, x.name, 'any', x.code.contents, that.compiler.ts));
                     if(result.errors.length === 0) {
                         x.code.contents = result.code;
                         x.code.type = CodeType.ES_2020;
@@ -84,7 +101,7 @@ export class TemplateMarkToJavaScriptCompiler {
                 }
                 else if (x.condition) {  // condition or clause (boolean condition)
                     checkCode(x.condition);
-                    const result = that.compiler.compile(writeFunctionToString(that.templateClass, x.functionName, 'boolean', x.condition.contents));
+                    const result = that.compiler.compile(writeFunctionToString(that.templateClass, x.functionName, 'boolean', x.condition.contents, that.compiler.ts));
                     if(result.errors.length === 0) {
                         x.condition.contents = result.code;
                         x.condition.type = CodeType.ES_2020;

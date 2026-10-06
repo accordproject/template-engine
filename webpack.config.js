@@ -72,11 +72,15 @@ module.exports = {
         // (the default in-process evaluator is used instead). Ignore the self-reference so
         // the bundle builds.
         new webpack.IgnorePlugin({ resourceRegExp: /^@accordproject\/template-engine$/ }),
-        // The LLM SDKs are optional, node-oriented dependencies loaded via dynamic
-        // import() in src/llm/Reasoners.ts. Keep them out of the browser bundle — the
-        // dynamic import rejects at runtime and the reasoner's try/catch surfaces a
-        // helpful "install this package" error instead.
-        new webpack.IgnorePlugin({ resourceRegExp: /^(openai|@anthropic-ai\/sdk)(\/.*)?$/ }),
+        // The LLM provider SDKs are optional peer dependencies, loaded by name via
+        // dynamic import() in src/llm/Reasoners.ts. Keep them all out of the browser
+        // bundle — the import rejects at runtime and the reasoner surfaces a helpful
+        // "install this package" error instead. Browser consumers that want a provider
+        // pass `sdkLoaders` (e.g. `{ openai: () => import('openai') }`) so their own
+        // bundler resolves the SDK.
+        new webpack.IgnorePlugin({
+            resourceRegExp: /^(openai|groq-sdk|@anthropic-ai\/sdk|@openrouter\/sdk|@google\/genai|@mistralai\/mistralai)(\/.*)?$/,
+        }),
         new webpack.BannerPlugin(
             `Accord Project Template Engine v${packageJson.version} — browser build\n` +
             'Licensed under the Apache License, Version 2.0'

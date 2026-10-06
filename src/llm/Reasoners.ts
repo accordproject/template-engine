@@ -66,12 +66,62 @@ export abstract class BaseReasoner {
 }
 
 /**
+ * Loads a provider SDK module, e.g. `() => import('openai')`.
+ *
+ * Bundlers (Vite, webpack, ...) can only resolve an `import()` whose specifier
+ * is a string literal, so browser consumers should pass loaders written that
+ * way rather than relying on the default runtime lookup.
+ */
+export type SdkLoader = () => Promise<unknown>;
+
+/**
+ * SDK loaders keyed by provider id (the `provider` field of
+ * {@link LLMProviderConfig}). A provider with no loader falls back to
+ * importing its SDK package by name at runtime, which works in Node but not
+ * in bundled browser code.
+ *
+ * The `ollama` and `openai-compatible` providers talk to the `openai` SDK, so
+ * they use their own key when present and otherwise the `openai` loader:
+ * passing `{ openai: () => import('openai') }` covers all three.
+ */
+export type SdkLoaders = Partial<Record<LLMProviderConfig['provider'], SdkLoader>>;
+
+/**
  * Loads an optional dependency at runtime.
  * @param specifier - module specifier
  * @returns imported module
  */
 function loadOptionalModule(specifier: string): Promise<any> {
   return import(specifier);
+}
+
+/**
+ * Loads a provider SDK, via the injected loader when one was supplied and by
+ * importing the package by name otherwise.
+ * @param packageName - npm package name of the SDK
+ * @param usage - what the SDK is needed for, e.g. "the Groq provider"
+ * @param sdkLoader - optional caller-supplied loader
+ * @returns the SDK module
+ * @throws {Error} naming the package if it cannot be loaded
+ */
+async function loadSdk(packageName: string, usage: string, sdkLoader?: SdkLoader): Promise<any> {
+  if (sdkLoader) {
+    try {
+      return await sdkLoader();
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `The SDK loader supplied for ${usage} failed to load '${packageName}': ${reason}`
+      );
+    }
+  }
+  try {
+    return await loadOptionalModule(packageName);
+  } catch {
+    throw new Error(
+      `The '${packageName}' package is required to use ${usage}. Install it with: npm install ${packageName}`
+    );
+  }
 }
 
 /**
@@ -142,9 +192,15 @@ export class GroqReasoner extends BaseReasoner {
     >
   > &
     Pick<GroqProviderConfig, 'effort' | 'clientOptions'>;
+  private readonly sdkLoader?: SdkLoader;
 
-  constructor(config: GroqProviderConfig) {
+  /**
+   * @param config - Groq provider configuration
+   * @param sdkLoader - optional loader for `groq-sdk`; defaults to importing it by name
+   */
+  constructor(config: GroqProviderConfig, sdkLoader?: SdkLoader) {
     super();
+    this.sdkLoader = sdkLoader;
     const apiKey =
       config.apiKey ||
       (typeof process !== 'undefined' ? process.env.GROQ_API_KEY : '') ||
@@ -170,14 +226,7 @@ export class GroqReasoner extends BaseReasoner {
   private getClient(): Promise<GroqClient> {
     if (!this.clientPromise) {
       this.clientPromise = (async () => {
-        let mod: any;
-        try {
-          mod = await loadOptionalModule('groq-sdk');
-        } catch {
-          throw new Error(
-            "The 'groq-sdk' package is required to use the Groq provider. Install it with: npm install groq-sdk"
-          );
-        }
+        const mod = await loadSdk('groq-sdk', 'the Groq provider', this.sdkLoader);
         const Groq = mod.default ?? mod.Groq;
         if (!Groq) {
           throw new Error("Unable to load the Groq SDK constructor from 'groq-sdk'");
@@ -342,9 +391,15 @@ export class OpenAIReasoner extends BaseReasoner {
   private readonly maxTokens: number;
   private readonly effort?: OpenAIEffort;
   private readonly clientOptions: Record<string, unknown>;
+  private readonly sdkLoader?: SdkLoader;
 
-  constructor(config: OpenAIProviderConfig) {
+  /**
+   * @param config - OpenAI provider configuration
+   * @param sdkLoader - optional loader for `openai`; defaults to importing it by name
+   */
+  constructor(config: OpenAIProviderConfig, sdkLoader?: SdkLoader) {
     super();
+    this.sdkLoader = sdkLoader;
     if (!config.apiKey) throw new Error('Missing apiKey for OpenAI provider');
     this.apiKey = config.apiKey;
     this.model = config.model;
@@ -359,14 +414,7 @@ export class OpenAIReasoner extends BaseReasoner {
   private getClient(): Promise<OpenAIClient> {
     if (!this.clientPromise) {
       this.clientPromise = (async () => {
-        let mod: any;
-        try {
-          mod = await loadOptionalModule('openai');
-        } catch {
-          throw new Error(
-            "The 'openai' package is required to use the OpenAI provider. Install it with: npm install openai"
-          );
-        }
+        const mod = await loadSdk('openai', 'the OpenAI provider', this.sdkLoader);
         return new mod.default({
           apiKey: this.apiKey,
           baseURL: 'https://api.openai.com/v1',
@@ -457,9 +505,15 @@ export class AnthropicReasoner extends BaseReasoner {
   private readonly effort?: AnthropicEffort;
   private readonly thinking: boolean;
   private readonly clientOptions: Record<string, unknown>;
+  private readonly sdkLoader?: SdkLoader;
 
-  constructor(config: AnthropicProviderConfig) {
+  /**
+   * @param config - Anthropic provider configuration
+   * @param sdkLoader - optional loader for `@anthropic-ai/sdk`; defaults to importing it by name
+   */
+  constructor(config: AnthropicProviderConfig, sdkLoader?: SdkLoader) {
     super();
+    this.sdkLoader = sdkLoader;
     if (!config.apiKey) throw new Error('Missing apiKey for Anthropic provider');
     this.apiKey = config.apiKey;
     this.model = config.model;
@@ -476,14 +530,7 @@ export class AnthropicReasoner extends BaseReasoner {
   private getClient(): Promise<AnthropicClient> {
     if (!this.clientPromise) {
       this.clientPromise = (async () => {
-        let mod: any;
-        try {
-          mod = await loadOptionalModule('@anthropic-ai/sdk');
-        } catch {
-          throw new Error(
-            "The '@anthropic-ai/sdk' package is required to use the Anthropic provider. Install it with: npm install @anthropic-ai/sdk"
-          );
-        }
+        const mod = await loadSdk('@anthropic-ai/sdk', 'the Anthropic provider', this.sdkLoader);
         return new mod.default({
           apiKey: this.apiKey,
           ...this.clientOptions,
@@ -563,9 +610,26 @@ export class OpenAICompatibleReasoner extends BaseReasoner {
   protected readonly maxTokens: number;
   protected readonly baseUrl: string;
   protected readonly clientOptions: Record<string, unknown>;
+  protected readonly sdkLoader?: SdkLoader;
+  protected readonly providerLabel: string;
 
-  constructor(config: BaseProviderConfig, baseUrl: string, defaultApiKey = '') {
+  /**
+   * @param config - provider configuration
+   * @param baseUrl - base URL of the OpenAI-compatible endpoint
+   * @param defaultApiKey - API key used when the config has none
+   * @param sdkLoader - optional loader for `openai`; defaults to importing it by name
+   * @param providerLabel - provider name used in error messages
+   */
+  constructor(
+    config: BaseProviderConfig,
+    baseUrl: string,
+    defaultApiKey = '',
+    sdkLoader?: SdkLoader,
+    providerLabel = 'OpenAI-compatible'
+  ) {
     super();
+    this.sdkLoader = sdkLoader;
+    this.providerLabel = providerLabel;
     const apiKey = config.apiKey || defaultApiKey;
     if (!apiKey) throw new Error('Missing apiKey for OpenAI-compatible provider');
     this.apiKey = apiKey;
@@ -581,14 +645,7 @@ export class OpenAICompatibleReasoner extends BaseReasoner {
   private getClient(): Promise<OpenAIClient> {
     if (!this.clientPromise) {
       this.clientPromise = (async () => {
-        let mod: any;
-        try {
-          mod = await loadOptionalModule('openai');
-        } catch {
-          throw new Error(
-            "The 'openai' package is required to use this provider. Install it with: npm install openai"
-          );
-        }
+        const mod = await loadSdk('openai', `the ${this.providerLabel} provider`, this.sdkLoader);
         return new mod.default({
           apiKey: this.apiKey,
           baseURL: this.baseUrl,
@@ -644,9 +701,15 @@ export class OpenRouterReasoner extends BaseReasoner {
   private readonly model: string;
   private readonly maxTokens: number;
   private readonly clientOptions: Record<string, unknown>;
+  private readonly sdkLoader?: SdkLoader;
 
-  constructor(config: OpenRouterProviderConfig) {
+  /**
+   * @param config - OpenRouter provider configuration
+   * @param sdkLoader - optional loader for `@openrouter/sdk`; defaults to importing it by name
+   */
+  constructor(config: OpenRouterProviderConfig, sdkLoader?: SdkLoader) {
     super();
+    this.sdkLoader = sdkLoader;
     if (!config.apiKey) throw new Error('Missing apiKey for OpenRouter provider');
     this.apiKey = config.apiKey;
     this.model = config.model;
@@ -660,14 +723,7 @@ export class OpenRouterReasoner extends BaseReasoner {
   private getClient(): Promise<OpenRouterClient> {
     if (!this.clientPromise) {
       this.clientPromise = (async () => {
-        let mod: any;
-        try {
-          mod = await loadOptionalModule('@openrouter/sdk');
-        } catch {
-          throw new Error(
-            "The '@openrouter/sdk' package is required to use the OpenRouter provider. Install it with: npm install @openrouter/sdk"
-          );
-        }
+        const mod = await loadSdk('@openrouter/sdk', 'the OpenRouter provider', this.sdkLoader);
         return new mod.OpenRouter({
           apiKey: this.apiKey,
           ...this.clientOptions,
@@ -712,8 +768,12 @@ export class OpenRouterReasoner extends BaseReasoner {
  * Ollama-backed reasoner.
  */
 export class OllamaReasoner extends OpenAICompatibleReasoner {
-  constructor(config: OllamaProviderConfig) {
-    super(config, config.baseUrl ?? 'http://localhost:11434/v1', 'ollama');
+  /**
+   * @param config - Ollama provider configuration
+   * @param sdkLoader - optional loader for `openai`; defaults to importing it by name
+   */
+  constructor(config: OllamaProviderConfig, sdkLoader?: SdkLoader) {
+    super(config, config.baseUrl ?? 'http://localhost:11434/v1', 'ollama', sdkLoader, 'Ollama');
   }
 }
 
@@ -721,11 +781,15 @@ export class OllamaReasoner extends OpenAICompatibleReasoner {
  * Reasoner for arbitrary OpenAI-compatible endpoints.
  */
 export class OpenAICompatibleCustomReasoner extends OpenAICompatibleReasoner {
-  constructor(config: OpenAICompatibleProviderConfig) {
+  /**
+   * @param config - OpenAI-compatible provider configuration
+   * @param sdkLoader - optional loader for `openai`; defaults to importing it by name
+   */
+  constructor(config: OpenAICompatibleProviderConfig, sdkLoader?: SdkLoader) {
     if (!config.customEndpoint) {
       throw new Error('customEndpoint is required for the openai-compatible provider');
     }
-    super(config, config.customEndpoint);
+    super(config, config.customEndpoint, '', sdkLoader);
   }
 }
 
@@ -748,9 +812,15 @@ export class GoogleReasoner extends BaseReasoner {
   private readonly model: string;
   private readonly maxTokens: number;
   private readonly clientOptions: Record<string, unknown>;
+  private readonly sdkLoader?: SdkLoader;
 
-  constructor(config: GoogleProviderConfig) {
+  /**
+   * @param config - Google provider configuration
+   * @param sdkLoader - optional loader for `@google/genai`; defaults to importing it by name
+   */
+  constructor(config: GoogleProviderConfig, sdkLoader?: SdkLoader) {
     super();
+    this.sdkLoader = sdkLoader;
     if (!config.apiKey) throw new Error('Missing apiKey for Google provider');
     this.apiKey = config.apiKey;
     this.model = config.model;
@@ -764,14 +834,7 @@ export class GoogleReasoner extends BaseReasoner {
   private getClient(): Promise<GoogleGenAIClient> {
     if (!this.clientPromise) {
       this.clientPromise = (async () => {
-        let mod: any;
-        try {
-          mod = await loadOptionalModule('@google/genai');
-        } catch {
-          throw new Error(
-            "The '@google/genai' package is required to use the Google provider. Install it with: npm install @google/genai"
-          );
-        }
+        const mod = await loadSdk('@google/genai', 'the Google provider', this.sdkLoader);
         return new mod.GoogleGenAI({
           apiKey: this.apiKey,
           ...this.clientOptions,
@@ -835,9 +898,15 @@ export class MistralReasoner extends BaseReasoner {
   private readonly model: string;
   private readonly maxTokens: number;
   private readonly clientOptions: Record<string, unknown>;
+  private readonly sdkLoader?: SdkLoader;
 
-  constructor(config: MistralProviderConfig) {
+  /**
+   * @param config - Mistral provider configuration
+   * @param sdkLoader - optional loader for `@mistralai/mistralai`; defaults to importing it by name
+   */
+  constructor(config: MistralProviderConfig, sdkLoader?: SdkLoader) {
     super();
+    this.sdkLoader = sdkLoader;
     if (!config.apiKey) throw new Error('Missing apiKey for Mistral provider');
     this.apiKey = config.apiKey;
     this.model = config.model;
@@ -851,14 +920,7 @@ export class MistralReasoner extends BaseReasoner {
   private getClient(): Promise<MistralClient> {
     if (!this.clientPromise) {
       this.clientPromise = (async () => {
-        let mod: any;
-        try {
-          mod = await loadOptionalModule('@mistralai/mistralai');
-        } catch {
-          throw new Error(
-            "The '@mistralai/mistralai' package is required to use the Mistral provider. Install it with: npm install @mistralai/mistralai"
-          );
-        }
+        const mod = await loadSdk('@mistralai/mistralai', 'the Mistral provider', this.sdkLoader);
         return new mod.Mistral({
           apiKey: this.apiKey,
           ...this.clientOptions,
@@ -902,26 +964,33 @@ export class MistralReasoner extends BaseReasoner {
 /**
  * Creates a provider-specific reasoner.
  * @param config - provider configuration
+ * @param sdkLoaders - optional SDK loaders, for bundled environments
  * @returns a reasoner for the selected provider
  */
-export function createReasoner(config: LLMProviderConfig): BaseReasoner {
+export function createReasoner(
+  config: LLMProviderConfig,
+  sdkLoaders: SdkLoaders = {}
+): BaseReasoner {
   switch (config.provider) {
     case 'groq':
-      return new GroqReasoner(config);
+      return new GroqReasoner(config, sdkLoaders.groq);
     case 'openai':
-      return new OpenAIReasoner(config);
+      return new OpenAIReasoner(config, sdkLoaders.openai);
     case 'anthropic':
-      return new AnthropicReasoner(config);
+      return new AnthropicReasoner(config, sdkLoaders.anthropic);
     case 'google':
-      return new GoogleReasoner(config);
+      return new GoogleReasoner(config, sdkLoaders.google);
     case 'mistral':
-      return new MistralReasoner(config);
+      return new MistralReasoner(config, sdkLoaders.mistral);
     case 'openrouter':
-      return new OpenRouterReasoner(config);
+      return new OpenRouterReasoner(config, sdkLoaders.openrouter);
     case 'ollama':
-      return new OllamaReasoner(config);
+      return new OllamaReasoner(config, sdkLoaders.ollama ?? sdkLoaders.openai);
     case 'openai-compatible':
-      return new OpenAICompatibleCustomReasoner(config);
+      return new OpenAICompatibleCustomReasoner(
+        config,
+        sdkLoaders['openai-compatible'] ?? sdkLoaders.openai
+      );
     default: {
       const _exhaustive: never = config;
       throw new Error(`Unsupported provider: ${(_exhaustive as any).provider}`);

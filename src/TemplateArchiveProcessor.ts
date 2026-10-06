@@ -26,6 +26,7 @@ import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { LLMExecutor } from './llm/LLMExecutor';
 import { LLMExecutorConfig } from './llm/LLMConfig';
+import { SdkLoaders } from './llm/Reasoners';
 import {
     isAssignableTo,
     RUNTIME_REQUEST_FQN,
@@ -55,6 +56,35 @@ export type InitResponse = {
     state: State;
 }
 
+/** The conventional template logic entry point. */
+const DEFAULT_LOGIC_ENTRY_POINT = 'logic/logic.ts';
+
+/**
+ * Resolves the template logic entry point from the identifiers of the template's
+ * TypeScript scripts. Candidates are `.ts` files directly inside `logic/` (so
+ * generated code under `logic/generated/` and non-TypeScript files such as
+ * `logic/README.md` are ignored). `logic/logic.ts` is preferred when present;
+ * otherwise there must be exactly one candidate.
+ * @param {string[]} identifiers - the script identifiers, e.g. `logic/logic.ts`
+ * @returns {string} the identifier of the logic entry point
+ * @throws {Error} if there is no candidate, or several candidates and no `logic/logic.ts`
+ */
+export function resolveLogicEntryPoint(identifiers: string[]): string {
+    const candidates = identifiers.filter(id => /^logic\/[^/]+\.ts$/.test(id));
+    if (candidates.includes(DEFAULT_LOGIC_ENTRY_POINT)) {
+        return DEFAULT_LOGIC_ENTRY_POINT;
+    }
+    if (candidates.length === 1) {
+        return candidates[0];
+    }
+    if (candidates.length === 0) {
+        throw new Error('Template logic requires a TypeScript entry point in the logic/ folder (e.g. logic/logic.ts).');
+    }
+    throw new Error(
+        `Template logic has multiple candidate entry points (${candidates.join(', ')}). ` +
+        `Name the entry point ${DEFAULT_LOGIC_ENTRY_POINT}, or keep a single .ts file directly in logic/.`);
+}
+
 /**
  * A template archive processor: can draft content using the
  * templatemark for the archive and trigger the logic of the archive
@@ -69,6 +99,9 @@ export class TemplateArchiveProcessor {
     /** Optional LLM fallback configuration. */
     llmConfig?: LLMExecutorConfig;
 
+    /** Optional LLM SDK loaders, for bundled environments. */
+    private sdkLoaders?: SdkLoaders;
+
     /** Lazily-created LLM executor reused across debug/init/trigger calls. */
     private llmExecutor?: LLMExecutor;
 
@@ -76,10 +109,12 @@ export class TemplateArchiveProcessor {
      * Creates a template archive processor
      * @param {Template} template - the template to be used by the processor
      * @param {LLMExecutorConfig} [llmConfig] - optional LLM fallback configuration
+     * @param {SdkLoaders} [sdkLoaders] - optional LLM SDK loaders, for bundled environments
      */
-    constructor(template: Template, llmConfig?: LLMExecutorConfig) {
+    constructor(template: Template, llmConfig?: LLMExecutorConfig, sdkLoaders?: SdkLoaders) {
         this.template = template;
         this.llmConfig = llmConfig;
+        this.sdkLoaders = sdkLoaders;
     }
 
     /**
@@ -121,7 +156,8 @@ export class TemplateArchiveProcessor {
         if (logicManager.getLanguage() === 'typescript') {
             const compiledCode: Record<string, TwoSlashReturn> = {};
             const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
-            const logicScript = tsFiles.find((tsFile) => tsFile.getIdentifier() === 'logic/logic.ts');
+            const entryPoint = resolveLogicEntryPoint(tsFiles.map((tsFile) => tsFile.getIdentifier()));
+            const logicScript = tsFiles.find((tsFile) => tsFile.getIdentifier() === entryPoint);
             await this.assertTemplateLogicSubclass(logicScript);
             for (let n = 0; n < tsFiles.length; n++) {
                 const tsFile = tsFiles[n];
@@ -146,7 +182,7 @@ export class TemplateArchiveProcessor {
                 // (assertRuntimeHierarchy). Scoped to the logic entry point and to TS2344 so
                 // that unrelated diagnostics (and non-logic scripts such as README.md) do
                 // not turn into hard failures.
-                const isLogicEntry = tsFile.getIdentifier().endsWith('logic.ts');
+                const isLogicEntry = tsFile.getIdentifier() === entryPoint;
                 if (isLogicEntry) {
                     const hierarchyErrors = (result.errors || [])
                         .filter(e => e.category === 1 && e.code === 2344);
@@ -302,7 +338,7 @@ export class TemplateArchiveProcessor {
             throw new Error('LLM fallback requested but llmConfig is missing');
         }
         if (!this.llmExecutor) {
-            this.llmExecutor = new LLMExecutor(this.template, this.llmConfig);
+            this.llmExecutor = new LLMExecutor(this.template, this.llmConfig, this.sdkLoaders);
         }
         return this.llmExecutor;
     }
@@ -326,7 +362,7 @@ export class TemplateArchiveProcessor {
             templateLogic: true,
             verbose: false,
             functionName: 'trigger',
-            code: compiledCode['logic/logic.ts'].code, // TODO DCS - how to find the code to run?
+            code: compiledCode[resolveLogicEntryPoint(Object.keys(compiledCode))].code,
             argumentNames: ['data', 'request', 'state'],
             arguments: [data, request, priorState, resolvedTime, resolvedOffset]
         });
@@ -347,7 +383,7 @@ export class TemplateArchiveProcessor {
      */
     private async executeTypeScriptInit(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
         const compiledCode = await this.compileLogic();
-        const logicCode = compiledCode['logic/logic.ts']?.code;
+        const logicCode = compiledCode[resolveLogicEntryPoint(Object.keys(compiledCode))].code;
 
         // Check if the compiled code even contains an `init` method before calling it
         if (!logicCode || (!logicCode.includes('init(') && !logicCode.includes('init ('))) {
@@ -362,7 +398,7 @@ export class TemplateArchiveProcessor {
             templateLogic: true,
             verbose: false,
             functionName: 'init',
-            code: logicCode, // TODO DCS - how to find the code to run?
+            code: logicCode,
             argumentNames: ['data'],
             arguments: [data, resolvedTime, resolvedOffset]
         });

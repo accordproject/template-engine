@@ -79,4 +79,10 @@ export {
   MistralReasoner,
   createReasoner,
 } from './Reasoners';
-export type { ChatMessage, ReasonerResult, JsonSchema } from './Reasoners';
+export type {
+  ChatMessage,
+  ReasonerResult,
+  JsonSchema,
+  SdkLoader,
+  SdkLoaders,
+} from './Reasoners';

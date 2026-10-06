@@ -13,7 +13,7 @@
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Template } from '@accordproject/cicero-core';
-import { BaseReasoner, ChatMessage, JsonSchema, createReasoner } from './Reasoners';
+import { BaseReasoner, ChatMessage, JsonSchema, SdkLoaders, createReasoner } from './Reasoners';
 import { LLMExecutorConfig } from './LLMConfig';
 import { treeShakeModel } from './ModelManagerSchema';
 import type { TriggerResponse, InitResponse } from '../TemplateArchiveProcessor';
@@ -517,11 +517,12 @@ export class LLMExecutor {
    * Creates an executor for a template.
    * @param template - template to execute
    * @param config - LLM configuration
+   * @param sdkLoaders - optional SDK loaders, for bundled environments
    */
-  constructor(template: Template, config: LLMExecutorConfig) {
+  constructor(template: Template, config: LLMExecutorConfig, sdkLoaders: SdkLoaders = {}) {
     this.template = template;
     this.config = config;
-    this.reasoner = createReasoner(config.provider);
+    this.reasoner = createReasoner(config.provider, sdkLoaders);
     this.fullSchema = config.provider.isStructuredOutputSupported ?? false;
     this.stateless = isStatelessTemplate(template);
 
