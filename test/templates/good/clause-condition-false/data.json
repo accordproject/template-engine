@@ -1,0 +1,11 @@
+{
+    "$class": "test@1.0.0.Customer",
+    "name": "Jane Doe",
+    "address": {
+        "$class": "test@1.0.0.Address",
+        "line1": "123 Main Street",
+        "city": "Boston",
+        "state": "MA",
+        "country": "USA"
+    }
+}

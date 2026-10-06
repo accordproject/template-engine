@@ -41,7 +41,7 @@ import {
     TemplateData,
     NAVIGATION_NODES
 } from './TemplateMarkNodes';
-import { TemplateMarkToJavaScriptCompiler } from './TemplateMarkToJavaScriptCompiler';
+import { TemplateMarkToJavaScriptCompiler, hasUserCode } from './TemplateMarkToJavaScriptCompiler';
 import { CodeType, ICode } from './model-gen/org.accordproject.templatemark@0.5.0';
 import { GenerationOptions, joinList } from './TypeScriptRuntime';
 import { getTemplateClassDeclaration } from './utils';
@@ -160,7 +160,7 @@ function getJsonPath(rootData: any, currentNode: any, paths: string[]): string {
         }
     }
 
-    if (currentNode.name !== 'this') {
+    if (currentNode.name !== 'this' && currentNode.name !== 'top') {
         withPath.push(`['${currentNode.name}']`);
     }
 
@@ -300,14 +300,37 @@ async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary
                         throw new Error(`Values found for path '${path}' in data ${data} is not an array: ${arrayData}.`);
                     }
                     else {
+                        // The shape of the ListBlockDefinition's children depends on whether
+                        // the markdown parser produced a CommonMark List/Item wrapping. That
+                        // wrapping is only emitted when the items have leading list markers
+                        // (e.g. `- ` for ulist, `1. ` for olist). When users put direct
+                        // variable references inside `{{#ulist}}` / `{{#olist}}` with no
+                        // leading marker (see #145), the body is parsed as a single Paragraph
+                        // directly under the ListBlockDefinition.
+                        const firstChild = context.nodes[0];
+                        const hasListWrapper = firstChild &&
+                            firstChild.$class === `${CommonMarkModel.NAMESPACE}.List` &&
+                            Array.isArray(firstChild.nodes) &&
+                            firstChild.nodes.length > 0;
+                        // When wrapped, the per-iteration template is the first Item inside
+                        // the List. Otherwise the ListBlockDefinition's first child IS the
+                        // per-iteration template (typically a Paragraph).
+                        const itemTemplate = hasListWrapper ? firstChild.nodes[0] : firstChild;
                         const nodes = [];
                         for (let n = 0; n < arrayData.length; n++) {
                             const arrayItem = arrayData[n];
                             // arrayItem is now the data for the nested generation
-                            const subResult = await generateAgreement(modelManager, clauseLibrary, context.nodes[0].nodes[0], arrayItem, options);
+                            const subResult = await generateAgreement(modelManager, clauseLibrary, itemTemplate, arrayItem, options);
+                            // When the template had a List/Item wrapper, the processed Item's
+                            // children (a Paragraph) become the children of the new output Item.
+                            // Otherwise the processed block itself becomes the sole child of
+                            // the new output node, preserving a valid block hierarchy.
+                            const childNodes = hasListWrapper
+                                ? (subResult.nodes ? subResult.nodes : [])
+                                : [subResult];
                             nodes.push({
                                 $class: childNodeClass,
-                                nodes: subResult.nodes ? subResult.nodes : []
+                                nodes: childNodes
                             });
                         }
                         result[thisPath.join('/')] = nodes;
@@ -469,8 +492,19 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
             // with the result of evaluating the JS code or a boolean property
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
-                    const result = userCodeResults[this.path.join('/')];
-                    context.isTrue = !!result as unknown as boolean;
+                    const key = this.path.join('/');
+                    const resultStr = userCodeResults[key];
+                    if (resultStr === undefined || resultStr === null) {
+                        // Treat missing result as false (e.g., condition didn't return a value)
+                        context.isTrue = false;
+                    } else {
+                        try {
+                            // Parse the JSON-stringified result to get the actual boolean value
+                            context.isTrue = !!JSON.parse(resultStr);
+                        } catch (err) {
+                            throw new Error(`Invalid JSON boolean result for condition '${key}': ${String(err)}`);
+                        }
+                    }
                 }
                 else {
                     const path = getJsonPath(templateMark, context, this.path);
@@ -495,21 +529,40 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
 
             // only include the children of a clause if its condition is true
             else if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
-                // Implicit undefined check: skip clause block if scoped variable is undefined/null.
-                // Skip this check for the root template clause (name === 'top') since its data IS the root object.
                 const path = getJsonPath(templateMark, context, this.path);
                 const variableValues = jp.query(data, path, 1);
-                if (context.name !== 'top' && (variableValues.length === 0 || variableValues[0] === undefined || variableValues[0] === null)) {
-                    delete context.nodes;
-                    stopHere = true;
-                } else if (context.condition) {
+
+                // If there's an explicit condition, evaluate it first (takes precedence over implicit check).
+                // This allows conditions like "return address!==undefined" to work correctly when
+                // the optional field is missing - the condition controls whether to render the clause.
+                if (context.condition) {
                     checkCode(context.condition);
-                    const result = !!userCodeResults[this.path.join('/')] as unknown as boolean;
+                    const key = this.path.join('/');
+                    const resultStr = userCodeResults[key];
+                    let result = false;
+                    if (resultStr === undefined || resultStr === null) {
+                        // Treat missing result as false (e.g., condition didn't return a value)
+                        result = false;
+                    } else {
+                        try {
+                            // Parse the JSON-stringified result to get the actual boolean value
+                            result = !!JSON.parse(resultStr);
+                        } catch (err) {
+                            throw new Error(`Invalid JSON boolean result for condition '${key}': ${String(err)}`);
+                        }
+                    }
                     if (!result) {
                         delete context.nodes;
                         stopHere = true;
                     }
                 }
+                // Otherwise, apply implicit undefined check: skip clause block if scoped variable is undefined/null.
+                // Skip this check for the root template clause (name === 'top') since its data IS the root object.
+                else if (context.name !== 'top' && (variableValues.length === 0 || variableValues[0] === undefined || variableValues[0] === null)) {
+                    delete context.nodes;
+                    stopHere = true;
+                }
+
                 delete context.condition;
                 delete context.functionName;
             }
@@ -555,6 +608,7 @@ export class TemplateMarkInterpreter {
     modelManager: ModelManager;
     templateClass: ClassDeclaration;
     clauseLibrary: object;
+    compilers: Map<string, Promise<TemplateMarkToJavaScriptCompiler>> = new Map();
 
     constructor(modelManager: ModelManager, clauseLibrary: object, templateConceptFqn?: string) {
         this.modelManager = modelManager;
@@ -574,20 +628,68 @@ export class TemplateMarkInterpreter {
      * @throws {Error} if the templateMark document is invalid
      */
     checkTypes(templateMark: object): object {
-        const modelManager = new ModelManager({ strict: true });
+        const modelManager = new ModelManager();
         modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
         modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
         modelManager.addCTOModel(TemplateMarkModel.MODEL, 'templatemark.cto');
         const factory = new Factory(modelManager);
-        const serializer = new Serializer(factory, modelManager);
+        const serializer = new Serializer(factory, modelManager, {});
         try {
-            serializer.fromJSON(templateMark);
-            return templateMark;
+            serializer.fromJSON(templateMark, {});
         }
         catch (err) {
             throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(templateMark, null, 2)}`);
         }
+
+        const errors: Array<{ propertyName: string, message: string }> = [];
+        const templateClass = this.templateClass;
+        const guardBlockPaths: Map<string, string> = new Map();
+
+        traverse(templateMark).forEach(function (node: any) {
+            if (!node || typeof node !== 'object' || !node.$class) return;
+
+            const currentPath = this.path.join('/');
+            if (OPTIONAL_DEFINITION_RE.test(node.$class) ||
+                CONDITIONAL_DEFINITION_RE.test(node.$class) ||
+                WITH_DEFINITION_RE.test(node.$class)) {
+                guardBlockPaths.set(node.name, currentPath);
+            }
+            if (VARIABLE_DEFINITION_RE.test(node.$class) ||
+                ENUM_VARIABLE_DEFINITION_RE.test(node.$class) ||
+                FORMATTED_VARIABLE_DEFINITION_RE.test(node.$class)) {
+                const propName = node.name;
+                if (propName && propName !== 'this') {
+                    try {
+                        const property = templateClass.getProperty(propName);
+                        if (property && property.isOptional()) {
+                            const guardPath = guardBlockPaths.get(propName);
+                            const isGuarded = guardPath !== undefined &&
+                                (currentPath === guardPath || currentPath.startsWith(guardPath + '/'));
+                            if (!isGuarded) {
+                                errors.push({
+                                    propertyName: propName,
+                                    message: `Optional property '${propName}' is used without a guard. Wrap it in {{#optional ${propName}}}...{{/optional}} or {{#if ${propName}}}...{{/if}}.`
+                                });
+                            }
+                        }
+                    } catch {
+                        // Property not found at root level, might be nested - skip
+                    }
+                }
+            }
+        });
+
+        if (errors.length > 0) {
+            const errorMessage = `Optional properties used without guards: ${errors.map(e => e.propertyName).join(', ')}`;
+            const error = new Error(errorMessage);
+            (error as any).errors = errors;
+            throw error;
+        }
+
+        return templateMark;
     }
+
+
 
     /**
      * Compiles the code nodes containing TS to code nodes containing JS.
@@ -617,20 +719,46 @@ export class TemplateMarkInterpreter {
         if(firstChild.name !== 'top') {
             throw new Error('First child is not named "top"!');
         }
-        const compiler = new TemplateMarkToJavaScriptCompiler(this.modelManager, templateConcept);
-        await compiler.initialize();
+        if(!hasUserCode(templateMark)) {
+            // nothing to compile, so don't load the TypeScript compiler
+            return templateMark;
+        }
+        const compiler = await this.getCompiler(templateConcept);
         return compiler.compile(templateMark);
     }
 
+    /**
+     * Returns an initialized compiler for a template concept, creating it
+     * on first use and reusing it for later calls.
+     * @param {string} templateConcept the fully qualified name of the template concept
+     * @returns {Promise<TemplateMarkToJavaScriptCompiler>} the compiler
+     */
+    getCompiler(templateConcept: string): Promise<TemplateMarkToJavaScriptCompiler> {
+        let compiler = this.compilers.get(templateConcept);
+        if(!compiler) {
+            const created = new TemplateMarkToJavaScriptCompiler(this.modelManager, templateConcept);
+            const initialized = created.initialize().then(() => created);
+            initialized.catch(() => {
+                // don't cache a failed initialization, so that a later call can retry
+                if(this.compilers.get(templateConcept) === initialized) {
+                    this.compilers.delete(templateConcept);
+                }
+            });
+            this.compilers.set(templateConcept, initialized);
+            compiler = initialized;
+        }
+        return compiler;
+    }
+
     validateCiceroMark(ciceroMark: object): object {
-        const modelManager = new ModelManager({ strict: true });
+        const modelManager = new ModelManager();
         modelManager.addCTOModel(ConcertoMetaModel.MODEL, 'concertometamodel.cto');
         modelManager.addCTOModel(CommonMarkModel.MODEL, 'commonmark.cto');
         modelManager.addCTOModel(CiceroMarkModel.MODEL, 'ciceromark.cto');
         const factory = new Factory(modelManager);
-        const serializer = new Serializer(factory, modelManager);
+        const serializer = new Serializer(factory, modelManager, {});
         try {
-            return serializer.fromJSON(ciceroMark);
+            return serializer.fromJSON(ciceroMark, {});
         }
         catch (err) {
             throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(ciceroMark, null, 2)}`);
@@ -639,8 +767,8 @@ export class TemplateMarkInterpreter {
 
     async generate(templateMark: object, data: TemplateData, options?: GenerationOptions): Promise<any> {
         const factory = new Factory(this.modelManager);
-        const serializer = new Serializer(factory, this.modelManager);
-        const templateData = serializer.fromJSON(data);
+        const serializer = new Serializer(factory, this.modelManager, {});
+        const templateData = serializer.fromJSON(data, {});
         if (templateData.getFullyQualifiedType() !== this.templateClass.getFullyQualifiedName()) {
             throw new Error(`Template data must be of type '${this.templateClass.getFullyQualifiedName()}'.`);
         }

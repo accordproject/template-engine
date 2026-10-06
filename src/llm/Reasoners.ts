@@ -1,0 +1,999 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import {
+  LLMProviderConfig,
+  GroqProviderConfig,
+  OpenAIProviderConfig,
+  AnthropicProviderConfig,
+  GoogleProviderConfig,
+  MistralProviderConfig,
+  OpenRouterProviderConfig,
+  OllamaProviderConfig,
+  OpenAICompatibleProviderConfig,
+  BaseProviderConfig,
+  ReasoningEffort,
+  GroqEffort,
+  GROQ_EFFORT_LEVELS,
+  OpenAIEffort,
+  OPENAI_EFFORT_LEVELS,
+  AnthropicEffort,
+  ANTHROPIC_EFFORT_LEVELS,
+} from './LLMConfig';
+
+/**
+ * A single chat turn sent to a provider.
+ */
+export interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+/**
+ * Raw content returned by a provider.
+ */
+export interface ReasonerResult {
+  content: string;
+}
+
+export type JsonSchema = Record<string, unknown>;
+
+/**
+ * Base interface for provider-specific reasoners.
+ */
+export abstract class BaseReasoner {
+  /**
+   * Completes a chat request.
+   * @param messages - conversation turns
+   * @param schema - optional JSON Schema for structured output
+   */
+  abstract complete(
+    messages: ChatMessage[],
+    schema?: JsonSchema
+  ): Promise<ReasonerResult>;
+}
+
+/**
+ * Loads a provider SDK module, e.g. `() => import('openai')`.
+ *
+ * Bundlers (Vite, webpack, ...) can only resolve an `import()` whose specifier
+ * is a string literal, so browser consumers should pass loaders written that
+ * way rather than relying on the default runtime lookup.
+ */
+export type SdkLoader = () => Promise<unknown>;
+
+/**
+ * SDK loaders keyed by provider id (the `provider` field of
+ * {@link LLMProviderConfig}). A provider with no loader falls back to
+ * importing its SDK package by name at runtime, which works in Node but not
+ * in bundled browser code.
+ *
+ * The `ollama` and `openai-compatible` providers talk to the `openai` SDK, so
+ * they use their own key when present and otherwise the `openai` loader:
+ * passing `{ openai: () => import('openai') }` covers all three.
+ */
+export type SdkLoaders = Partial<Record<LLMProviderConfig['provider'], SdkLoader>>;
+
+/**
+ * Loads an optional dependency at runtime.
+ * @param specifier - module specifier
+ * @returns imported module
+ */
+function loadOptionalModule(specifier: string): Promise<any> {
+  return import(specifier);
+}
+
+/**
+ * Loads a provider SDK, via the injected loader when one was supplied and by
+ * importing the package by name otherwise.
+ * @param packageName - npm package name of the SDK
+ * @param usage - what the SDK is needed for, e.g. "the Groq provider"
+ * @param sdkLoader - optional caller-supplied loader
+ * @returns the SDK module
+ * @throws {Error} naming the package if it cannot be loaded
+ */
+async function loadSdk(packageName: string, usage: string, sdkLoader?: SdkLoader): Promise<any> {
+  if (sdkLoader) {
+    try {
+      return await sdkLoader();
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `The SDK loader supplied for ${usage} failed to load '${packageName}': ${reason}`
+      );
+    }
+  }
+  try {
+    return await loadOptionalModule(packageName);
+  } catch {
+    throw new Error(
+      `The '${packageName}' package is required to use ${usage}. Install it with: npm install ${packageName}`
+    );
+  }
+}
+
+/**
+ * Narrows a configured effort level to the ones a provider's API accepts,
+ * throwing rather than silently falling back to the provider default.
+ * @param effort - the configured effort level, if any
+ * @param supported - the levels this provider accepts
+ * @param providerLabel - provider name, used in the error message
+ * @returns the effort level, or undefined when none was configured
+ * @throws {Error} if the level is not one the provider supports
+ */
+function resolveEffort<T extends ReasoningEffort>(
+  effort: ReasoningEffort | undefined,
+  supported: readonly T[],
+  providerLabel: string
+): T | undefined {
+  if (!effort) return undefined;
+  if (!(supported as readonly string[]).includes(effort)) {
+    throw new Error(
+      `The ${providerLabel} provider does not support effort '${effort}'. ` +
+      `Supported levels: ${supported.join(', ')}`
+    );
+  }
+  return effort as T;
+}
+
+interface GroqResponseFormat {
+  type: 'json_schema';
+  json_schema: {
+    name: string;
+    strict: boolean;
+    schema: JsonSchema;
+  };
+}
+
+interface GroqChatCompletionCreateParams {
+  model: string;
+  messages: ChatMessage[];
+  temperature: number;
+  max_tokens: number;
+  top_p: number;
+  response_format?: GroqResponseFormat;
+  /** Reasoning depth; reasoning models only. */
+  reasoning_effort?: GroqEffort;
+}
+
+interface GroqChatCompletionResponse {
+  choices?: Array<{ message?: { content?: string | null } }>;
+}
+
+interface GroqClient {
+  chat: {
+    completions: {
+      create: (args: GroqChatCompletionCreateParams) => Promise<GroqChatCompletionResponse>;
+    };
+  };
+}
+
+/**
+ * Groq-backed reasoner.
+ */
+export class GroqReasoner extends BaseReasoner {
+  private clientPromise?: Promise<GroqClient>;
+  private readonly config: Required<
+    Pick<
+      GroqProviderConfig,
+      'apiKey' | 'model' | 'baseUrl' | 'temperature' | 'maxTokens' | 'topP' | 'timeoutMs'
+    >
+  > &
+    Pick<GroqProviderConfig, 'effort' | 'clientOptions'>;
+  private readonly sdkLoader?: SdkLoader;
+
+  /**
+   * @param config - Groq provider configuration
+   * @param sdkLoader - optional loader for `groq-sdk`; defaults to importing it by name
+   */
+  constructor(config: GroqProviderConfig, sdkLoader?: SdkLoader) {
+    super();
+    this.sdkLoader = sdkLoader;
+    const apiKey =
+      config.apiKey ||
+      (typeof process !== 'undefined' ? process.env.GROQ_API_KEY : '') ||
+      '';
+    if (!apiKey) throw new Error('Missing apiKey for Groq provider');
+
+    this.config = {
+      apiKey,
+      model: config.model,
+      baseUrl: config.baseUrl ?? 'https://api.groq.com/openai/v1',
+      temperature: config.temperature ?? 0,
+      maxTokens: config.maxTokens ?? 4096,
+      topP: config.topP ?? 1,
+      effort: resolveEffort(config.effort, GROQ_EFFORT_LEVELS, 'groq'),
+      timeoutMs: config.timeoutMs ?? 60000,
+      clientOptions: config.clientOptions ?? {},
+    };
+  }
+
+  /**
+   * Loads the Groq client on first use.
+   */
+  private getClient(): Promise<GroqClient> {
+    if (!this.clientPromise) {
+      this.clientPromise = (async () => {
+        const mod = await loadSdk('groq-sdk', 'the Groq provider', this.sdkLoader);
+        const Groq = mod.default ?? mod.Groq;
+        if (!Groq) {
+          throw new Error("Unable to load the Groq SDK constructor from 'groq-sdk'");
+        }
+        return new Groq({
+          apiKey: this.config.apiKey,
+          baseURL: this.config.baseUrl,
+          ...this.config.clientOptions,
+        }) as GroqClient;
+      })();
+    }
+    return this.clientPromise;
+  }
+
+  async complete(messages: ChatMessage[], schema?: JsonSchema): Promise<ReasonerResult> {
+    const options: GroqChatCompletionCreateParams = {
+      model: this.config.model,
+      messages,
+      temperature: this.config.temperature,
+      max_tokens: this.config.maxTokens,
+      top_p: this.config.topP,
+    };
+
+    if (this.config.effort) {
+      options.reasoning_effort = this.config.effort;
+    }
+
+    if (schema) {
+      options.response_format = {
+        type: 'json_schema',
+        json_schema: {
+          name: 'structured_output',
+          strict: true,
+          schema,
+        },
+      };
+    }
+
+    const client = await this.getClient();
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(
+        () => reject(new Error(`Groq request timed out after ${this.config.timeoutMs}ms`)),
+        this.config.timeoutMs
+      );
+    });
+
+    try {
+      const response = await Promise.race([
+        client.chat.completions.create(options),
+        timeoutPromise,
+      ]);
+      const content = response?.choices?.[0]?.message?.content;
+      if (!content || typeof content !== 'string') {
+        throw new Error('Groq API returned no assistant content');
+      }
+      return { content };
+    } catch (error: any) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(`Groq API error: ${String(error)}`);
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
+  }
+}
+
+interface OpenAIChatMessageParam {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+interface OpenAIResponseFormat {
+  type: 'json_schema';
+  json_schema: {
+    name: string;
+    strict: boolean;
+    schema: JsonSchema;
+  };
+}
+
+interface OpenAIChatCompletionCreateParams {
+  model: string;
+  messages: OpenAIChatMessageParam[];
+  stream: false;
+  response_format?: OpenAIResponseFormat;
+  /** Reasoning depth; reasoning models only. */
+  reasoning_effort?: OpenAIEffort;
+  /** OpenAI-native token limit field. */
+  max_completion_tokens?: number;
+  /** Legacy token limit field used by OpenAI-compatible APIs. */
+  max_tokens?: number;
+}
+
+interface OpenAIChatCompletionResponse {
+  choices?: Array<{ message?: { content?: string | null } }>;
+}
+
+interface OpenAIClient {
+  chat: {
+    completions: {
+      create: (args: OpenAIChatCompletionCreateParams) => Promise<OpenAIChatCompletionResponse>;
+    };
+  };
+}
+
+/**
+ * Formats messages for OpenAI-style chat APIs.
+ * @param messages - chat messages to convert
+ * @returns provider-ready messages
+ */
+function formatOpenAIMessages(messages: ChatMessage[]): OpenAIChatMessageParam[] {
+  const systemMessages = messages.filter(message => message.role === 'system');
+  const conversationMessages = messages.filter(message => message.role !== 'system');
+
+  return [
+    ...(systemMessages.length > 0
+      ? [
+          {
+            role: 'system' as const,
+            content: systemMessages.map(message => message.content).join('\n\n'),
+          },
+        ]
+      : []),
+    ...conversationMessages.map(message => ({
+      role: message.role as 'user' | 'assistant',
+      content: message.content,
+    })),
+  ];
+}
+
+/**
+ * Builds a structured-output payload for OpenAI-style providers.
+ * @param schema - JSON Schema to attach
+ * @param strict - whether the provider should enforce strict output
+ * @returns response format payload
+ */
+function createOpenAIResponseFormat(
+  schema: JsonSchema,
+  strict: boolean
+): OpenAIResponseFormat {
+  return {
+    type: 'json_schema',
+    json_schema: {
+      name: 'structured_output',
+      strict,
+      schema,
+    },
+  };
+}
+
+/**
+ * OpenAI-backed reasoner.
+ */
+export class OpenAIReasoner extends BaseReasoner {
+  private clientPromise?: Promise<OpenAIClient>;
+  private readonly apiKey: string;
+  private readonly model: string;
+  private readonly maxTokens: number;
+  private readonly effort?: OpenAIEffort;
+  private readonly clientOptions: Record<string, unknown>;
+  private readonly sdkLoader?: SdkLoader;
+
+  /**
+   * @param config - OpenAI provider configuration
+   * @param sdkLoader - optional loader for `openai`; defaults to importing it by name
+   */
+  constructor(config: OpenAIProviderConfig, sdkLoader?: SdkLoader) {
+    super();
+    this.sdkLoader = sdkLoader;
+    if (!config.apiKey) throw new Error('Missing apiKey for OpenAI provider');
+    this.apiKey = config.apiKey;
+    this.model = config.model;
+    this.maxTokens = config.maxTokens ?? 4096;
+    this.effort = resolveEffort(config.effort, OPENAI_EFFORT_LEVELS, 'openai');
+    this.clientOptions = config.clientOptions ?? {};
+  }
+
+  /**
+   * Loads the OpenAI client on first use.
+   */
+  private getClient(): Promise<OpenAIClient> {
+    if (!this.clientPromise) {
+      this.clientPromise = (async () => {
+        const mod = await loadSdk('openai', 'the OpenAI provider', this.sdkLoader);
+        return new mod.default({
+          apiKey: this.apiKey,
+          baseURL: 'https://api.openai.com/v1',
+          ...this.clientOptions,
+        }) as OpenAIClient;
+      })();
+    }
+    return this.clientPromise;
+  }
+
+  async complete(messages: ChatMessage[], schema?: JsonSchema): Promise<ReasonerResult> {
+    const options: OpenAIChatCompletionCreateParams = {
+      model: this.model,
+      messages: formatOpenAIMessages(messages),
+      max_completion_tokens: this.maxTokens,
+      stream: false,
+    };
+
+    if (this.effort) {
+      options.reasoning_effort = this.effort;
+    }
+
+    if (schema) {
+      options.response_format = createOpenAIResponseFormat(schema, false);
+    }
+
+    const client = await this.getClient();
+    const response = await client.chat.completions.create(options);
+
+    const content = response.choices?.[0]?.message?.content;
+    if (!content) throw new Error('OpenAIReasoner: no content in response');
+    return { content };
+  }
+}
+
+interface AnthropicMessageParam {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+/** Anthropic's `output_config`, carrying both the output format and the effort level. */
+interface AnthropicOutputConfig {
+  format?: {
+    type: string;
+    schema: JsonSchema;
+  };
+  effort?: AnthropicEffort;
+}
+
+/** Adaptive extended thinking; depth comes from `effort`, not `budget_tokens`. */
+interface AnthropicThinkingConfig {
+  type: 'adaptive';
+}
+
+interface AnthropicMessageCreateParams {
+  model: string;
+  max_tokens: number;
+  system?: string;
+  messages: AnthropicMessageParam[];
+  output_config?: AnthropicOutputConfig;
+  thinking?: AnthropicThinkingConfig;
+}
+
+interface AnthropicContentBlock {
+  type: string;
+  text?: string;
+}
+
+interface AnthropicMessageResponse {
+  stop_reason?: string | null;
+  content: AnthropicContentBlock[];
+}
+
+interface AnthropicClient {
+  messages: {
+    create: (args: AnthropicMessageCreateParams) => Promise<AnthropicMessageResponse>;
+  };
+}
+
+/**
+ * Anthropic-backed reasoner.
+ */
+export class AnthropicReasoner extends BaseReasoner {
+  private clientPromise?: Promise<AnthropicClient>;
+  private readonly apiKey: string;
+  private readonly model: string;
+  private readonly maxTokens: number;
+  private readonly effort?: AnthropicEffort;
+  private readonly thinking: boolean;
+  private readonly clientOptions: Record<string, unknown>;
+  private readonly sdkLoader?: SdkLoader;
+
+  /**
+   * @param config - Anthropic provider configuration
+   * @param sdkLoader - optional loader for `@anthropic-ai/sdk`; defaults to importing it by name
+   */
+  constructor(config: AnthropicProviderConfig, sdkLoader?: SdkLoader) {
+    super();
+    this.sdkLoader = sdkLoader;
+    if (!config.apiKey) throw new Error('Missing apiKey for Anthropic provider');
+    this.apiKey = config.apiKey;
+    this.model = config.model;
+    // Thinking tokens share this budget with the answer, so leave room for both.
+    this.maxTokens = config.maxTokens ?? 16000;
+    this.effort = resolveEffort(config.effort, ANTHROPIC_EFFORT_LEVELS, 'anthropic');
+    this.thinking = config.thinking ?? true;
+    this.clientOptions = config.clientOptions ?? {};
+  }
+
+  /**
+   * Loads the Anthropic client on first use.
+   */
+  private getClient(): Promise<AnthropicClient> {
+    if (!this.clientPromise) {
+      this.clientPromise = (async () => {
+        const mod = await loadSdk('@anthropic-ai/sdk', 'the Anthropic provider', this.sdkLoader);
+        return new mod.default({
+          apiKey: this.apiKey,
+          ...this.clientOptions,
+        }) as AnthropicClient;
+      })();
+    }
+    return this.clientPromise;
+  }
+
+  async complete(messages: ChatMessage[], schema?: JsonSchema): Promise<ReasonerResult> {
+    const systemContent = messages
+      .filter(m => m.role === 'system')
+      .map(m => m.content)
+      .join('\n\n');
+
+    const formattedMessages: AnthropicMessageParam[] = messages
+      .filter(m => m.role === 'user' || m.role === 'assistant')
+      .map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+
+    const params: AnthropicMessageCreateParams = {
+      model: this.model,
+      max_tokens: this.maxTokens,
+      ...(systemContent ? { system: systemContent } : {}),
+      messages: formattedMessages,
+    };
+
+    // Extended thinking is opt-in; without it `effort` has nothing to deepen.
+    if (this.thinking) {
+      params.thinking = { type: 'adaptive' };
+    }
+
+    const outputConfig: AnthropicOutputConfig = {};
+    if (schema) {
+      outputConfig.format = {
+        type: 'json_schema',
+        schema,
+      };
+    }
+    if (this.effort) {
+      outputConfig.effort = this.effort;
+    }
+    if (Object.keys(outputConfig).length > 0) {
+      params.output_config = outputConfig;
+    }
+
+    const client = await this.getClient();
+    const response = await client.messages.create(params);
+
+    if (response.stop_reason === 'refusal') {
+      throw new Error('Anthropic refused to produce structured output for this request');
+    }
+
+    // An exhausted budget surfaces as truncated JSON; report it as such rather
+    // than leaving the caller with a JSON.parse syntax error.
+    if (response.stop_reason === 'max_tokens') {
+      throw new Error(
+        `Anthropic response hit the ${this.maxTokens}-token limit before completing. ` +
+        'Raise maxTokens, lower effort, or set thinking: false.'
+      );
+    }
+
+    const block = response.content.find(b => b.type === 'text');
+    if (!block || !block.text) {
+      throw new Error('Anthropic: no text block in response');
+    }
+    return { content: block.text };
+  }
+}
+
+/**
+ * Base reasoner for providers that expose an OpenAI-compatible chat API.
+ */
+export class OpenAICompatibleReasoner extends BaseReasoner {
+  protected clientPromise?: Promise<OpenAIClient>;
+  protected readonly apiKey: string;
+  protected readonly model: string;
+  protected readonly maxTokens: number;
+  protected readonly baseUrl: string;
+  protected readonly clientOptions: Record<string, unknown>;
+  protected readonly sdkLoader?: SdkLoader;
+  protected readonly providerLabel: string;
+
+  /**
+   * @param config - provider configuration
+   * @param baseUrl - base URL of the OpenAI-compatible endpoint
+   * @param defaultApiKey - API key used when the config has none
+   * @param sdkLoader - optional loader for `openai`; defaults to importing it by name
+   * @param providerLabel - provider name used in error messages
+   */
+  constructor(
+    config: BaseProviderConfig,
+    baseUrl: string,
+    defaultApiKey = '',
+    sdkLoader?: SdkLoader,
+    providerLabel = 'OpenAI-compatible'
+  ) {
+    super();
+    this.sdkLoader = sdkLoader;
+    this.providerLabel = providerLabel;
+    const apiKey = config.apiKey || defaultApiKey;
+    if (!apiKey) throw new Error('Missing apiKey for OpenAI-compatible provider');
+    this.apiKey = apiKey;
+    this.model = config.model;
+    this.maxTokens = config.maxTokens ?? 4096;
+    this.baseUrl = baseUrl;
+    this.clientOptions = config.clientOptions ?? {};
+  }
+
+  /**
+   * Loads the OpenAI-compatible client on first use.
+   */
+  private getClient(): Promise<OpenAIClient> {
+    if (!this.clientPromise) {
+      this.clientPromise = (async () => {
+        const mod = await loadSdk('openai', `the ${this.providerLabel} provider`, this.sdkLoader);
+        return new mod.default({
+          apiKey: this.apiKey,
+          baseURL: this.baseUrl,
+          ...this.clientOptions,
+        }) as OpenAIClient;
+      })();
+    }
+    return this.clientPromise;
+  }
+
+  async complete(messages: ChatMessage[], schema?: JsonSchema): Promise<ReasonerResult> {
+    const options: OpenAIChatCompletionCreateParams = {
+      model: this.model,
+      messages: formatOpenAIMessages(messages),
+      max_tokens: this.maxTokens,
+      stream: false,
+    };
+
+    if (schema) {
+      options.response_format = createOpenAIResponseFormat(schema, false);
+    }
+
+    const client = await this.getClient();
+    const response = await client.chat.completions.create(options);
+
+    const content = response.choices?.[0]?.message?.content;
+    if (!content) throw new Error(`${this.constructor.name}: no content in response`);
+    return { content };
+  }
+}
+
+interface OpenRouterChatRequest {
+  model: string;
+  messages: Array<{ role: string; content: string }>;
+  maxTokens?: number;
+  responseFormat?: Record<string, unknown>;
+}
+
+interface OpenRouterClient {
+  chat: {
+    send: (args: {
+      chatRequest: OpenRouterChatRequest;
+    }) => Promise<{ choices?: Array<{ message?: { content?: unknown } }> }>;
+  };
+}
+
+/**
+ * OpenRouter-backed reasoner.
+ */
+export class OpenRouterReasoner extends BaseReasoner {
+  private clientPromise?: Promise<OpenRouterClient>;
+  private readonly apiKey: string;
+  private readonly model: string;
+  private readonly maxTokens: number;
+  private readonly clientOptions: Record<string, unknown>;
+  private readonly sdkLoader?: SdkLoader;
+
+  /**
+   * @param config - OpenRouter provider configuration
+   * @param sdkLoader - optional loader for `@openrouter/sdk`; defaults to importing it by name
+   */
+  constructor(config: OpenRouterProviderConfig, sdkLoader?: SdkLoader) {
+    super();
+    this.sdkLoader = sdkLoader;
+    if (!config.apiKey) throw new Error('Missing apiKey for OpenRouter provider');
+    this.apiKey = config.apiKey;
+    this.model = config.model;
+    this.maxTokens = config.maxTokens ?? 4096;
+    this.clientOptions = config.clientOptions ?? {};
+  }
+
+  /**
+   * Loads the OpenRouter client on first use.
+   */
+  private getClient(): Promise<OpenRouterClient> {
+    if (!this.clientPromise) {
+      this.clientPromise = (async () => {
+        const mod = await loadSdk('@openrouter/sdk', 'the OpenRouter provider', this.sdkLoader);
+        return new mod.OpenRouter({
+          apiKey: this.apiKey,
+          ...this.clientOptions,
+        }) as OpenRouterClient;
+      })();
+    }
+    return this.clientPromise;
+  }
+
+  async complete(messages: ChatMessage[], schema?: JsonSchema): Promise<ReasonerResult> {
+    const formattedMessages = messages.map(m => ({ role: m.role, content: m.content }));
+
+    const chatRequest: OpenRouterChatRequest = {
+      model: this.model,
+      messages: formattedMessages,
+      maxTokens: this.maxTokens,
+    };
+
+    if (schema) {
+      chatRequest.responseFormat = {
+        type: 'json_schema',
+        jsonSchema: {
+          name: 'structured_output',
+          strict: true,
+          schema,
+        },
+      };
+    }
+
+    const client = await this.getClient();
+    const response = await client.chat.send({ chatRequest });
+
+    const content = response.choices?.[0]?.message?.content;
+    if (!content || typeof content !== 'string') {
+      throw new Error('OpenRouterReasoner: no content in response');
+    }
+    return { content };
+  }
+}
+
+/**
+ * Ollama-backed reasoner.
+ */
+export class OllamaReasoner extends OpenAICompatibleReasoner {
+  /**
+   * @param config - Ollama provider configuration
+   * @param sdkLoader - optional loader for `openai`; defaults to importing it by name
+   */
+  constructor(config: OllamaProviderConfig, sdkLoader?: SdkLoader) {
+    super(config, config.baseUrl ?? 'http://localhost:11434/v1', 'ollama', sdkLoader, 'Ollama');
+  }
+}
+
+/**
+ * Reasoner for arbitrary OpenAI-compatible endpoints.
+ */
+export class OpenAICompatibleCustomReasoner extends OpenAICompatibleReasoner {
+  /**
+   * @param config - OpenAI-compatible provider configuration
+   * @param sdkLoader - optional loader for `openai`; defaults to importing it by name
+   */
+  constructor(config: OpenAICompatibleProviderConfig, sdkLoader?: SdkLoader) {
+    if (!config.customEndpoint) {
+      throw new Error('customEndpoint is required for the openai-compatible provider');
+    }
+    super(config, config.customEndpoint, '', sdkLoader);
+  }
+}
+
+interface GoogleGenAIClient {
+  models: {
+    generateContent: (args: {
+      model: string;
+      contents: unknown;
+      config?: Record<string, unknown>;
+    }) => Promise<{ text?: string }>;
+  };
+}
+
+/**
+ * Google-backed reasoner.
+ */
+export class GoogleReasoner extends BaseReasoner {
+  private clientPromise?: Promise<GoogleGenAIClient>;
+  private readonly apiKey: string;
+  private readonly model: string;
+  private readonly maxTokens: number;
+  private readonly clientOptions: Record<string, unknown>;
+  private readonly sdkLoader?: SdkLoader;
+
+  /**
+   * @param config - Google provider configuration
+   * @param sdkLoader - optional loader for `@google/genai`; defaults to importing it by name
+   */
+  constructor(config: GoogleProviderConfig, sdkLoader?: SdkLoader) {
+    super();
+    this.sdkLoader = sdkLoader;
+    if (!config.apiKey) throw new Error('Missing apiKey for Google provider');
+    this.apiKey = config.apiKey;
+    this.model = config.model;
+    this.maxTokens = config.maxTokens ?? 4096;
+    this.clientOptions = config.clientOptions ?? {};
+  }
+
+  /**
+   * Loads the Google client on first use.
+   */
+  private getClient(): Promise<GoogleGenAIClient> {
+    if (!this.clientPromise) {
+      this.clientPromise = (async () => {
+        const mod = await loadSdk('@google/genai', 'the Google provider', this.sdkLoader);
+        return new mod.GoogleGenAI({
+          apiKey: this.apiKey,
+          ...this.clientOptions,
+        }) as GoogleGenAIClient;
+      })();
+    }
+    return this.clientPromise;
+  }
+
+  async complete(messages: ChatMessage[], schema?: JsonSchema): Promise<ReasonerResult> {
+    const systemInstruction = messages
+      .filter(m => m.role === 'system')
+      .map(m => m.content)
+      .join('\n\n');
+
+    const contents = messages
+      .filter(m => m.role === 'user' || m.role === 'assistant')
+      .map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      }));
+
+    const generationConfig: Record<string, unknown> = {
+      maxOutputTokens: this.maxTokens,
+    };
+    if (systemInstruction) {
+      generationConfig.systemInstruction = systemInstruction;
+    }
+    if (schema) {
+      generationConfig.responseMimeType = 'application/json';
+      generationConfig.responseJsonSchema = schema;
+    }
+
+    const client = await this.getClient();
+    const response = await client.models.generateContent({
+      model: this.model,
+      contents,
+      config: generationConfig,
+    });
+
+    const content = response.text;
+    if (!content) throw new Error('GoogleReasoner: no content in response');
+    return { content };
+  }
+}
+
+interface MistralClient {
+  chat: {
+    complete: (
+      args: Record<string, unknown>
+    ) => Promise<{ choices?: Array<{ message?: { content?: unknown } }> }>;
+  };
+}
+
+/**
+ * Mistral-backed reasoner.
+ */
+export class MistralReasoner extends BaseReasoner {
+  private clientPromise?: Promise<MistralClient>;
+  private readonly apiKey: string;
+  private readonly model: string;
+  private readonly maxTokens: number;
+  private readonly clientOptions: Record<string, unknown>;
+  private readonly sdkLoader?: SdkLoader;
+
+  /**
+   * @param config - Mistral provider configuration
+   * @param sdkLoader - optional loader for `@mistralai/mistralai`; defaults to importing it by name
+   */
+  constructor(config: MistralProviderConfig, sdkLoader?: SdkLoader) {
+    super();
+    this.sdkLoader = sdkLoader;
+    if (!config.apiKey) throw new Error('Missing apiKey for Mistral provider');
+    this.apiKey = config.apiKey;
+    this.model = config.model;
+    this.maxTokens = config.maxTokens ?? 4096;
+    this.clientOptions = config.clientOptions ?? {};
+  }
+
+  /**
+   * Loads the Mistral client on first use.
+   */
+  private getClient(): Promise<MistralClient> {
+    if (!this.clientPromise) {
+      this.clientPromise = (async () => {
+        const mod = await loadSdk('@mistralai/mistralai', 'the Mistral provider', this.sdkLoader);
+        return new mod.Mistral({
+          apiKey: this.apiKey,
+          ...this.clientOptions,
+        }) as MistralClient;
+      })();
+    }
+    return this.clientPromise;
+  }
+
+  async complete(messages: ChatMessage[], schema?: JsonSchema): Promise<ReasonerResult> {
+    const formattedMessages = messages.map(m => ({ role: m.role, content: m.content }));
+
+    const options: Record<string, unknown> = {
+      model: this.model,
+      messages: formattedMessages,
+      maxTokens: this.maxTokens,
+    };
+
+    if (schema) {
+      options.responseFormat = {
+        type: 'json_schema',
+        jsonSchema: {
+          name: 'structured_output',
+          strict: true,
+          schemaDefinition: schema,
+        },
+      };
+    }
+
+    const client = await this.getClient();
+    const response = await client.chat.complete(options);
+
+    const content = response.choices?.[0]?.message?.content;
+    if (!content || typeof content !== 'string') {
+      throw new Error('MistralReasoner: no content in response');
+    }
+    return { content };
+  }
+}
+
+/**
+ * Creates a provider-specific reasoner.
+ * @param config - provider configuration
+ * @param sdkLoaders - optional SDK loaders, for bundled environments
+ * @returns a reasoner for the selected provider
+ */
+export function createReasoner(
+  config: LLMProviderConfig,
+  sdkLoaders: SdkLoaders = {}
+): BaseReasoner {
+  switch (config.provider) {
+    case 'groq':
+      return new GroqReasoner(config, sdkLoaders.groq);
+    case 'openai':
+      return new OpenAIReasoner(config, sdkLoaders.openai);
+    case 'anthropic':
+      return new AnthropicReasoner(config, sdkLoaders.anthropic);
+    case 'google':
+      return new GoogleReasoner(config, sdkLoaders.google);
+    case 'mistral':
+      return new MistralReasoner(config, sdkLoaders.mistral);
+    case 'openrouter':
+      return new OpenRouterReasoner(config, sdkLoaders.openrouter);
+    case 'ollama':
+      return new OllamaReasoner(config, sdkLoaders.ollama ?? sdkLoaders.openai);
+    case 'openai-compatible':
+      return new OpenAICompatibleCustomReasoner(
+        config,
+        sdkLoaders['openai-compatible'] ?? sdkLoaders.openai
+      );
+    default: {
+      const _exhaustive: never = config;
+      throw new Error(`Unsupported provider: ${(_exhaustive as any).provider}`);
+    }
+  }
+}

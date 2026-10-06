@@ -25,6 +25,9 @@ const INFINITE_RESULT = {timeout: true};
 const EXCEPTION = {code: 'throw "my error"; return 42;', argumentNames: [], arguments: []};
 const EXCEPTION_RESULT = {code: 1, result: {message: 'my error'}};
 
+const OPEN_HANDLE = {code: 'setInterval(() => {}, 1000); return 42;', argumentNames: [], arguments: []};
+const OPEN_HANDLE_ERROR = {code: 'setInterval(() => {}, 1000); throw "my error";', argumentNames: [], arguments: []};
+
 // crash - faking a successful return
 const CRASH = {code: 'process.exit(); return 42;', argumentNames: [], arguments: []};
 const CRASH_RESULT = {code: 0, result: undefined};
@@ -85,6 +88,21 @@ describe('javascript evaluator', () => {
     test('should eval exception javascript safe', async () => {
         try {
             await javaScriptEvaluator.evalChildProcess(EXCEPTION);
+            expect(false).toBeTruthy();
+        }
+        catch(err:any) {
+            delete err.elapsed;
+            expect(err).toEqual(EXCEPTION_RESULT);
+        }
+    });
+    test('should exit after successful code leaves an open handle', async () => {
+        const result = await javaScriptEvaluator.evalChildProcess(OPEN_HANDLE, {timeout: 1000});
+        delete result.elapsed;
+        expect(result).toEqual({result: 42});
+    });
+    test('should exit after failing code leaves an open handle', async () => {
+        try {
+            await javaScriptEvaluator.evalChildProcess(OPEN_HANDLE_ERROR, {timeout: 1000});
             expect(false).toBeTruthy();
         }
         catch(err:any) {

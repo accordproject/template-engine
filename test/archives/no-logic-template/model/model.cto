@@ -1,6 +1,9 @@
-namespace org.example
+namespace org.example@0.0.1
+
+import org.accordproject.contract@0.2.0.Clause from https://models.accordproject.org/accordproject/contract@0.2.0.cto
+import org.accordproject.runtime@0.2.0.{Request,Response,State} from https://models.accordproject.org/accordproject/runtime@0.2.0.cto
 
 @template
-asset TemplateModel {
+asset TemplateModel extends Clause {
   o String name
 }

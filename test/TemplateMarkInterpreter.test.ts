@@ -36,6 +36,10 @@ const CLAUSE_LIBRARY = {
 
 const GOOD_TEMPLATES_ROOT = './test/templates/good';
 const BAD_TEMPLATES_ROOT = './test/templates/bad';
+const MONEY_MODEL_FILES = [
+    '@models.accordproject.org.money@0.3.0.cto',
+    '@models.accordproject.org.money@1.0.0.cto'
+];
 
 describe('templatemark interpreter', () => {
     jest.setTimeout(30000);
@@ -69,9 +73,11 @@ describe('templatemark interpreter', () => {
              */
             const data = JSON.parse(readFileSync(`${GOOD_TEMPLATES_ROOT}/${templateName}/data.json`, 'utf-8'));
 
-            const modelManager = new ModelManager({ strict: true });
-            modelManager.addCTOModel(model, undefined, true);
-            await modelManager.updateExternalModels();
+            const modelManager = new ModelManager();
+            MONEY_MODEL_FILES.forEach(file => {
+                modelManager.addCTOModel(readFileSync(path.join(__dirname, 'models', file), 'utf-8'), file);
+            });
+            modelManager.addCTOModel(model);
             const engine = new TemplateMarkInterpreter(modelManager, CLAUSE_LIBRARY);
 
             const templateMarkTransformer = new TemplateMarkTransformer();
@@ -100,11 +106,11 @@ describe('templatemark interpreter', () => {
 
     badTemplates.forEach(function (template) {
         test(`should fail to generate ${template.name}`, async () => {
-            const templatenName = path.parse(template.name).name;
-            const model = readFileSync(`${BAD_TEMPLATES_ROOT}/${templatenName}/model.cto`, 'utf-8');
-            const templateMarkup = readFileSync(`${BAD_TEMPLATES_ROOT}/${templatenName}/template.md`, 'utf-8');
-            const data = JSON.parse(readFileSync(`${BAD_TEMPLATES_ROOT}/${templatenName}/data.json`, 'utf-8'));
-            const modelManager = new ModelManager({ strict: true });
+            const templateName = path.parse(template.name).name;
+            const model = readFileSync(`${BAD_TEMPLATES_ROOT}/${templateName}/model.cto`, 'utf-8');
+            const templateMarkup = readFileSync(`${BAD_TEMPLATES_ROOT}/${templateName}/template.md`, 'utf-8');
+            const data = JSON.parse(readFileSync(`${BAD_TEMPLATES_ROOT}/${templateName}/data.json`, 'utf-8'));
+            const modelManager = new ModelManager();
             modelManager.addCTOModel(model);
             const engine = new TemplateMarkInterpreter(modelManager, CLAUSE_LIBRARY);
 
@@ -115,6 +121,98 @@ describe('templatemark interpreter', () => {
                 return engine.generate(templateMarkDom, data, {now});
             };
             await expect(f()).rejects.toMatchSnapshot();
+        });
+    });
+
+    // Regression for https://github.com/accordproject/template-engine/issues/145.
+    // When a {{#ulist}} / {{#olist}} body contains direct variable references with no
+    // leading list marker, the markdown parser produces a Paragraph (not a List/Item
+    // wrapping) under the ListBlockDefinition. The recursion must still descend into the
+    // per-iteration template and resolve those variables against each array element.
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    describe('issue #145: direct variable references inside ulist/olist', () => {
+        const MODEL = `namespace volumediscount@1.0.0
+concept VolumeDiscount {
+    o Double volumeAbove
+    o Double rate
+}
+@template
+concept TemplateData {
+    o VolumeDiscount[] volumeDiscounts
+}`;
+        const DATA = {
+            $class: 'volumediscount@1.0.0.TemplateData',
+            volumeDiscounts: [
+                { $class: 'volumediscount@1.0.0.VolumeDiscount', volumeAbove: 100, rate: 5 },
+                { $class: 'volumediscount@1.0.0.VolumeDiscount', volumeAbove: 500, rate: 10 },
+            ]
+        };
+        const LIST_CASES: Array<['ulist' | 'olist', 'bullet' | 'ordered']> = [
+            ['ulist', 'bullet'],
+            ['olist', 'ordered'],
+        ];
+
+        async function renderList(content: string): Promise<any> {
+            const modelManager = new ModelManager();
+            modelManager.addCTOModel(MODEL);
+            const engine = new TemplateMarkInterpreter(modelManager, {});
+            const templateMarkTransformer = new TemplateMarkTransformer();
+            const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate(
+                { content }, modelManager, 'clause', { verbose: false });
+            const ciceroMark = await engine.generate(templateMarkDom, DATA, { now: '2023-03-17T00:00:00.000Z' });
+            const json: any = ciceroMark.toJSON();
+            const found: any[] = [];
+            (function walk(n: any) {
+                if (!n) return;
+                if (n.$class === `${CommonMarkModel.NAMESPACE}.List`) found.push(n);
+                if (Array.isArray(n.nodes)) n.nodes.forEach(walk);
+            })(json);
+            return found[0];
+        }
+
+        // Asserts the rendered List has one Item per array element, each containing the
+        // variable's drafted value. Both ulist and olist hit the same code path.
+        async function expectVariablesResolved(content: string, listType: 'bullet' | 'ordered') {
+            const list = await renderList(content);
+            expect(list).toBeDefined();
+            expect(list.type).toBe(listType);
+            expect(list.nodes).toHaveLength(2);
+            const collectVariables = (item: any): Array<{ name: string, value: string }> => {
+                const out: Array<{ name: string, value: string }> = [];
+                (function walk(n: any) {
+                    if (!n) return;
+                    if (n.$class === 'org.accordproject.ciceromark@0.6.0.Variable') {
+                        out.push({ name: n.name, value: n.value });
+                    }
+                    if (Array.isArray(n.nodes)) n.nodes.forEach(walk);
+                })(item);
+                return out;
+            };
+            expect(collectVariables(list.nodes[0])).toEqual([
+                { name: 'volumeAbove', value: '100.0' },
+                { name: 'rate', value: '5.0' },
+            ]);
+            expect(collectVariables(list.nodes[1])).toEqual([
+                { name: 'volumeAbove', value: '500.0' },
+                { name: 'rate', value: '10.0' },
+            ]);
+        }
+
+        // Failure mode A: a VariableDefinition is the very first inline node, which
+        // triggered `getJsonPath` to throw `Paths must be supplied`.
+        test.each(LIST_CASES)('%s body starting with a variable does not throw and resolves values', async (templateListType, renderedListType) => {
+            await expectVariablesResolved(
+                `{{#${templateListType} volumeDiscounts}}\n{{volumeAbove}} units at {{rate}}%\n{{/${templateListType}}}\n`,
+                renderedListType
+            );
+        });
+
+        // Failure mode B: leading text means no throw, but Items were silently empty.
+        test.each(LIST_CASES)('%s body with leading text yields populated items', async (templateListType, renderedListType) => {
+            await expectVariablesResolved(
+                `{{#${templateListType} volumeDiscounts}}\nAbove {{volumeAbove}} units: {{rate}}% off\n{{/${templateListType}}}\n`,
+                renderedListType
+            );
         });
     });
 });

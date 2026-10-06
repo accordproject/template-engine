@@ -26,7 +26,7 @@ describe('hello world template', () => {
             $class: 'helloworld@1.0.0.TemplateData',
             message: 'World',
         };
-        const modelManager = new ModelManager({ strict: true });
+        const modelManager = new ModelManager();
         modelManager.addCTOModel(model);
         const engine = new TemplateMarkInterpreter(modelManager, {});
 

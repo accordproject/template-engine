@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /*
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -11,5 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-declare module '@accordproject/markdown-template'
-declare module '@accordproject/markdown-html'
+
+'use strict';
+
+const semver = require('semver');
+const targetVersion = process.argv[2];
+
+if (!semver.valid(targetVersion)) {
+    console.error(`Error: the version "${targetVersion}" is invalid!`);
+    process.exit(1);
+}
+
+const prerelease = semver.prerelease(targetVersion);
+const tag = prerelease ? 'unstable' : 'latest';
+
+console.log(`::set-output name=tag::--tag=${tag}`);

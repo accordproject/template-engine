@@ -1,0 +1,15 @@
+{
+    "$class": "volumediscountulist@1.0.0.TemplateData",
+    "volumeDiscounts": [
+        {
+            "$class": "volumediscountulist@1.0.0.VolumeDiscount",
+            "volumeAbove": 100,
+            "rate": 5
+        },
+        {
+            "$class": "volumediscountulist@1.0.0.VolumeDiscount",
+            "volumeAbove": 500,
+            "rate": 10
+        }
+    ]
+}

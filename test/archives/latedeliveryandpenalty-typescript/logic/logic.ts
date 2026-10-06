@@ -30,7 +30,7 @@ class LateDeliveryLogic extends TemplateLogic<ITemplateModel, ILateDeliveryAndPe
     async trigger(data: ITemplateModel, request:ILateDeliveryAndPenaltyRequest, state:ILateDeliveryAndPenaltyState) : Promise<LateDeliveryContractResponse> {
         const event:ILateDeliveryAndPenaltyEvent = {
                 $class: 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyEvent',
-                $timestamp: new Date(),
+                $timestamp: new Date().toISOString(),
                 penaltyCalculated: true
             };
         const newState:ILateDeliveryAndPenaltyState = {
@@ -42,7 +42,7 @@ class LateDeliveryLogic extends TemplateLogic<ITemplateModel, ILateDeliveryAndPe
             result: {
                 penalty: data.penaltyPercentage * calc(request.goodsValue),
                 buyerMayTerminate: true,
-                $timestamp: new Date(),
+                $timestamp: new Date().toISOString(),
                 $class: 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyResponse'
             },
             events: [event],
