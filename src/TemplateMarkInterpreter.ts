@@ -46,6 +46,7 @@ import { CodeType, ICode } from './model-gen/org.accordproject.templatemark@0.5.
 import { GenerationOptions, joinList } from './TypeScriptRuntime';
 import { getTemplateClassDeclaration } from './utils';
 import { EvalResponse, JavaScriptEvaluator } from './JavaScriptEvaluator';
+import { CompiledUserLogic } from './UserLogic';
 
 function checkCode(code: ICode) {
     if (code.type !== CodeType.ES_2020) {
@@ -69,14 +70,33 @@ const TEMPLATEMARK_ROOT_NODES = [
 const DOCUMENT_ROOT = 'org.accordproject.commonmark@0.5.0.Document';
 
 /**
+ * Determines whether a JS expression references any of the top-level symbols
+ * declared by the template's logic/logic.ts. Only those expressions need the
+ * (potentially large) logic prelude spliced into their function body.
+ * @param {string} expression the JS expression
+ * @param {CompiledUserLogic} userLogic the compiled user logic, if any
+ * @returns {boolean} true if the expression references a user logic symbol
+ */
+function usesUserLogic(expression: string, userLogic: CompiledUserLogic | undefined): boolean {
+    if (!userLogic || !userLogic.prelude || userLogic.symbols.length === 0) {
+        return false;
+    }
+    return userLogic.symbols.some(name =>
+        new RegExp(`(^|[^\\w$.])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\w$])`).test(expression));
+}
+
+/**
  * Evaluates a JS expression
  * @param {*} clauseLibrary the clause library
  * @param {*} data the contract data
  * @param {string} fn the JS function (including header)
+ * @param {CompiledUserLogic} userLogic the compiled logic/logic.ts, whose prelude is spliced
+ *   into the formula function body when the expression references one of its helpers
+ *   (e.g. `monthlyPaymentFormula`), so they are in scope.
  * @param {GenerationOptions} options the generation options
  * @returns {object} the result of evaluating the expression against the data
  */
-async function evaluateJavaScript(clauseLibrary: object, data: TemplateData, fn: string, options?: GenerationOptions): Promise<EvalResponse> {
+async function evaluateJavaScript(clauseLibrary: object, data: TemplateData, fn: string, userLogic: CompiledUserLogic | undefined, options?: GenerationOptions): Promise<EvalResponse> {
     if (options?.disableJavaScriptEvaluation) {
         throw new Error('JavaScript evaluation is disabled.');
     }
@@ -98,8 +118,9 @@ async function evaluateJavaScript(clauseLibrary: object, data: TemplateData, fn:
     if (expression.trim().length === 0) {
         throw new Error('Empty expression');
     }
+    const codeWithPrelude = usesUserLogic(expression, userLogic) ? `${userLogic?.prelude}\n${expression}` : expression;
     try {
-        const request = { code: expression, argumentNames: functionArgNames, arguments: functionArgValues };
+        const request = { code: codeWithPrelude, argumentNames: functionArgNames, arguments: functionArgValues };
         if (options?.childProcessJavaScriptEvaluation) {
             if (isBrowser) {
                 throw new Error('Child process evaluation is not supported inside web browser');
@@ -221,10 +242,11 @@ type UserCodeResult = Record<string, any>;
  * @param {*} clauseLibrary - the clause library
  * @param {*} templateMark - the TemplateMark JSON document
  * @param {*} data - the template data JSON
+ * @param {CompiledUserLogic} userLogic - the compiled logic/logic.ts, exposing its helpers
  * @param {[GenerationOptions]} options - the generation options
  * @returns {Promise<UserCodeResult>} a promise to a UserCodeResult
  */
-async function evaluateUserCode(clauseLibrary: object, templateMark: object, data: TemplateData, options?: GenerationOptions): Promise<UserCodeResult> {
+async function evaluateUserCode(clauseLibrary: object, templateMark: object, data: TemplateData, userLogic: CompiledUserLogic | undefined, options?: GenerationOptions): Promise<UserCodeResult> {
     const result: UserCodeResult = {};
     const paths = traverse(templateMark).paths();
     for (let n = 0; n < paths.length; n++) {
@@ -235,7 +257,7 @@ async function evaluateUserCode(clauseLibrary: object, templateMark: object, dat
             if (FORMULA_DEFINITION_RE.test(nodeClass)) {
                 if (context.code) {
                     checkCode(context.code);
-                    const evalResponse = await evaluateJavaScript(clauseLibrary, data, context.code.contents, options);
+                    const evalResponse = await evaluateJavaScript(clauseLibrary, data, context.code.contents, userLogic, options);
                     result[path.join('/')] = JSON.stringify(evalResponse.result);
                 }
                 else {
@@ -245,7 +267,7 @@ async function evaluateUserCode(clauseLibrary: object, templateMark: object, dat
             else if (CONDITIONAL_DEFINITION_RE.test(nodeClass) || CLAUSE_DEFINITION_RE.test(nodeClass)) {
                 if (context.condition) {
                     checkCode(context.condition);
-                    const evalResponse = await evaluateJavaScript(clauseLibrary, data, context.condition.contents, options);
+                    const evalResponse = await evaluateJavaScript(clauseLibrary, data, context.condition.contents, userLogic, options);
                     result[path.join('/')] = JSON.stringify(evalResponse.result);
                 }
             }
@@ -272,7 +294,7 @@ type OptionalBlockResult = Record<string, any[]>;
  * @param {[GenerationOptions]} options - the generation options
  * @returns {*} the AgreementMark JSON for optional blocks
  */
-async function generateOptionalBlocks(modelManager: ModelManager, clauseLibrary: object, templateMark: object, data: TemplateData, options?: GenerationOptions): Promise<OptionalBlockResult> {
+async function generateOptionalBlocks(modelManager: ModelManager, clauseLibrary: object, templateMark: object, data: TemplateData, userLogic: CompiledUserLogic | undefined, options?: GenerationOptions): Promise<OptionalBlockResult> {
     const result: OptionalBlockResult = {};
     const paths = traverse(templateMark).paths();
     for (let n = 0; n < paths.length; n++) {
@@ -305,7 +327,7 @@ async function generateOptionalBlocks(modelManager: ModelManager, clauseLibrary:
                             nodes: context.whenSome
                         };
                         // Process with the optional property value as the new data context
-                        const subResult = await generateAgreement(modelManager, clauseLibrary, whenSomeParagraph, optionalPropertyValue, options);
+                        const subResult = await generateAgreement(modelManager, clauseLibrary, whenSomeParagraph, optionalPropertyValue, userLogic, options);
                         result[thisPath.join('/')] = subResult.nodes ? subResult.nodes : [];
                     } else {
                         result[thisPath.join('/')] = [];
@@ -331,7 +353,7 @@ async function generateOptionalBlocks(modelManager: ModelManager, clauseLibrary:
  * @param {[GenerationOptions]} options - the generation options
  * @returns {*} the AgreementMark JSON for the list block
  */
-async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary: object, templateMark: object, data: TemplateData, nodeRegExp: RegExp, childNodeClass: string, options?: GenerationOptions): Promise<RecursiveBlockResult> {
+async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary: object, templateMark: object, data: TemplateData, nodeRegExp: RegExp, childNodeClass: string, userLogic: CompiledUserLogic | undefined, options?: GenerationOptions): Promise<RecursiveBlockResult> {
     const result: RecursiveBlockResult = {};
     const paths = traverse(templateMark).paths();
     for (let n = 0; n < paths.length; n++) {
@@ -374,7 +396,7 @@ async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary
                         for (let n = 0; n < arrayData.length; n++) {
                             const arrayItem = arrayData[n];
                             // arrayItem is now the data for the nested generation
-                            const subResult = await generateAgreement(modelManager, clauseLibrary, itemTemplate, arrayItem, options);
+                            const subResult = await generateAgreement(modelManager, clauseLibrary, itemTemplate, arrayItem, userLogic, options);
                             // When the template had a List/Item wrapper, the processed Item's
                             // children (a Paragraph) become the children of the new output Item.
                             // Otherwise the processed block itself becomes the sole child of
@@ -405,15 +427,15 @@ async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary
  * @param {[GenerationOptions]} options - the generation options
  * @returns {*} the AgreementMark JSON
  */
-async function generateAgreement(modelManager: ModelManager, clauseLibrary: object, templateMark: object, data: TemplateData, options?: GenerationOptions): Promise<any> {
+async function generateAgreement(modelManager: ModelManager, clauseLibrary: object, templateMark: object, data: TemplateData, userLogic: CompiledUserLogic | undefined, options?: GenerationOptions): Promise<any> {
     const introspector = new Introspector(modelManager);
     // evaluate all the user code (async)
-    const userCodeResults = await evaluateUserCode(clauseLibrary, templateMark, data, options);
+    const userCodeResults = await evaluateUserCode(clauseLibrary, templateMark, data, userLogic, options);
     // evaluate all recursive blocks (async)
-    const listBlockResults = await generateRecursiveBlocks(modelManager, clauseLibrary, templateMark, data, LISTBLOCK_DEFINITION_RE, `${CommonMarkModel.NAMESPACE}.Item`, options);
-    const foreachBlockResults = await generateRecursiveBlocks(modelManager, clauseLibrary, templateMark, data, FOREACH_DEFINITION_RE, `${CommonMarkModel.NAMESPACE}.Paragraph`, options);
+    const listBlockResults = await generateRecursiveBlocks(modelManager, clauseLibrary, templateMark, data, LISTBLOCK_DEFINITION_RE, `${CommonMarkModel.NAMESPACE}.Item`, userLogic, options);
+    const foreachBlockResults = await generateRecursiveBlocks(modelManager, clauseLibrary, templateMark, data, FOREACH_DEFINITION_RE, `${CommonMarkModel.NAMESPACE}.Paragraph`, userLogic, options);
     // evaluate all optional blocks (async)
-    const optionalBlockResults = await generateOptionalBlocks(modelManager, clauseLibrary, templateMark, data, options);
+    const optionalBlockResults = await generateOptionalBlocks(modelManager, clauseLibrary, templateMark, data, userLogic, options);
     // traverse the templatemark, creating an output agreementmark tree
     return traverse(templateMark).map(function (context: any) {
         let stopHere = false;
@@ -669,12 +691,14 @@ export class TemplateMarkInterpreter {
     modelManager: ModelManager;
     templateClass: ClassDeclaration;
     clauseLibrary: object;
+    userLogic?: CompiledUserLogic;
     compilers: Map<string, Promise<TemplateMarkToJavaScriptCompiler>> = new Map();
 
-    constructor(modelManager: ModelManager, clauseLibrary: object, templateConceptFqn?: string) {
+    constructor(modelManager: ModelManager, clauseLibrary: object, templateConceptFqn?: string, userLogic?: CompiledUserLogic) {
         this.modelManager = modelManager;
         this.clauseLibrary = clauseLibrary;
         this.templateClass = getTemplateClassDeclaration(this.modelManager, templateConceptFqn);
+        this.userLogic = userLogic;
     }
 
     /**
@@ -797,7 +821,7 @@ export class TemplateMarkInterpreter {
     getCompiler(templateConcept: string): Promise<TemplateMarkToJavaScriptCompiler> {
         let compiler = this.compilers.get(templateConcept);
         if(!compiler) {
-            const created = new TemplateMarkToJavaScriptCompiler(this.modelManager, templateConcept);
+            const created = new TemplateMarkToJavaScriptCompiler(this.modelManager, templateConcept, this.userLogic?.symbols ?? []);
             const initialized = created.initialize().then(() => created);
             initialized.catch(() => {
                 // don't cache a failed initialization, so that a later call can retry
@@ -836,7 +860,7 @@ export class TemplateMarkInterpreter {
         const typedTemplateMark = this.checkTypes(templateMark);
         const jsTemplateMark = await this.compileTypeScriptToJavaScript(typedTemplateMark);
         // console.log('Compiled JS: ' + JSON.stringify(jsTemplateMark, null, 2));
-        const ciceroMark = await generateAgreement(this.modelManager, this.clauseLibrary, jsTemplateMark, data, options);
+        const ciceroMark = await generateAgreement(this.modelManager, this.clauseLibrary, jsTemplateMark, data, this.userLogic, options);
         // console.log('Generated AgreementMark');
         return this.validateCiceroMark(ciceroMark);
     }

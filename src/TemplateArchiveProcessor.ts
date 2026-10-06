@@ -24,6 +24,8 @@ import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler
 import Script from '@accordproject/cicero-core/types/src/script';
 import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
+import { compileUserLogic, CompiledUserLogic, toCompiledUserLogic } from './UserLogic';
+import { hasUserCode } from './TemplateMarkToJavaScriptCompiler';
 import { LLMExecutor } from './llm/LLMExecutor';
 import { LLMExecutorConfig } from './llm/LLMConfig';
 import { SdkLoaders } from './llm/Reasoners';
@@ -132,14 +134,52 @@ export class TemplateArchiveProcessor {
 
         // Get the data
         const modelManager = this.template.getModelManager();
-        const engine = new TemplateMarkInterpreter(modelManager, {});
         const templateMarkTransformer = new TemplateMarkTransformer();
         const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate(
             { content: this.template.getTemplate() }, modelManager, templateKind);
+
+        // Compile the template's logic/logic.ts (when present) so that inline
+        // formulas {{% expr %}} can call helpers declared in user code (issue #147).
+        // Skipped when the template has no formulas or conditions to evaluate.
+        const userLogic = hasUserCode(templateMarkDom) ? await this.compileUserLogicForDraft() : undefined;
+        const engine = new TemplateMarkInterpreter(modelManager, {}, undefined, userLogic);
         const now = currentTime ? currentTime : new Date().toISOString();
         const ciceroMark = await engine.generate(templateMarkDom, data, { now });
         const result = transform(ciceroMark.toJSON(), 'ciceromark', ['ciceromark_unquoted', format], null, options);
         return result;
+    }
+
+    /**
+     * Compiles the template's `logic/logic.ts` so that its top-level helpers can be
+     * used by inline formulas when drafting. Unlike {@link compileLogic} this never
+     * throws for templates without logic: drafting does not require it, so this
+     * returns `undefined` when the template has no TypeScript logic or does not ship
+     * a `logic/logic.ts` file (other scripts, such as generated model files, are
+     * never used in its place). Reuses the compiled logic cache when it is populated.
+     * @returns {Promise<CompiledUserLogic | undefined>} the compiled user logic, if any
+     */
+    private async compileUserLogicForDraft(): Promise<CompiledUserLogic | undefined> {
+        if (!this.template.hasLogic()) {
+            return undefined;
+        }
+        const logicManager = this.template.getLogicManager();
+        if (logicManager.getLanguage() !== 'typescript') {
+            return undefined;
+        }
+        const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
+        const logicScript = tsFiles.find((tsFile) => tsFile.getIdentifier() === 'logic/logic.ts');
+        if (!logicScript) {
+            return undefined;
+        }
+        const cached = this.compiledLogicCache?.['logic/logic.ts'];
+        if (cached) {
+            return toCompiledUserLogic(logicScript.getContents(), cached.code);
+        }
+        return compileUserLogic(
+            this.template.getModelManager(),
+            this.template.getTemplateModel().getFullyQualifiedName(),
+            logicScript.getContents(),
+        );
     }
 
     /**

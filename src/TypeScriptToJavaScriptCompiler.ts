@@ -174,8 +174,8 @@ export class TypeScriptToJavaScriptCompiler {
     /** @deprecated unused: the typescript module and its lib files are bundled */
     typescriptUrl?: string;
 
-    constructor(modelManager: ModelManager, templateConceptFqn?: string) {
-        this.context = new TypeScriptCompilationContext(modelManager, templateConceptFqn).getCompilationContext();
+    constructor(modelManager: ModelManager, templateConceptFqn?: string, userLogicSymbols: string[] = []) {
+        this.context = new TypeScriptCompilationContext(modelManager, templateConceptFqn, userLogicSymbols).getCompilationContext();
     }
 
     /**
