@@ -35,6 +35,31 @@ export type CompilerError = {
 };
 
 /**
+ * Thrown when user code in a template fails to compile. The message is a
+ * human-readable summary; the full structured diagnostics for every failing
+ * node are available on the errors property.
+ */
+export class TemplateCompilationError extends Error {
+    readonly errors: CompilerError[];
+
+    /**
+     * Creates a new TemplateCompilationError
+     * @param {CompilerError[]} errors the compilation errors, one per failing node
+     */
+    constructor(errors: CompilerError[]) {
+        super(errors.map(e => {
+            const details = e.errors.map(d => {
+                const pos = d.line !== undefined ? ` (line ${d.line}, col ${d.character})` : '';
+                return `${d.renderedMessage}${pos}`;
+            });
+            return `Compilation error in '${e.nodeId}': ${details.join('; ')}`;
+        }).join('\n'));
+        this.name = 'TemplateCompilationError';
+        this.errors = errors;
+    }
+}
+
+/**
  * Returns true if the TemplateMark JSON contains any user code (formulas,
  * conditions or clause conditions) that needs to be compiled.
  * @param {*} templateJson the TemplateMark JSON object
@@ -122,16 +147,7 @@ export class TemplateMarkToJavaScriptCompiler {
             return compiled;
         }
         else {
-            const messages = errors.map(e => {
-                const details = e.errors.map(d => {
-                    const pos = d.line !== undefined ? ` (line ${d.line}, col ${d.character})` : '';
-                    return `${d.renderedMessage}${pos}`;
-                });
-                return `Compilation error in '${e.nodeId}': ${details.join('; ')}`;
-            });
-            const error = new Error(messages.join('\n'));
-            (error as any).errors = errors;
-            throw error;
+            throw new TemplateCompilationError(errors);
         }
     }
 }
