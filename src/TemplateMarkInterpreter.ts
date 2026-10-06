@@ -82,7 +82,7 @@ function usesUserLogic(expression: string, userLogic: CompiledUserLogic | undefi
         return false;
     }
     return userLogic.symbols.some(name =>
-        new RegExp(`(^|[^\\w$.])${name.replace(/\$/g, '\\$')}($|[^\\w$])`).test(expression));
+        new RegExp(`(^|[^\\w$.])${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\w$])`).test(expression));
 }
 
 /**
