@@ -76,7 +76,8 @@ const SCRIPT_TARGET = 9 // ES2022
     //     Preserve = 200,
     // }
 
-const MODULE_KIND = 6; // ES2020 modules
+export const MODULE_KIND_COMMONJS = 1;
+const MODULE_KIND = 99; // ESNext modules
 
 /**
  * User code is compiled against the ES2022 lib only, which is what the browser bundle
@@ -191,29 +192,31 @@ export class TypeScriptToJavaScriptCompiler {
         this.fsMap = new Map(library.fsMap);
     }
 
-    compile(typescript: string): TwoSlashReturn {
+    compile(typescript: string, moduleKind?: number, filename?: string): TwoSlashReturn {
         if(!this.fsMap) {
             throw new Error('initialize must be awaited before compile is called.');
         }
+        const filenameHeader = filename ? `// @filename: ${filename}\n` : '';
         const twoSlashCode =`
 ${this.context}
-${typescript}
+${filenameHeader}${typescript}
 `;
 
+        const emittedFilename = filename ? filename.replace(/\.ts$/, '.js') : 'code.js';
         const options: TwoSlashOptions = {
             // twoslash writes the compiled files into the map, so give it a fresh copy
             fsMap: new Map(this.fsMap),
             tsModule: this.ts,
             defaultCompilerOptions: {
                 target: SCRIPT_TARGET,
-                module: MODULE_KIND,
+                module: moduleKind ?? MODULE_KIND,
                 lib: LIBS,
             },
             lzstringModule:lzstring,
             defaultOptions: {
                 showEmit: true,
                 noErrorValidation: true,
-                showEmittedFile: 'code.js'
+                showEmittedFile: emittedFilename
             }
         };
         // console.log(twoSlashCode);

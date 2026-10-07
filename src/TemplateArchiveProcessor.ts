@@ -19,7 +19,7 @@ import { Factory, Serializer } from '@accordproject/concerto-core';
 import { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { transform } from '@accordproject/markdown-transform';
-import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler';
+import { MODULE_KIND_COMMONJS, TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler';
 // @ts-expect-error - this type export is missing in recent cicero-core versions but is still required for TypeScript AST
 import Script from '@accordproject/cicero-core/types/src/script';
 import { TwoSlashReturn } from '@typescript/twoslash';
@@ -195,7 +195,7 @@ export class TemplateArchiveProcessor {
         const logicManager = this.template.getLogicManager();
         if (logicManager.getLanguage() === 'typescript') {
             const compiledCode: Record<string, TwoSlashReturn> = {};
-            const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript');
+            const tsFiles: Array<Script> = logicManager.getScriptManager().getScriptsForTarget('typescript').filter((script: Script) => script.getIdentifier().endsWith('.ts'));
             const entryPoint = resolveLogicEntryPoint(tsFiles.map((tsFile) => tsFile.getIdentifier()));
             const logicScript = tsFiles.find((tsFile) => tsFile.getIdentifier() === entryPoint);
             await this.assertTemplateLogicSubclass(logicScript);
@@ -207,11 +207,15 @@ export class TemplateArchiveProcessor {
 
                 await compiler.initialize();
 
+                for (const file of tsFiles) {
+                    compiler.fsMap!.set(`/${file.getIdentifier()}`, file.getContents());
+                }
+
                 // The runtime type declarations (IConcept, TemplateLogic, etc.) are
                 // provided by the compilation context, with the State / Request / Response /
                 // Event type positions bound to the model-derived Runtime* unions (the
                 // concrete base plus its subclasses).
-                const result = compiler.compile(tsFile.getContents());
+                const result = compiler.compile(tsFile.getContents(), MODULE_KIND_COMMONJS, `/${tsFile.getIdentifier()}`);
 
                 // Surface the runtime-hierarchy constraint violation (TS2344) as a hard
                 // error. The state type argument must satisfy the RuntimeState union; a type
@@ -393,16 +397,104 @@ export class TemplateArchiveProcessor {
      * @param {number} [utcOffset] - the UTC offset, defaults to zero
      * @returns {Promise<TriggerResponse>} the response and any events
      */
+    /**
+     * Bundles compiled CommonJS modules into a single sandbox execution script.
+     * @param {string} entryPoint - the entry point module identifier
+     * @param {Record<string, TwoSlashReturn>} compiledCode - the compiled ts files
+     * @param {string} functionName - the method name to call on the instantiated class
+     * @returns {string} the unified javascript code string for execution
+     */
+    private bundleCommonJS(entryPoint: string, compiledCode: Record<string, TwoSlashReturn>, functionName: string): string {
+        const modulesObj = Object.entries(compiledCode).map(([filename, result]) => {
+            // Trim '.ts' extension for the module identifier
+            const moduleId = filename.endsWith('.ts') ? filename.slice(0, -3) : filename;
+            return `"${moduleId}": function(module, exports, require) {\n${result.code}\n}`;
+        }).join(',\n');
+
+        const entryId = entryPoint.endsWith('.ts') ? entryPoint.slice(0, -3) : entryPoint;
+
+        return `
+const TemplateLogic = class {
+    init(data) { return Promise.resolve(undefined); }
+};
+
+const __modules = {
+${modulesObj}
+};
+const __cache = {};
+
+function resolveId(parentId, reqId) {
+    if (!reqId.startsWith('.') && !reqId.startsWith('..')) {
+        return reqId;
+    }
+
+    // Get the directory of the parent module
+    const parentDirIdx = parentId.lastIndexOf('/');
+    const parentDir = parentDirIdx >= 0 ? parentId.substring(0, parentDirIdx) : '';
+
+    const parts = parentDir ? parentDir.split('/') : [];
+    const reqParts = reqId.split('/');
+
+    for (let i = 0; i < reqParts.length; i++) {
+        const p = reqParts[i];
+        if (p === '..') {
+            if (parts.length === 0) {
+                // Cannot resolve above root
+                return null;
+            }
+            parts.pop();
+        } else if (p !== '.') {
+            parts.push(p);
+        }
+    }
+
+    return parts.join('/');
+}
+
+function createRequire(parentId) {
+    return function require(id) {
+        let resolvedId = resolveId(parentId, id);
+
+        if (resolvedId && resolvedId.endsWith('.js')) {
+            resolvedId = resolvedId.slice(0, -3);
+        }
+
+        if (!resolvedId || !__modules[resolvedId]) {
+            throw new Error("Cannot find module '" + id + "'");
+        }
+
+        if (__cache[resolvedId]) {
+            return __cache[resolvedId].exports;
+        }
+
+        const module = { exports: {} };
+        __cache[resolvedId] = module;
+        __modules[resolvedId](module, module.exports, createRequire(resolvedId));
+        return module.exports;
+    };
+}
+
+const EntryModule = createRequire("logic")("${entryId}");
+const TemplateLogicClass = EntryModule.default || EntryModule;
+const instance = new TemplateLogicClass();
+if (typeof instance["${functionName}"] !== 'function') {
+    throw new Error("Function '" + "${functionName}" + "' not found on logic class.");
+}
+const args = Array.prototype.slice.call(arguments, 2);
+return instance["${functionName}"].apply(instance, args);
+`;
+    }
+
     private async executeTypeScriptTrigger(data: any, request: any, priorState?: any, currentTime?: string, utcOffset?: number): Promise<TriggerResponse> {
         const compiledCode = await this.compileLogic();
         const resolvedTime = currentTime ?? new Date().toISOString();
         const resolvedOffset = utcOffset ?? 0;
+        const entryPoint = resolveLogicEntryPoint(Object.keys(compiledCode));
         const evaluator = new JavaScriptEvaluator();
         const evalResponse = await evaluator.evalDangerously({
-            templateLogic: true,
+            templateLogic: false,
             verbose: false,
-            functionName: 'trigger',
-            code: compiledCode[resolveLogicEntryPoint(Object.keys(compiledCode))].code,
+            code: this.bundleCommonJS(entryPoint, compiledCode, 'trigger'),
             argumentNames: ['data', 'request', 'state'],
             arguments: [data, request, priorState, resolvedTime, resolvedOffset]
         });
@@ -415,7 +507,7 @@ export class TemplateArchiveProcessor {
 
     /**
      * Executes the template's compiled TypeScript init logic. Returns an empty
-     * state when the compiled logic defines no `init` method (stateless template).
+     * state when the compiled logic defines no \`init\` method (stateless template).
      * @param {any} data - the data for the template
      * @param {string} [currentTime] - the current time, defaults to now
      * @param {number} [utcOffset] - the UTC offset, defaults to zero
@@ -425,7 +517,7 @@ export class TemplateArchiveProcessor {
         const compiledCode = await this.compileLogic();
         const logicCode = compiledCode[resolveLogicEntryPoint(Object.keys(compiledCode))].code;
 
-        // Check if the compiled code even contains an `init` method before calling it
+        // Check if the compiled code even contains an \`init\` method before calling it
         if (!logicCode || (!logicCode.includes('init(') && !logicCode.includes('init ('))) {
             // Stateless template — no init method defined, return empty state
             return { state: {} };
@@ -433,12 +525,12 @@ export class TemplateArchiveProcessor {
 
         const resolvedTime = currentTime ?? new Date().toISOString();
         const resolvedOffset = utcOffset ?? 0;
+        const entryPoint = resolveLogicEntryPoint(Object.keys(compiledCode));
         const evaluator = new JavaScriptEvaluator();
         const evalResponse = await evaluator.evalDangerously({
-            templateLogic: true,
+            templateLogic: false,
             verbose: false,
-            functionName: 'init',
-            code: logicCode,
+            code: this.bundleCommonJS(entryPoint, compiledCode, 'init'),
             argumentNames: ['data'],
             arguments: [data, resolvedTime, resolvedOffset]
         });
@@ -543,7 +635,7 @@ export class TemplateArchiveProcessor {
     async init(data: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<InitResponse> {
         const factory = new Factory(this.template.getModelManager());
         const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true});
-        
+
         // validate inputs before execution
         if (data) serializer.fromJSON(data);
 
