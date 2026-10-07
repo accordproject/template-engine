@@ -144,7 +144,13 @@ export class TemplateArchiveProcessor {
         const userLogic = hasUserCode(templateMarkDom) ? await this.compileUserLogicForDraft() : undefined;
         const engine = new TemplateMarkInterpreter(modelManager, {}, undefined, userLogic);
         const now = currentTime ? currentTime : new Date().toISOString();
-        const ciceroMark = await engine.generate(templateMarkDom, data, { now });
+        // pass the locale and the vocabulary through so that drafting can use
+        // localized terms (issue #10)
+        const ciceroMark = await engine.generate(templateMarkDom, data, {
+            now,
+            locale: options?.locale,
+            vocabularyManager: options?.vocabularyManager
+        });
         const result = transform(ciceroMark.toJSON(), 'ciceromark', ['ciceromark_unquoted', format], null, options);
         return result;
     }
