@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, renameSync, writeFileSync } from 'fs';
+import { cpSync, mkdtempSync, renameSync, writeFileSync, mkdirSync } from 'fs';
 import os from 'os';
 import path from 'path';
 import {Template} from '@accordproject/cicero-core';
@@ -15,6 +15,18 @@ async function loadTemplate(logicSource?: string): Promise<Template> {
     const tempDir = path.join(tempRoot, 'template');
     cpSync(TEMPLATE_DIR, tempDir, { recursive: true });
     writeFileSync(path.join(tempDir, 'logic', 'logic.ts'), logicSource);
+    return Template.fromDirectory(tempDir, {offline: true});
+}
+
+async function loadMultiFileTemplate(logicSources: Record<string, string>): Promise<Template> {
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'template-engine-logic-'));
+    const tempDir = path.join(tempRoot, 'template');
+    cpSync(TEMPLATE_DIR, tempDir, { recursive: true });
+    for (const [filename, source] of Object.entries(logicSources)) {
+        const fullPath = path.join(tempDir, 'logic', filename);
+        mkdirSync(path.dirname(fullPath), { recursive: true });
+        writeFileSync(fullPath, source);
+    }
     return Template.fromDirectory(tempDir, {offline: true});
 }
 
@@ -264,6 +276,224 @@ export default UnicodeLogic;
         const processor = new TemplateArchiveProcessor(template);
         const response = await processor.init(VALID_DATA);
         expect((response.state as { count: number }).count).toBe(text.codePointAt(0));
+    });
+
+    describe('multi-file TypeScript logic execution', () => {
+        const request = {
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyRequest",
+            "forceMajeure": false,
+            "agreedDelivery": "2017-10-07T16:38:01.412Z",
+            "goodsValue": 200,
+            "$timestamp": "2020-03-03T16:21:40.597Z",
+            "$identifier": "1b3bebfb-47e1-45bd-bea7-e73cd3956616"
+        };
+
+        const state = {
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyState",
+            "count": 0,
+            "$identifier": "0573e8e2-0fb0-4e3a-bad3-30cc00d41829"
+        };
+
+        const logicSourceBase = `
+import { ILateDeliveryAndPenaltyState, ILateDeliveryAndPenaltyRequest, ILateDeliveryAndPenaltyResponse, ILateDeliveryAndPenaltyEvent, ITemplateModel } from "./generated/io.clause.latedeliveryandpenalty@0.1.0";
+{IMPORT_STATEMENT}
+
+// @ts-expect-error
+class LateDeliveryLogic extends TemplateLogic {
+    // @ts-expect-error
+    async init(data: ITemplateModel) {
+        return {
+            state: {
+                $class: 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyState',
+                $identifier: data.$identifier,
+                count: 0,
+            }
+        }
+    }
+    // @ts-expect-error
+    async trigger(data: ITemplateModel, request: ILateDeliveryAndPenaltyRequest, state: ILateDeliveryAndPenaltyState) {
+        const amt = {CALL_STATEMENT};
+        const newState: ILateDeliveryAndPenaltyState = {
+            $class: 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyState',
+            $identifier: state.$identifier,
+            count: state.count + 1,
+        }
+        return {
+            result: {
+                penalty: data.penaltyPercentage * amt,
+                buyerMayTerminate: true,
+                $timestamp: new Date().toISOString(),
+                $class: 'io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyResponse'
+            },
+            events: [],
+            state: newState
+        }
+    }
+}
+export default LateDeliveryLogic;
+`;
+
+        test('multi-file but no imports', async () => {
+            const helperSource = `export function getAmount() { return 10; }`;
+            const logicSource = logicSourceBase
+                .replace('{IMPORT_STATEMENT}', '')
+                .replace('{CALL_STATEMENT}', '20');
+
+            const template = await loadMultiFileTemplate({
+                'logic.ts': logicSource,
+                'helper.ts': helperSource
+            });
+
+            const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+            const response = await templateArchiveProcessor.trigger(VALID_DATA, request, state);
+
+            expect(response.result).toBeDefined();
+            expect(((response.result as unknown) as { penalty: number }).penalty).toBe(210); // 10.5 * 20
+        });
+
+        test('single local import', async () => {
+            const helperSource = `export function getAmount() { return 10; }`;
+            const logicSource = logicSourceBase
+                .replace('{IMPORT_STATEMENT}', 'import { getAmount } from "./helper";')
+                .replace('{CALL_STATEMENT}', 'getAmount()');
+
+            const template = await loadMultiFileTemplate({
+                'logic.ts': logicSource,
+                'helper.ts': helperSource
+            });
+
+            const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+            const response = await templateArchiveProcessor.trigger(VALID_DATA, request, state);
+
+            expect(response.result).toBeDefined();
+            expect(((response.result as unknown) as { penalty: number }).penalty).toBe(105); // 10.5 * 10
+        });
+
+        test('nested dependencies', async () => {
+            const utilsSource = `export function getAmount() { return 15; }`;
+            const helperSource = `import { getAmount } from "./utils";\nexport function calculate() { return getAmount(); }`;
+            const logicSource = logicSourceBase
+                .replace('{IMPORT_STATEMENT}', 'import { calculate } from "./helper";')
+                .replace('{CALL_STATEMENT}', 'calculate()');
+
+            const template = await loadMultiFileTemplate({
+                'logic.ts': logicSource,
+                'helper.ts': helperSource,
+                'utils.ts': utilsSource
+            });
+
+            const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+            const response = await templateArchiveProcessor.trigger(VALID_DATA, request, state);
+
+            expect(response.result).toBeDefined();
+            expect(((response.result as unknown) as { penalty: number }).penalty).toBe(157.5); // 10.5 * 15
+        });
+
+        test('shared dependency / module identity', async () => {
+            // Test that module state is shared across imports
+            const utilsSource = `export let sharedCounter = 0;\nexport function increment() { sharedCounter += 1; return sharedCounter; }`;
+            const helperSource = `import { increment } from "./utils";\nexport function help() { return increment(); }`;
+            const logicSource = logicSourceBase
+                .replace('{IMPORT_STATEMENT}', 'import { help } from "./helper";\nimport { increment } from "./utils";')
+                .replace('{CALL_STATEMENT}', 'help() + increment()'); // 1 + 2 = 3
+
+            const template = await loadMultiFileTemplate({
+                'logic.ts': logicSource,
+                'helper.ts': helperSource,
+                'utils.ts': utilsSource
+            });
+
+            const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+            const response = await templateArchiveProcessor.trigger(VALID_DATA, request, state);
+
+            expect(response.result).toBeDefined();
+            expect(((response.result as unknown) as { penalty: number }).penalty).toBe(31.5); // 10.5 * 3
+        });
+
+test('nested directory import', async () => {
+            const utilsSource = `export function getAmount() { return 15; }`;
+            const helperSource = `import { getAmount } from "./utils";\nexport function calculate() { return getAmount(); }`;
+            const logicSource = logicSourceBase
+                .replace('{IMPORT_STATEMENT}', 'import { calculate } from "./sub/helper";')
+                .replace('{CALL_STATEMENT}', 'calculate()');
+
+            const template = await loadMultiFileTemplate({
+                'logic.ts': logicSource,
+                'sub/helper.ts': helperSource,
+                'sub/utils.ts': utilsSource
+            });
+
+            const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+            const response = await templateArchiveProcessor.trigger(VALID_DATA, request, state);
+
+            expect(response.result).toBeDefined();
+            expect(((response.result as unknown) as { penalty: number }).penalty).toBe(157.5); // 10.5 * 15
+        });
+
+        test('parent-directory import', async () => {
+            const utilsSource = `export function getAmount() { return 12; }`;
+            const helperSource = `import { getAmount } from "../utils";\nexport function calculate() { return getAmount(); }`;
+            const logicSource = logicSourceBase
+                .replace('{IMPORT_STATEMENT}', 'import { calculate } from "./sub/helper";')
+                .replace('{CALL_STATEMENT}', 'calculate()');
+
+            const template = await loadMultiFileTemplate({
+                'logic.ts': logicSource,
+                'sub/helper.ts': helperSource,
+                'utils.ts': utilsSource
+            });
+
+            const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+            const response = await templateArchiveProcessor.trigger(VALID_DATA, request, state);
+
+            expect(response.result).toBeDefined();
+            expect(((response.result as unknown) as { penalty: number }).penalty).toBe(126); // 10.5 * 12
+        });
+
+        test('security: prevents escaping module map', async () => {
+            const attempts = [
+                '../outside',
+                '../../outside',
+                '/absolute/path',
+                'fs',
+                'node:fs',
+                'child_process'
+            ];
+
+            for (const attempt of attempts) {
+                const logicSource = logicSourceBase
+                    .replace('{IMPORT_STATEMENT}', `import { something } from "${attempt}";`)
+                    .replace('{CALL_STATEMENT}', 'something()');
+
+                const template = await loadMultiFileTemplate({
+                    'logic.ts': logicSource
+                });
+
+                const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+                // trigger will fail due to require() throwing
+                await expect(templateArchiveProcessor.trigger(VALID_DATA, request, state)).rejects.toMatchObject({
+                    message: expect.stringMatching(/Cannot find module/)
+                });
+            }
+        }, 15000);
+
+        test('circular dependencies', async () => {
+            const helperSource = `import { getAmountBase } from "./logic";\nexport function getAmount() { return getAmountBase() * 2; }`;
+            const logicSource = logicSourceBase
+                .replace('{IMPORT_STATEMENT}', 'import { getAmount } from "./helper";\nexport function getAmountBase() { return 5; }')
+                .replace('{CALL_STATEMENT}', 'getAmount()'); // 5 * 2 = 10
+
+            const template = await loadMultiFileTemplate({
+                'logic.ts': logicSource,
+                'helper.ts': helperSource
+            });
+
+            const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+            const response = await templateArchiveProcessor.trigger(VALID_DATA, request, state);
+
+            expect(response.result).toBeDefined();
+            expect(((response.result as unknown) as { penalty: number }).penalty).toBe(105); // 10.5 * 10
+        });
     });
 
     it('rejects a request whose type does not extend the runtime Request', async () => {
