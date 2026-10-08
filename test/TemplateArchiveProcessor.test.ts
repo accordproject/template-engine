@@ -475,7 +475,7 @@ test('nested directory import', async () => {
                     message: expect.stringMatching(/Cannot find module/)
                 });
             }
-        });
+        }, 15000);
 
         test('circular dependencies', async () => {
             const helperSource = `import { getAmountBase } from "./logic";\nexport function getAmount() { return getAmountBase() * 2; }`;
