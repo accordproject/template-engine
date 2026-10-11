@@ -50,9 +50,9 @@
     "@accordproject/concerto-core": "^5.0.0",
     "@accordproject/concerto-util": "^5.0.0",
     "@accordproject/concerto-vocabulary": "^5.0.0",
-    "@accordproject/markdown-common": "^1.1.0",
-    "@accordproject/markdown-template": "^1.1.0",
-    "@accordproject/markdown-transform": "^1.1.0",
+    "@accordproject/markdown-common": "^2.0.0",
+    "@accordproject/markdown-template": "^2.0.0",
+    "@accordproject/markdown-transform": "^2.0.0",
     "@typescript/twoslash": "^3.2.9",
     "browser-or-node": "^3.0.0",
     "dayjs": "1.11.13",
@@ -91,7 +91,7 @@
     }
   },
   "devDependencies": {
-    "@accordproject/markdown-html": "^1.1.0",
+    "@accordproject/markdown-html": "^2.0.0",
     "@anthropic-ai/sdk": "^0.100.1",
     "@cucumber/cucumber": "^13.2.1",
     "@eslint/eslintrc": "^3.3.1",
