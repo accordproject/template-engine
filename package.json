@@ -46,7 +46,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@accordproject/cicero-core": "^2.2.0",
-    "@accordproject/concerto-codegen": "^6.3.0",
+    "@accordproject/concerto-codegen": "^7.1.0",
     "@accordproject/concerto-core": "^5.0.0",
     "@accordproject/concerto-util": "^5.0.0",
     "@accordproject/concerto-vocabulary": "^5.0.0",
