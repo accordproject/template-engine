@@ -419,6 +419,137 @@ async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary
 }
 
 /**
+ * Builds the ordered list of locales to attempt when resolving a vocabulary
+ * term: the requested locale, its base language when the locale is region
+ * qualified, and finally 'en'.
+ * @param {string} locale - the requested BCP-47 locale identifier
+ * @returns {string[]} the fallback chain, most specific first
+ */
+function getLocaleFallbackChain(locale: string): string[] {
+    const chain = [locale];
+    const base = locale.split('-')[0];
+    if (base && !chain.includes(base)) {
+        chain.push(base);
+    }
+    if (!chain.includes('en')) {
+        chain.push('en');
+    }
+    return chain;
+}
+
+/**
+ * Resolves a localized term from the vocabulary carried by the generation
+ * options, trying each locale in the fallback chain. Failures (for instance an
+ * unknown declaration) are treated as 'no term' so that generation gracefully
+ * falls back to the raw value.
+ * @param {GenerationOptions | undefined} options - the generation options
+ * @param {ModelManager} modelManager - the model manager
+ * @param {string} namespace - the namespace of the declaration
+ * @param {string} declarationName - the name of the concept or enum
+ * @param {string} propertyName - the name of the property, or an enum value
+ * @returns {string | undefined} the localized term, when the vocabulary has one
+ */
+function resolveVocabularyTerm(options: GenerationOptions | undefined, modelManager: ModelManager, namespace: string, declarationName: string, propertyName: string): string | undefined {
+    const vocabularyManager = options?.vocabularyManager;
+    if (!vocabularyManager || !options?.locale) {
+        return undefined;
+    }
+    for (const locale of getLocaleFallbackChain(options.locale)) {
+        try {
+            const term = vocabularyManager.resolveTerm(modelManager, namespace, locale, declarationName, propertyName);
+            if (term !== null && term !== undefined && term !== '') {
+                return String(term);
+            }
+        }
+        catch {
+            // the declaration cannot be resolved: try the next locale
+        }
+    }
+    return undefined;
+}
+
+/**
+ * Resolves the localized label of a property by walking up from a template mark
+ * node to the nearest enclosing declaration that declares a class element type
+ * (issue #10). Returns undefined when no ancestor declaration carries a term.
+ * @param {ModelManager} modelManager - the model manager
+ * @param {Introspector} introspector - the introspector
+ * @param {object} templateMark - the TemplateMark document
+ * @param {Array<string | number>} path - the path of the current node
+ * @param {string} propertyName - the name of the property to label
+ * @param {GenerationOptions | undefined} options - the generation options
+ * @returns {string | undefined} the localized label, when the vocabulary has one
+ */
+function resolvePropertyLabel(modelManager: ModelManager, introspector: Introspector, templateMark: object, path: Array<string | number>, propertyName: string, options?: GenerationOptions): string | undefined {
+    if (!options?.vocabularyManager || !options?.locale) {
+        return undefined;
+    }
+    let node: any = templateMark;
+    const ancestors: any[] = [];
+    for (let n = 0; n < path.length - 1; n++) {
+        node = node?.[path[n]];
+        if (node && typeof node === 'object') {
+            ancestors.push(node);
+        }
+    }
+    for (let n = ancestors.length - 1; n >= 0; n--) {
+        const elementType = ancestors[n].elementType;
+        if (typeof elementType !== 'string' || (ModelUtil as any).isPrimitiveType(elementType)) {
+            continue;
+        }
+        let declaration: ClassDeclaration;
+        try {
+            declaration = introspector.getClassDeclaration(elementType);
+        }
+        catch {
+            // the enclosing element type is not a class (e.g. a scalar): keep walking
+            continue;
+        }
+        const label = resolveVocabularyTerm(options, modelManager, declaration.getNamespace(), declaration.getName(), propertyName);
+        if (label) {
+            return label;
+        }
+    }
+    return undefined;
+}
+
+/**
+ * Applies the vocabulary to a drafted value (issue #10). An enum value is
+ * replaced by its localized term when the vocabulary defines one; otherwise the
+ * localized label of the property, when found, is prepended to the drafted
+ * value. The raw drafted value is returned when no vocabulary or no term is
+ * available.
+ * @param {ModelManager} modelManager - the model manager
+ * @param {Introspector} introspector - the introspector
+ * @param {object} templateMark - the TemplateMark document
+ * @param {Array<string | number>} path - the path of the current node
+ * @param {any} context - the current TemplateMark node
+ * @param {ClassDeclaration | null} type - the declaration of the variable, when it is not a primitive type
+ * @param {any} variableValue - the value read from the data
+ * @param {string} draftedValue - the value after drafting
+ * @param {GenerationOptions | undefined} options - the generation options
+ * @returns {string} the value to render
+ */
+function applyVocabularyToValue(modelManager: ModelManager, introspector: Introspector, templateMark: object, path: Array<string | number>, context: any, type: ClassDeclaration | null, variableValue: any, draftedValue: string, options?: GenerationOptions): string {
+    if (!options?.vocabularyManager || !options?.locale) {
+        return draftedValue;
+    }
+    if (type && type.isEnum() && typeof variableValue === 'string') {
+        const term = resolveVocabularyTerm(options, modelManager, type.getNamespace(), type.getName(), variableValue);
+        if (term) {
+            return term;
+        }
+    }
+    if (context.name) {
+        const label = resolvePropertyLabel(modelManager, introspector, templateMark, path, String(context.name), options);
+        if (label) {
+            return `${label}: ${draftedValue}`;
+        }
+    }
+    return draftedValue;
+}
+
+/**
  * Generates an AgreementMark JSON document from a template plus data.
  * @param {ModelManager} modelManager - the template model
  * @param {*} clauseLibrary - the clause library
@@ -515,8 +646,29 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                     else {
                         context.$class = `${CommonMarkModel.NAMESPACE}.Text`;
                         const drafter = getDrafter(context.elementType);
+                        // localized vocabulary terms for enum values (issue #10)
+                        let enumDeclaration: ClassDeclaration | null = null;
+                        if (options?.vocabularyManager && options?.locale &&
+                            context.elementType && !(ModelUtil as any).isPrimitiveType(context.elementType)) {
+                            try {
+                                const declaration = introspector.getClassDeclaration(context.elementType);
+                                if (declaration.isEnum()) {
+                                    enumDeclaration = declaration;
+                                }
+                            }
+                            catch {
+                                // the element type is not a class: join the drafted values as-is
+                            }
+                        }
                         context.text = joinList(arrayData.map(arrayItem => {
-                            return drafter ? drafter(arrayItem, context.format) : arrayItem as string;
+                            const draftedValue = drafter ? drafter(arrayItem, context.format) : arrayItem as string;
+                            if (enumDeclaration && typeof arrayItem === 'string') {
+                                const term = resolveVocabularyTerm(options, modelManager, enumDeclaration.getNamespace(), enumDeclaration.getName(), arrayItem);
+                                if (term) {
+                                    return term;
+                                }
+                            }
+                            return draftedValue;
                         }), context, options);
                         delete context.elementType;
                         delete context.name;
@@ -556,7 +708,8 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                         const type = (ModelUtil as any).isPrimitiveType(context.elementType) ? null : introspector.getClassDeclaration(context.elementType);
                         // we want to draft Enums as strings, not objects
                         const drafter = getDrafter(type && type.isEnum() ? 'String' : context.elementType);
-                        context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
+                        const draftedValue = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
+                        context.value = applyVocabularyToValue(modelManager, introspector, templateMark, this.path, context, type, variableValue, draftedValue, options);
                     }
                 }
                 else {
@@ -565,7 +718,8 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                     const type = (ModelUtil as any).isPrimitiveType(context.elementType) ? null : introspector.getClassDeclaration(context.elementType);
                     // we want to draft Enums as strings, not objects
                     const drafter = getDrafter(type && type.isEnum() ? 'String' : context.elementType);
-                    context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
+                    const draftedValue = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
+                    context.value = applyVocabularyToValue(modelManager, introspector, templateMark, this.path, context, type, variableValue, draftedValue, options);
                 }
             }
 

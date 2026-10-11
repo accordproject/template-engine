@@ -13,6 +13,7 @@
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import type { VocabularyManager } from '@accordproject/concerto-vocabulary';
 
 const DEBUG = false;
 
@@ -29,6 +30,11 @@ export type GenerationOptions = {
     disableJavaScriptEvaluation?: boolean
     childProcessJavaScriptEvaluation?: boolean
     timeout?: number
+    /**
+     * Optional vocabulary used to localize terms (issue #10).
+     * When omitted, drafting falls back to the raw values.
+     */
+    vocabularyManager?: VocabularyManager
 }
 
 export function joinList(data:Array<string>, joinDef:any, options?:GenerationOptions) : string {
