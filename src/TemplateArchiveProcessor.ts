@@ -20,8 +20,7 @@ import { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { transform } from '@accordproject/markdown-transform';
 import { TypeScriptToJavaScriptCompiler } from './TypeScriptToJavaScriptCompiler';
-// @ts-expect-error - this type export is missing in recent cicero-core versions but is still required for TypeScript AST
-import Script from '@accordproject/cicero-core/types/src/script';
+import type { Script } from '@accordproject/cicero-core';
 import { TwoSlashReturn } from '@typescript/twoslash';
 import { JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { compileUserLogic, CompiledUserLogic, toCompiledUserLogic } from './UserLogic';
