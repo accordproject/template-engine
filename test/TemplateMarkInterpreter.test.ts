@@ -1,5 +1,6 @@
 import { ModelManager } from '@accordproject/concerto-core';
-import { CommonMarkModel } from '@accordproject/markdown-common';
+import { CommonMarkModel, CommonMarkTransformer } from '@accordproject/markdown-common';
+import { transform } from '@accordproject/markdown-transform';
 import { TemplateCompilationError, TemplateMarkInterpreter } from '../src';
 import { TemplateMarkTransformer } from '@accordproject/markdown-template';
 import { readFileSync, readdirSync } from 'fs';
@@ -218,6 +219,124 @@ concept TemplateData {
                 `{{#${templateListType} volumeDiscounts}}\nAbove {{volumeAbove}} units: {{rate}}% off\n{{/${templateListType}}}\n`,
                 renderedListType
             );
+        });
+    });
+
+    describe('multi-block list bodies', () => {
+        const MODEL = `namespace listbody@1.0.0
+concept Entry {
+    o String first
+    o String second
+}
+@template
+concept TemplateData {
+    o Entry[] entries
+    o String[] names
+}`;
+        const DATA = {
+            $class: 'listbody@1.0.0.TemplateData',
+            entries: [
+                { $class: 'listbody@1.0.0.Entry', first: 'alpha', second: 'A2' },
+                { $class: 'listbody@1.0.0.Entry', first: 'beta', second: 'B2' },
+            ],
+            names: ['alpha', 'beta'],
+        };
+        const LIST_CASES: Array<['ulist' | 'olist', 'bullet' | 'ordered']> = [
+            ['ulist', 'bullet'],
+            ['olist', 'ordered'],
+        ];
+        const cm = (type: string) => `${CommonMarkModel.NAMESPACE}.${type}`;
+        const text = (node: any): string => node.value ?? node.text ?? (node.nodes ?? []).map(text).join('');
+        const itemBodies = (list: any) => list.nodes.map((item: any) => ({
+            $class: item.$class,
+            blocks: item.nodes.map((block: any) => ({ $class: block.$class, text: text(block) })),
+        }));
+
+        async function renderBody(kind: 'ulist' | 'olist', body: string, wrapped = false, data = DATA, field = 'entries') {
+            const modelManager = new ModelManager();
+            modelManager.addCTOModel(MODEL);
+            const marker = kind === 'ulist' ? '- ' : '1. ';
+            const content = wrapped
+                ? body.split('\n').map((line, index) => index === 0 ? marker + line : line ? '   ' + line : '').join('\n')
+                : body;
+            const templateMark = new TemplateMarkTransformer().fromMarkdownTemplate(
+                { content: `{{#${kind} ${field}}}\n${content}\n{{/${kind}}}` }, modelManager, 'contract');
+            const agreement = await new TemplateMarkInterpreter(modelManager, {}).generate(templateMark, data);
+            const json = agreement.toJSON();
+            const list = json.nodes[0].nodes[0];
+            const markdown = await transform(json, 'ciceromark', ['ciceromark_unquoted', 'markdown'], null, {});
+            const rendered = new CommonMarkTransformer().fromMarkdown(markdown);
+            expect(list.$class).toBe(cm('List'));
+            return { list, markdown, rendered };
+        }
+
+        test.each(LIST_CASES)('%s preserves formatted paragraphs and per-element values', async (kind, listType) => {
+            const body = '**First: {{first}}**\n\nSecond: [{{second}}](https://example.test) with *emphasis* and `code`';
+            const result = await renderBody(kind, body);
+            const wrapped = await renderBody(kind, body, true);
+            const expectedItems = DATA.entries.map(entry => ({
+                $class: cm('Item'),
+                blocks: [
+                    { $class: cm('Paragraph'), text: `First: ${entry.first}` },
+                    { $class: cm('Paragraph'), text: `Second: ${entry.second} with emphasis and code` },
+                ],
+            }));
+            expect({ agreement: itemBodies(result.list), markdown: itemBodies(result.rendered.nodes[0]) })
+                .toEqual({ agreement: expectedItems, markdown: expectedItems });
+            expect(result.list.type).toBe(listType);
+            result.list.nodes.forEach((item: any) => {
+                expect(item.nodes[0].nodes[0].$class).toBe(cm('Strong'));
+                expect(item.nodes[1].nodes.map((node: any) => node.$class))
+                    .toEqual(['Text', 'Link', 'Text', 'Emph', 'Text', 'Code'].map(cm));
+            });
+            expect(result.list).toEqual(wrapped.list);
+            expect(result.markdown).toBe(wrapped.markdown);
+        });
+
+        test.each(LIST_CASES)('%s preserves static nested blocks after the first paragraph', async (kind) => {
+            for (const [suffix, blockType] of [
+                ['> Quote: {{second}}', 'BlockQuote'],
+                ['- Child: {{second}}', 'List'],
+            ]) {
+                const body = `First: {{first}}\n\n${suffix}`;
+                const result = await renderBody(kind, body);
+                const wrapped = await renderBody(kind, body, true);
+                for (const list of [result.list, result.rendered.nodes[0]]) {
+                    expect(list.nodes).toHaveLength(DATA.entries.length);
+                    list.nodes.forEach((item: any, index: number) => {
+                        expect(item.$class).toBe(cm('Item'));
+                        expect(item.nodes.map((node: any) => node.$class)).toEqual([cm('Paragraph'), cm(blockType)]);
+                        expect(text(item.nodes[0])).toBe(`First: ${DATA.entries[index].first}`);
+                        expect(text(item.nodes[1])).toBe(`${blockType === 'List' ? 'Child' : 'Quote'}: ${DATA.entries[index].second}`);
+                        expect(item.nodes[1].nodes[0].$class).toBe(cm(blockType === 'List' ? 'Item' : 'Paragraph'));
+                    });
+                }
+                expect(result.list).toEqual(wrapped.list);
+                expect(result.markdown).toBe(wrapped.markdown);
+            }
+        });
+
+        test.each(LIST_CASES)('%s preserves multiple paragraphs for primitive array elements', async (kind) => {
+            const result = await renderBody(kind, 'First: {{this}}\n\nSecond: {{this}}', false, DATA, 'names');
+            const expectedItems = DATA.names.map(name => ({
+                $class: cm('Item'),
+                blocks: [
+                    { $class: cm('Paragraph'), text: `First: ${name}` },
+                    { $class: cm('Paragraph'), text: `Second: ${name}` },
+                ],
+            }));
+            expect({ agreement: itemBodies(result.list), markdown: itemBodies(result.rendered.nodes[0]) })
+                .toEqual({ agreement: expectedItems, markdown: expectedItems });
+        });
+
+        test.each(LIST_CASES)('%s emits no items for an empty array', async (kind) => {
+            const body = 'First: {{first}}\n\nSecond: {{second}}';
+            for (const wrapped of [false, true]) {
+                const result = await renderBody(kind, body, wrapped, { ...DATA, entries: [] });
+                expect(result.list.nodes).toEqual([]);
+                expect(result.markdown).toBe('');
+                expect(result.rendered).toEqual(new CommonMarkTransformer().fromMarkdown(''));
+            }
         });
     });
 

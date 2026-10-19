@@ -381,27 +381,32 @@ async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary
                         // wrapping is only emitted when the items have leading list markers
                         // (e.g. `- ` for ulist, `1. ` for olist). When users put direct
                         // variable references inside `{{#ulist}}` / `{{#olist}}` with no
-                        // leading marker (see #145), the body is parsed as a single Paragraph
-                        // directly under the ListBlockDefinition.
+                        // leading marker (see #145), the body blocks are placed directly
+                        // under the ListBlockDefinition.
                         const firstChild = context.nodes[0];
                         const hasListWrapper = firstChild &&
                             firstChild.$class === `${CommonMarkModel.NAMESPACE}.List` &&
                             Array.isArray(firstChild.nodes) &&
                             firstChild.nodes.length > 0;
-                        // When wrapped, the per-iteration template is the first Item inside
-                        // the List. Otherwise the ListBlockDefinition's first child IS the
-                        // per-iteration template (typically a Paragraph).
-                        const itemTemplate = hasListWrapper ? firstChild.nodes[0] : firstChild;
+                        const hasMultiBlockListBody = LISTBLOCK_DEFINITION_RE.test(nodeClass) &&
+                            !hasListWrapper && context.nodes.length > 1;
+                        // Repeat all unwrapped list body blocks within one Item. Keep the
+                        // existing wrapped, single-block and foreach paths unchanged.
+                        const itemTemplate = hasListWrapper ? firstChild.nodes[0]
+                            : hasMultiBlockListBody ? {
+                                $class: `${CommonMarkModel.NAMESPACE}.Item`,
+                                nodes: context.nodes
+                            } : firstChild;
                         const nodes = [];
                         for (let n = 0; n < arrayData.length; n++) {
                             const arrayItem = arrayData[n];
                             // arrayItem is now the data for the nested generation
                             const subResult = await generateAgreement(modelManager, clauseLibrary, itemTemplate, arrayItem, userLogic, options);
-                            // When the template had a List/Item wrapper, the processed Item's
-                            // children (a Paragraph) become the children of the new output Item.
+                            // Unwrap the processed Item, including a synthetic multi-block
+                            // container, so the output never gains an extra Item layer.
                             // Otherwise the processed block itself becomes the sole child of
                             // the new output node, preserving a valid block hierarchy.
-                            const childNodes = hasListWrapper
+                            const childNodes = hasListWrapper || hasMultiBlockListBody
                                 ? (subResult.nodes ? subResult.nodes : [])
                                 : [subResult];
                             nodes.push({
