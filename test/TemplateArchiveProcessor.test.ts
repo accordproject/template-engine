@@ -1,4 +1,4 @@
-import { cpSync, mkdtempSync, renameSync, writeFileSync } from 'fs';
+import { cpSync, mkdtempSync, readFileSync, renameSync, writeFileSync } from 'fs';
 import os from 'os';
 import path from 'path';
 import {Template} from '@accordproject/cicero-core';
@@ -79,6 +79,40 @@ describe('template archive processor', () => {
         const response: InitResponse = await templateArchiveProcessor.init(data);
         const payload = response.state as { count?: number };
         expect(payload.count).toBe(0);
+    });
+
+    test('should init a template that targets cicero ^2.0.0', async () => {
+        const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'template-engine-cicero2-'));
+        const tempDir = path.join(tempRoot, 'template');
+        cpSync(TEMPLATE_DIR, tempDir, { recursive: true });
+        const packageJsonPath = path.join(tempDir, 'package.json');
+        const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+        packageJson.accordproject.cicero = '^2.0.0';
+        writeFileSync(packageJsonPath, JSON.stringify(packageJson));
+
+        const template = await Template.fromDirectory(tempDir, {offline: true});
+        expect(template.getMetadata().getCiceroVersion()).toBe('^2.0.0');
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        const response: InitResponse = await templateArchiveProcessor.init({
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
+            "forceMajeure": true,
+            "penaltyDuration": {
+                "$class": "org.accordproject.time@0.3.0.Duration",
+                "amount": 2,
+                "unit": "days"
+            },
+            "penaltyPercentage": 10.5,
+            "capPercentage": 55,
+            "termination": {
+                "$class": "org.accordproject.time@0.3.0.Duration",
+                "amount": 15,
+                "unit": "days"
+            },
+            "fractionalPart": "days",
+            "clauseId": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8",
+            "$identifier": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8"
+        });
+        expect((response.state as { count?: number }).count).toBe(0);
     });
 
     test('should draft a template whose formula calls a helper from logic/logic.ts (#147)', async () => {
