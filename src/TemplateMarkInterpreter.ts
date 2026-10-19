@@ -364,6 +364,13 @@ async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary
 
             // evaluate nodes, recursing on each child item
             if (nodeRegExp.test(nodeClass)) {
+                // Nested lists are generated with their owning list item, not this data context.
+                if (LISTBLOCK_DEFINITION_RE.test(nodeClass) && thisPath.some((_, depth) => {
+                    const ancestor = traverse.get(templateMark, thisPath.slice(0, depth));
+                    return ancestor && typeof ancestor.$class === 'string' && LISTBLOCK_DEFINITION_RE.test(ancestor.$class);
+                })) {
+                    continue;
+                }
                 const path = getJsonPath(templateMark, context, thisPath, modelManager);
                 const variableValues = jp.query(data, path, 1);
 
