@@ -388,3 +388,40 @@ export default UnicodeLogic;
         });
     });
 });
+
+// Kept in this file rather than its own suite: loading template logic in a second test
+// file within the same Jest worker fails with "Test environment has been torn down".
+describe('template archive processor - logic that only defines trigger', () => {
+    const data = {
+        $class: 'org.example@0.0.1.TemplateModel',
+        clauseId: 'test',
+        $identifier: 'test',
+        name: 'World'
+    };
+
+    let templateArchiveProcessor: TemplateArchiveProcessor;
+
+    beforeAll(async () => {
+        const template = await Template.fromDirectory('test/archives/inherited-init', {offline: true});
+        templateArchiveProcessor = new TemplateArchiveProcessor(template);
+    });
+
+    test('init returns an empty state when the logic inherits the default init', async () => {
+        const response = await templateArchiveProcessor.init(data);
+        expect(response).toEqual({ state: {} });
+    });
+
+    test('trigger works with the state returned by the inherited init', async () => {
+        const { state } = await templateArchiveProcessor.init(data);
+        const request = {
+            $class: 'org.example@0.0.1.GreetingRequest',
+            $timestamp: new Date().toISOString(),
+            greeting: 'Hello'
+        };
+        const response = await templateArchiveProcessor.trigger(data, request, state);
+        expect(response.result).toMatchObject({
+            $class: 'org.example@0.0.1.GreetingResponse',
+            message: 'Hello World'
+        });
+    });
+});
