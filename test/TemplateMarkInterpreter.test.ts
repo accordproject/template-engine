@@ -1,9 +1,9 @@
 import { ModelManager } from '@accordproject/concerto-core';
-import { CommonMarkModel, CommonMarkTransformer } from '@accordproject/markdown-common';
+import { CommonMarkModel, CommonMarkTransformer, TemplateMarkModel } from '@accordproject/markdown-common';
 import { transform } from '@accordproject/markdown-transform';
 import { TemplateCompilationError, TemplateMarkInterpreter } from '../src';
-import { TemplateMarkTransformer } from '@accordproject/markdown-template';
-import { readFileSync, readdirSync } from 'fs';
+import { TemplateMarkTransformer, templatemarkutil } from '@accordproject/markdown-template';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 import * as path from 'path';
 
 const CLAUSE_LIBRARY = {
@@ -35,6 +35,19 @@ const CLAUSE_LIBRARY = {
     ]
 };
 
+// Shared by the list structure assertions.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const text = (node: any): string => node.value ?? node.text ?? (node.nodes ?? []).map(text).join('');
+
+function loadTemplateMark(fixtureRoot: string, modelManager: ModelManager) {
+    const templateJsonPath = path.join(fixtureRoot, 'template.json');
+    return existsSync(templateJsonPath)
+        ? templatemarkutil.templateMarkTyping(JSON.parse(readFileSync(templateJsonPath, 'utf-8')), modelManager, 'contract')
+        : new TemplateMarkTransformer().fromMarkdownTemplate({
+            content: readFileSync(path.join(fixtureRoot, 'template.md'), 'utf-8')
+        }, modelManager, 'contract', { verbose: false });
+}
+
 const GOOD_TEMPLATES_ROOT = './test/templates/good';
 const BAD_TEMPLATES_ROOT = './test/templates/bad';
 const MONEY_MODEL_FILES = [
@@ -44,30 +57,18 @@ const MONEY_MODEL_FILES = [
 
 describe('templatemark interpreter', () => {
     jest.setTimeout(30000);
-    const goodTemplates: Array<{ name: string, content: string }> = readdirSync(GOOD_TEMPLATES_ROOT).map(dir => {
-        return {
-            name: dir,
-            content: readFileSync(path.join(GOOD_TEMPLATES_ROOT, dir, 'template.md'), 'utf-8')
-        };
-    });
+    const goodTemplates = readdirSync(GOOD_TEMPLATES_ROOT);
 
-    goodTemplates.forEach(function (template) {
-        if(template.name === 'foreach') return; // currently broken!!
+    goodTemplates.forEach(function (templateName) {
+        if(templateName === 'foreach') return; // currently broken!!
 
-        test(`should generate ${template.name}`, async () => {
-            const templateName = path.parse(template.name).name;
-
+        test(`should generate ${templateName}`, async () => {
             /**
              * Define the data model for the template. The model must have a concept with
              * the @template decorator. The types of properties allow the template to be
              * type-checked.
             */
             const model = readFileSync(`${GOOD_TEMPLATES_ROOT}/${templateName}/model.cto`, 'utf-8');
-
-            /**
-             * Load the template, rich-text with variables, conditional sections etc
-             */
-            const templateMarkup = readFileSync(`${GOOD_TEMPLATES_ROOT}/${templateName}/template.md`, 'utf-8');
 
             /**
              * Define the data we will merge with the template - an instance of the template model
@@ -81,9 +82,7 @@ describe('templatemark interpreter', () => {
             modelManager.addCTOModel(model);
             const engine = new TemplateMarkInterpreter(modelManager, CLAUSE_LIBRARY);
 
-            const templateMarkTransformer = new TemplateMarkTransformer();
-
-            const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate({ content: templateMarkup }, modelManager, 'contract', { verbose: false });
+            const templateMarkDom = loadTemplateMark(path.join(GOOD_TEMPLATES_ROOT, templateName), modelManager);
             // console.log(JSON.stringify(templateMarkDom, null, 2));
 
             // execute without sandbox
@@ -98,26 +97,18 @@ describe('templatemark interpreter', () => {
         });
     });
 
-    const badTemplates: Array<{ name: string, content: string }> = readdirSync(BAD_TEMPLATES_ROOT).map(dir => {
-        return {
-            name: dir,
-            content: readFileSync(path.join(BAD_TEMPLATES_ROOT, dir, 'template.md'), 'utf-8')
-        };
-    });
+    const badTemplates = readdirSync(BAD_TEMPLATES_ROOT);
 
-    badTemplates.forEach(function (template) {
-        test(`should fail to generate ${template.name}`, async () => {
-            const templateName = path.parse(template.name).name;
+    badTemplates.forEach(function (templateName) {
+        test(`should fail to generate ${templateName}`, async () => {
             const model = readFileSync(`${BAD_TEMPLATES_ROOT}/${templateName}/model.cto`, 'utf-8');
-            const templateMarkup = readFileSync(`${BAD_TEMPLATES_ROOT}/${templateName}/template.md`, 'utf-8');
             const data = JSON.parse(readFileSync(`${BAD_TEMPLATES_ROOT}/${templateName}/data.json`, 'utf-8'));
             const modelManager = new ModelManager();
             modelManager.addCTOModel(model);
             const engine = new TemplateMarkInterpreter(modelManager, CLAUSE_LIBRARY);
 
             const f = async () => {
-                const templateMarkTransformer = new TemplateMarkTransformer();
-                const templateMarkDom = templateMarkTransformer.fromMarkdownTemplate({ content: templateMarkup }, modelManager, 'contract', { verbose: false });
+                const templateMarkDom = loadTemplateMark(path.join(BAD_TEMPLATES_ROOT, templateName), modelManager);
                 const now = '2023-03-17T00:00:00.000Z';
                 return engine.generate(templateMarkDom, data, {now});
             };
@@ -246,7 +237,6 @@ concept TemplateData {
             ['olist', 'ordered'],
         ];
         const cm = (type: string) => `${CommonMarkModel.NAMESPACE}.${type}`;
-        const text = (node: any): string => node.value ?? node.text ?? (node.nodes ?? []).map(text).join('');
         const itemBodies = (list: any) => list.nodes.map((item: any) => ({
             $class: item.$class,
             blocks: item.nodes.map((block: any) => ({ $class: block.$class, text: text(block) })),
@@ -340,6 +330,71 @@ concept TemplateData {
         });
     });
 
+    describe('nested list data contexts', () => {
+        const fixtureRoot = path.join(GOOD_TEMPLATES_ROOT, 'nested-list');
+        const DATA = JSON.parse(readFileSync(path.join(fixtureRoot, 'data.json'), 'utf-8'));
+        const cm = (type: string) => `${CommonMarkModel.NAMESPACE}.${type}`;
+        const nested = '{{#ulist entries}}\n{{label}}\n\n{{#olist tags}}\n{{this}}\n{{/olist}}\n{{/ulist}}';
+
+        async function render(content = readFileSync(path.join(fixtureRoot, 'template.md'), 'utf-8'), entries = DATA.entries) {
+            const modelManager = new ModelManager();
+            modelManager.addCTOModel(readFileSync(path.join(fixtureRoot, 'model.cto'), 'utf-8'));
+            const templateMark = new TemplateMarkTransformer().fromMarkdownTemplate({ content }, modelManager, 'contract');
+            const agreement = await new TemplateMarkInterpreter(modelManager, {}).generate(templateMark, { ...DATA, entries });
+            const json = agreement.toJSON();
+            const markdown = await transform(json, 'ciceromark', ['ciceromark_unquoted', 'markdown'], null, {});
+            return { nodes: json.nodes[0].nodes, markdown, rendered: new CommonMarkTransformer().fromMarkdown(markdown) };
+        }
+
+        test('preserves populated wrapped and unwrapped lists and repeated child values', async () => {
+            const result = await render();
+            for (const nodes of [result.nodes, result.rendered.nodes]) {
+                expect(nodes.map((list: any) => list.type)).toEqual(['bullet', 'ordered']);
+                nodes.forEach((list: any, index: number) => {
+                    expect(list.$class).toBe(cm('List'));
+                    expect(list.nodes.map((item: any) => item.nodes.map(text)))
+                        .toEqual([['first', 'redredblue'], ['second', 'green']]);
+                    list.nodes.forEach((item: any) => {
+                        expect(item.$class).toBe(cm('Item'));
+                        expect(item.nodes.map((node: any) => node.$class)).toEqual([cm('Paragraph'), cm('List')]);
+                        expect(item.nodes[1].type).toBe(index === 0 ? 'ordered' : 'bullet');
+                    });
+                    expect(list.nodes[0].nodes[1].nodes.map(text)).toEqual(['red', 'red', 'blue']);
+                });
+            }
+        });
+
+        test('does not evaluate child lists for an empty outer list', async () => {
+            const result = await render(nested, []);
+            expect(result.nodes[0]).toMatchObject({ $class: cm('List'), type: 'bullet', nodes: [] });
+            expect(result.markdown).toBe('');
+        });
+
+        test('uses the corresponding item at each of three list levels', async () => {
+            const result = await render('{{#ulist entries}}\n{{label}}\n\n{{#olist children}}\n{{label}}\n\n{{#ulist tags}}\n{{this}}\n{{/ulist}}\n{{/olist}}\n{{/ulist}}');
+            const outer = result.nodes[0];
+            expect(outer.nodes.map((item: any) => text(item.nodes[0]))).toEqual(['first', 'second']);
+            expect(outer.nodes[1].nodes[1].nodes).toEqual([]);
+            for (const list of [outer, result.rendered.nodes[0]]) {
+                const children = list.nodes[0].nodes[1];
+                expect(children).toMatchObject({ $class: cm('List'), type: 'ordered' });
+                expect(children.nodes).toHaveLength(1);
+                expect(text(children.nodes[0].nodes[0])).toBe('child');
+                expect(children.nodes[0].nodes[1]).toMatchObject({ $class: cm('List'), type: 'bullet' });
+                expect(children.nodes[0].nodes[1].nodes.map(text)).toEqual(['deep']);
+            }
+        });
+
+        test('keeps an independent top-level sibling list in the root context', async () => {
+            const result = await render(nested + '\n\n{{#olist names}}\n{{this}}\n{{/olist}}');
+            for (const nodes of [result.nodes, result.rendered.nodes]) {
+                expect(nodes).toHaveLength(2);
+                expect(nodes[0].nodes.map((item: any) => text(item.nodes[0]))).toEqual(['first', 'second']);
+                expect(nodes[1]).toMatchObject({ $class: cm('List'), type: 'ordered' });
+                expect(nodes[1].nodes.map(text)).toEqual(['root']);
+            }
+        });
+    });
     // Optional blocks guarding scalar values (primitives and enums) have no property
     // scope to navigate into: named variables inside them resolve from the parent data
     // context, while {{this}} refers to the optional value itself. The TemplateMark is
@@ -370,7 +425,7 @@ concept TemplateData {
             favoriteColor: 'GREEN',
             person: { $class: `${NS}.Person`, name: 'Alice', age: 25 }
         };
-        const TM = 'org.accordproject.templatemark@0.5.0';
+        const TM = TemplateMarkModel.NAMESPACE;
         const text = (t: string) => ({ $class: `${CommonMarkModel.NAMESPACE}.Text`, text: t });
         const variable = (name: string, elementType: string) => ({ $class: `${TM}.VariableDefinition`, name, elementType });
         const enumVariable = (name: string) => ({ $class: `${TM}.EnumVariableDefinition`, name, elementType: `${NS}.Color`, enumValues: ['RED', 'GREEN'] });

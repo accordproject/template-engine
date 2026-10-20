@@ -1,0 +1,4 @@
+{
+  "$class": "optionallistrelationship@1.0.0.TemplateData",
+  "person": "resource:optionallistrelationship@1.0.0.Person#alice"
+}

@@ -165,6 +165,44 @@ function isScalarType(modelManager: ModelManager | undefined, elementType: strin
     }
 }
 
+function isObjectValue(value: unknown): boolean {
+    return typeof value === 'object' && value !== null;
+}
+
+/**
+ * Returns whether a recursive owner handles this list or its branch is inactive.
+ * Object optionals own whenSome only; whenNone remains in the enclosing context.
+ */
+function hasOwningAncestor(templateMark: object, path: string[], modelManager: ModelManager, data: TemplateData): boolean {
+    let hasWhenNoneAncestor = false;
+    return path.some((_, depth) => {
+        const ancestorPath = path.slice(0, depth);
+        const ancestor = traverse.get(templateMark, ancestorPath);
+        if (!ancestor || typeof ancestor.$class !== 'string') {
+            return false;
+        }
+        if (LISTBLOCK_DEFINITION_RE.test(ancestor.$class)) {
+            return true;
+        }
+        if (!OPTIONAL_DEFINITION_RE.test(ancestor.$class)) {
+            return false;
+        }
+        if (path[depth] === 'whenNone') {
+            hasWhenNoneAncestor = true;
+        }
+        // Do not infer optional ownership from JSONPath lookups across whenNone.
+        if (hasWhenNoneAncestor || path[depth] !== 'whenSome' ||
+            typeof ancestor.elementType !== 'string' || isScalarType(modelManager, ancestor.elementType)) {
+            return false;
+        }
+        const optionalPath = getJsonPath(templateMark, ancestor, ancestorPath, modelManager);
+        const values = jp.query(data, optionalPath, 1);
+        // Missing values leave whenSome inactive. Present values own it only if
+        // generateOptionalBlocks recurses, excluding null and relationship URIs.
+        return values.length === 0 || isObjectValue(values[0]);
+    });
+}
+
 /**
  * Calculates a JSON path to use to retrieve data, based on a TemplatemMark tree.
  * For example, if we hit a VariableDefinition {{city}} that is nested inside a
@@ -316,7 +354,7 @@ async function generateOptionalBlocks(modelManager: ModelManager, clauseLibrary:
                     // normal traverse handles them with the full parent data context, so that
                     // both {{this}} and named variables like {{age}} resolve inside
                     // {{#optional age}}...{{/optional}}.
-                    if (typeof optionalPropertyValue !== 'object' || optionalPropertyValue === null) {
+                    if (!isObjectValue(optionalPropertyValue)) {
                         continue;
                     }
 
@@ -364,6 +402,10 @@ async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary
 
             // evaluate nodes, recursing on each child item
             if (nodeRegExp.test(nodeClass)) {
+                // Recursive owners generate these lists with their own data context.
+                if (LISTBLOCK_DEFINITION_RE.test(nodeClass) && hasOwningAncestor(templateMark, thisPath, modelManager, data)) {
+                    continue;
+                }
                 const path = getJsonPath(templateMark, context, thisPath, modelManager);
                 const variableValues = jp.query(data, path, 1);
 
