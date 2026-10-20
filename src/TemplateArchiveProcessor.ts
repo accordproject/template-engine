@@ -442,7 +442,10 @@ export class TemplateArchiveProcessor {
             arguments: [data, resolvedTime, resolvedOffset]
         });
         if (evalResponse.result) {
-            return evalResponse.result as InitResponse;
+            // Logic that inherits the runtime TemplateLogic's default init resolves to
+            // undefined: treat that as a stateless template's empty placeholder state.
+            const initResponse = await evalResponse.result as InitResponse | undefined;
+            return initResponse ?? { state: {} };
         } else {
             throw new Error('Init failed with message: ' + evalResponse.message);
         }
