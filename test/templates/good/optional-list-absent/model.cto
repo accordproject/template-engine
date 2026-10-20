@@ -1,0 +1,13 @@
+namespace optionallists@1.0.0
+
+enum Color { o RED o GREEN }
+concept Person { o String name o String[] tags }
+concept Entry { o String label o Person person optional }
+@template
+concept TemplateData {
+    o String label
+    o Person person optional
+    o Entry[] entries
+    o Integer age optional
+    o Color color optional
+}

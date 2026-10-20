@@ -1,0 +1,5 @@
+namespace optionallistnull@1.0.0
+
+concept Person { o String[] tags }
+@template
+concept TemplateData { o Person person optional }
