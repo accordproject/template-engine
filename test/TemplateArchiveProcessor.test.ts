@@ -320,7 +320,7 @@ export default UnicodeLogic;
     it('init does not throw for a stateless template (empty placeholder state)', async () => {
         const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
-        // A stateless template (no compiled `init`) yields the empty placeholder `{ state: {} }`.
+        // A stateless template (logic inherits the default `init`) yields the empty placeholder `{ state: {} }`.
         // init() must not try to serialize/validate that classless placeholder.
         jest.spyOn(templateArchiveProcessor as unknown as { executeTypeScriptInit: () => Promise<InitResponse> },
             'executeTypeScriptInit').mockResolvedValue({ state: {} });

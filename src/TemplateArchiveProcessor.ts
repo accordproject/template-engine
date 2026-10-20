@@ -413,8 +413,10 @@ export class TemplateArchiveProcessor {
     }
 
     /**
-     * Executes the template's compiled TypeScript init logic. Returns an empty
-     * state when the compiled logic defines no `init` method (stateless template).
+     * Executes the template's compiled TypeScript init logic. Logic that defines
+     * no `init` method inherits the runtime `TemplateLogic` default, which resolves
+     * to undefined; that becomes a stateless template's empty placeholder state
+     * (`{ state: {} }`).
      * @param {any} data - the data for the template
      * @param {string} [currentTime] - the current time, defaults to now
      * @param {number} [utcOffset] - the UTC offset, defaults to zero
@@ -423,12 +425,6 @@ export class TemplateArchiveProcessor {
     private async executeTypeScriptInit(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
         const compiledCode = await this.compileLogic();
         const logicCode = compiledCode[resolveLogicEntryPoint(Object.keys(compiledCode))].code;
-
-        // Check if the compiled code even contains an `init` method before calling it
-        if (!logicCode || (!logicCode.includes('init(') && !logicCode.includes('init ('))) {
-            // Stateless template — no init method defined, return empty state
-            return { state: {} };
-        }
 
         const resolvedTime = currentTime ?? new Date().toISOString();
         const resolvedOffset = utcOffset ?? 0;
@@ -442,8 +438,8 @@ export class TemplateArchiveProcessor {
             arguments: [data, resolvedTime, resolvedOffset]
         });
         if (evalResponse.result) {
-            // Logic that inherits the runtime TemplateLogic's default init resolves to
-            // undefined: treat that as a stateless template's empty placeholder state.
+            // An inherited (default) init resolves to undefined: return the stateless
+            // template's empty placeholder state.
             const initResponse = await evalResponse.result as InitResponse | undefined;
             return initResponse ?? { state: {} };
         } else {
