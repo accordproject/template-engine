@@ -44,7 +44,7 @@ import {
 import { TemplateMarkToJavaScriptCompiler, hasUserCode } from './TemplateMarkToJavaScriptCompiler';
 import { CodeType, ICode } from './model-gen/org.accordproject.templatemark@0.5.0';
 import { GenerationOptions, joinList } from './TypeScriptRuntime';
-import { getTemplateClassDeclaration } from './utils';
+import { getTemplateClassDeclaration, normalizeDates } from './utils';
 import { EvalResponse, JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { CompiledUserLogic } from './UserLogic';
 
@@ -858,6 +858,8 @@ export class TemplateMarkInterpreter {
     async generate(templateMark: object, data: TemplateData, options?: GenerationOptions): Promise<any> {
         const factory = new Factory(this.modelManager);
         const serializer = new Serializer(factory, this.modelManager, {});
+        // accept JS Dates for DateTime fields: drafters and formulas receive ISO strings either way
+        data = normalizeDates(data);
         const templateData = serializer.fromJSON(data, {});
         if (templateData.getFullyQualifiedType() !== this.templateClass.getFullyQualifiedName()) {
             throw new Error(`Template data must be of type '${this.templateClass.getFullyQualifiedName()}'.`);

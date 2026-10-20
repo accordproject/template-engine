@@ -30,6 +30,7 @@ import { LLMExecutorConfig } from './llm/LLMConfig';
 import { SdkLoaders } from './llm/Reasoners';
 import {
     isAssignableTo,
+    normalizeDates,
     RUNTIME_REQUEST_FQN,
     RUNTIME_RESPONSE_FQN,
     RUNTIME_STATE_FQN,
@@ -486,6 +487,11 @@ export class TemplateArchiveProcessor {
             );
         }
 
+        // accept JS Dates for DateTime fields: the logic receives ISO strings either way
+        data = normalizeDates(data);
+        request = normalizeDates(request);
+        priorState = normalizeDates(priorState);
+
         // validate inputs before execution. A stateless template's init returns an empty
         // placeholder state ({}); skip only that. Any other state - including a non-empty
         // object with no $class - is validated normally (and fails if malformed).
@@ -543,6 +549,9 @@ export class TemplateArchiveProcessor {
         const factory = new Factory(this.template.getModelManager());
         const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true});
         
+        // accept JS Dates for DateTime fields: the logic receives ISO strings either way
+        data = normalizeDates(data);
+
         // validate inputs before execution
         if (data) serializer.fromJSON(data);
 

@@ -225,6 +225,73 @@ export default class PlainLogic {
         expect(eventPayload.penaltyCalculated).toBe(true);
     });
 
+    test('should trigger a template with JS Dates for DateTime fields', async () => {
+        const template = await loadTemplate();
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        const data = {
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
+            "forceMajeure": true,
+            "penaltyDuration": {
+                "$class": "org.accordproject.time@0.3.0.Duration",
+                "amount": 2,
+                "unit": "days"
+            },
+            "penaltyPercentage": 10.5,
+            "capPercentage": 55,
+            "termination": {
+                "$class": "org.accordproject.time@0.3.0.Duration",
+                "amount": 15,
+                "unit": "days"
+            },
+            "fractionalPart": "days",
+            "clauseId": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8",
+            "$identifier": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8"
+        };
+        const agreedDelivery = new Date("2017-10-07T16:38:01.412Z");
+        const request = {
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyRequest",
+            "forceMajeure": false,
+            "agreedDelivery": agreedDelivery,
+            "goodsValue": 100,
+            "$timestamp": new Date("2017-10-07T16:38:01.412Z")
+        };
+
+        const stateResponse = await templateArchiveProcessor.init(data);
+        const response: TriggerResponse = await templateArchiveProcessor.trigger(data, request, stateResponse.state);
+
+        // same result as the ISO string request in 'should trigger a template'
+        const resultPayload = response.result as { penalty?: number };
+        expect(resultPayload.penalty).toBe(2625);
+        // the caller's request is not modified
+        expect(request.agreedDelivery).toBe(agreedDelivery);
+    });
+
+    test('should reject an invalid JS Date in a trigger request', async () => {
+        const template = await loadTemplate();
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        const data = {
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
+            "forceMajeure": true,
+            "penaltyDuration": { "$class": "org.accordproject.time@0.3.0.Duration", "amount": 2, "unit": "days" },
+            "penaltyPercentage": 10.5,
+            "capPercentage": 55,
+            "termination": { "$class": "org.accordproject.time@0.3.0.Duration", "amount": 15, "unit": "days" },
+            "fractionalPart": "days",
+            "clauseId": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8",
+            "$identifier": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8"
+        };
+        const request = {
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyRequest",
+            "forceMajeure": false,
+            "agreedDelivery": new Date("not a date"),
+            "goodsValue": 100,
+            "$timestamp": "2017-10-07T16:38:01.412Z"
+        };
+        const stateResponse = await templateArchiveProcessor.init(data);
+        await expect(templateArchiveProcessor.trigger(data, request, stateResponse.state))
+            .rejects.toThrow('Invalid Date at `$.agreedDelivery`');
+    });
+
     it('should throw a validation error on invalid init data', async () => {
         const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);

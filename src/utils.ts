@@ -71,6 +71,41 @@ export function isAssignableTo(modelManager: ModelManager, fqn: string, baseFqn:
         .some((decl: ClassDeclaration) => decl.getFullyQualifiedName() === fqn);
 }
 
+/**
+ * Returns a copy of value with every JS Date replaced by its ISO 8601 string, so callers
+ * can pass Date objects for DateTime fields. Concerto only accepts DateTime values as
+ * strings, and template logic is generated with DateTime typed as string, so inputs are
+ * normalized before validation and the normalized copy is what the logic receives.
+ * Recurses into arrays and plain objects only; the caller's object is not modified.
+ * @param {any} value - the input data (contract data, request or state)
+ * @param {string} [path] - the path of value from the root, used in error messages
+ * @returns {any} the normalized copy
+ * @throws {Error} if a Date is invalid
+ */
+export function normalizeDates(value: any, path = '$'): any {
+    if (value instanceof Date) {
+        if (Number.isNaN(value.getTime())) {
+            throw new Error(`Invalid Date at \`${path}\`: expected a valid date for a DateTime value.`);
+        }
+        return value.toISOString();
+    }
+    if (Array.isArray(value)) {
+        return value.map((item, i) => normalizeDates(item, `${path}[${i}]`));
+    }
+    if (value !== null && typeof value === 'object') {
+        const proto = Object.getPrototypeOf(value);
+        if (proto !== Object.prototype && proto !== null) {
+            return value;
+        }
+        const result: any = {};
+        for (const [key, item] of Object.entries(value)) {
+            result[key] = normalizeDates(item, `${path}.${key}`);
+        }
+        return result;
+    }
+    return value;
+}
+
 export function ensureDirSync(path:string) {
     if(!existsSync(path)) {
         mkdirSync(path, { recursive: true });

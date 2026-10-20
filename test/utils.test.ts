@@ -26,7 +26,8 @@ import {
     writeFunctionToString,
     nameUserCode,
     getTemplateClassDeclaration,
-    wrapExpressionWithReturn
+    wrapExpressionWithReturn,
+    normalizeDates
 } from '../src/utils';
 
 const MODEL_NS = 'test.hierarchy@1.0.0';
@@ -324,5 +325,49 @@ describe('wrapExpressionWithReturn', () => {
     test('returns an empty string as-is', () => {
         expect(wrapExpressionWithReturn(ts, '')).toBe('');
         expect(wrapExpressionWithReturn(ts, '   \n\t  ')).toBe('');
+    });
+});
+
+describe('normalizeDates', () => {
+    test('replaces Dates with ISO strings, including nested objects and arrays', () => {
+        const date = new Date('2024-01-02T03:04:05.678Z');
+        const input = {
+            $class: 'org.example@1.0.0.Data',
+            at: date,
+            nested: { at: date, name: 'n' },
+            list: [date, { at: date }],
+            count: 1,
+            missing: null,
+        };
+        expect(normalizeDates(input)).toEqual({
+            $class: 'org.example@1.0.0.Data',
+            at: '2024-01-02T03:04:05.678Z',
+            nested: { at: '2024-01-02T03:04:05.678Z', name: 'n' },
+            list: ['2024-01-02T03:04:05.678Z', { at: '2024-01-02T03:04:05.678Z' }],
+            count: 1,
+            missing: null,
+        });
+    });
+
+    test('does not modify the input', () => {
+        const date = new Date('2024-01-02T03:04:05.678Z');
+        const input = { at: date, list: [date] };
+        normalizeDates(input);
+        expect(input.at).toBe(date);
+        expect(input.list[0]).toBe(date);
+    });
+
+    test('leaves strings, primitives, undefined and class instances unchanged', () => {
+        class Box { value = new Date(0); }
+        const box = new Box();
+        expect(normalizeDates('2024-01-02T03:04:05.678Z')).toBe('2024-01-02T03:04:05.678Z');
+        expect(normalizeDates(42)).toBe(42);
+        expect(normalizeDates(undefined)).toBeUndefined();
+        expect(normalizeDates({ box }).box).toBe(box);
+    });
+
+    test('throws on an invalid Date, naming its path', () => {
+        expect(() => normalizeDates({ list: [{ at: new Date('nope') }] }))
+            .toThrow('Invalid Date at `$.list[0].at`');
     });
 });

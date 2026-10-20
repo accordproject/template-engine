@@ -426,3 +426,29 @@ concept TemplateData {
         });
     });
 });
+
+describe('JS Date values for DateTime fields', () => {
+    test('should generate the same agreement from Dates as from ISO strings', async () => {
+        const root = `${GOOD_TEMPLATES_ROOT}/insurance-period`;
+        const modelManager = new ModelManager();
+        modelManager.addCTOModel(readFileSync(`${root}/model.cto`, 'utf-8'));
+        const engine = new TemplateMarkInterpreter(modelManager, {});
+        const templateMarkDom = new TemplateMarkTransformer().fromMarkdownTemplate(
+            { content: readFileSync(`${root}/template.md`, 'utf-8') }, modelManager, 'contract', { verbose: false });
+        const now = '2023-03-17T00:00:00.000Z';
+
+        const fromStrings = await engine.generate(templateMarkDom, {
+            $class: 'insurance@1.0.0.InsurancePeriod',
+            from: '2018-05-23T00:00:00.000Z',
+            to: '2021-01-01T00:00:00.000Z',
+        }, { now });
+        const fromDates = await engine.generate(templateMarkDom, {
+            $class: 'insurance@1.0.0.InsurancePeriod',
+            from: new Date('2018-05-23T00:00:00.000Z'),
+            to: new Date('2021-01-01T00:00:00.000Z'),
+        } as any, { now });
+
+        expect(fromDates.toJSON()).toStrictEqual(fromStrings.toJSON());
+        expect(JSON.stringify(fromDates.toJSON())).toContain('23 May 2018');
+    });
+});
