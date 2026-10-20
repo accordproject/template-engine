@@ -320,7 +320,7 @@ export default UnicodeLogic;
     it('init does not throw for a stateless template (empty placeholder state)', async () => {
         const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);
-        // A stateless template (no compiled `init`) yields the empty placeholder `{ state: {} }`.
+        // A stateless template (logic inherits the default `init`) yields the empty placeholder `{ state: {} }`.
         // init() must not try to serialize/validate that classless placeholder.
         jest.spyOn(templateArchiveProcessor as unknown as { executeTypeScriptInit: () => Promise<InitResponse> },
             'executeTypeScriptInit').mockResolvedValue({ state: {} });
@@ -385,6 +385,43 @@ export default UnicodeLogic;
             const stateResponse = await templateArchiveProcessor.init(VALID_DATA);
             const response = await templateArchiveProcessor.trigger(VALID_DATA, request, stateResponse.state);
             expect((response.result as { penalty?: number }).penalty).toBe(2625);
+        });
+    });
+});
+
+// Kept in this file rather than its own suite: loading template logic in a second test
+// file within the same Jest worker fails with "Test environment has been torn down".
+describe('template archive processor - logic that only defines trigger', () => {
+    const data = {
+        $class: 'org.example@0.0.1.TemplateModel',
+        clauseId: 'test',
+        $identifier: 'test',
+        name: 'World'
+    };
+
+    let templateArchiveProcessor: TemplateArchiveProcessor;
+
+    beforeAll(async () => {
+        const template = await Template.fromDirectory('test/archives/inherited-init', {offline: true});
+        templateArchiveProcessor = new TemplateArchiveProcessor(template);
+    });
+
+    test('init returns an empty state when the logic inherits the default init', async () => {
+        const response = await templateArchiveProcessor.init(data);
+        expect(response).toEqual({ state: {} });
+    });
+
+    test('trigger works with the state returned by the inherited init', async () => {
+        const { state } = await templateArchiveProcessor.init(data);
+        const request = {
+            $class: 'org.example@0.0.1.GreetingRequest',
+            $timestamp: new Date().toISOString(),
+            greeting: 'Hello'
+        };
+        const response = await templateArchiveProcessor.trigger(data, request, state);
+        expect(response.result).toMatchObject({
+            $class: 'org.example@0.0.1.GreetingResponse',
+            message: 'Hello World'
         });
     });
 });

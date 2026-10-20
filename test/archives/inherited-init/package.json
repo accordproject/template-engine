@@ -1,0 +1,10 @@
+{
+  "name": "inherited-init",
+  "version": "0.0.1",
+  "description": "Stateless template whose logic defines only trigger and inherits init",
+  "accordproject": {
+    "runtime": "typescript",
+    "template": "clause",
+    "cicero": "^3.0.0"
+  }
+}
