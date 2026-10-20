@@ -292,6 +292,31 @@ export default class PlainLogic {
             .rejects.toThrow('Invalid Date at `$.agreedDelivery`');
     });
 
+    test('should still validate a prior state whose only key is __proto__', async () => {
+        const template = await loadTemplate();
+        const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+        const data = {
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
+            "forceMajeure": true,
+            "penaltyDuration": { "$class": "org.accordproject.time@0.3.0.Duration", "amount": 2, "unit": "days" },
+            "penaltyPercentage": 10.5,
+            "capPercentage": 55,
+            "termination": { "$class": "org.accordproject.time@0.3.0.Duration", "amount": 15, "unit": "days" },
+            "fractionalPart": "days",
+            "clauseId": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8",
+            "$identifier": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8"
+        };
+        const request = {
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyRequest",
+            "forceMajeure": false,
+            "agreedDelivery": "2017-10-07T16:38:01.412Z",
+            "goodsValue": 100,
+            "$timestamp": "2017-10-07T16:38:01.412Z"
+        };
+        const priorState = JSON.parse('{"__proto__":{"count":"invalid"}}');
+        await expect(templateArchiveProcessor.trigger(data, request, priorState)).rejects.toThrow('Does not contain a $class type identifier');
+    });
+
     it('should throw a validation error on invalid init data', async () => {
         const template = await loadTemplate();
         const templateArchiveProcessor = new TemplateArchiveProcessor(template);

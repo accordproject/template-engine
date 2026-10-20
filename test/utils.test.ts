@@ -366,6 +366,15 @@ describe('normalizeDates', () => {
         expect(normalizeDates({ box }).box).toBe(box);
     });
 
+    test('copies an own __proto__ key as data, without changing the prototype', () => {
+        const input = JSON.parse('{"__proto__":{"count":"invalid"}}');
+        const result = normalizeDates(input);
+        expect(Object.getPrototypeOf(result)).toBe(Object.prototype);
+        expect(Object.keys(result)).toEqual(['__proto__']);
+        expect(result.count).toBeUndefined();
+        expect(Object.getOwnPropertyDescriptor(result, '__proto__')?.value).toEqual({ count: 'invalid' });
+    });
+
     test('throws on an invalid Date, naming its path', () => {
         expect(() => normalizeDates({ list: [{ at: new Date('nope') }] }))
             .toThrow('Invalid Date at `$.list[0].at`');

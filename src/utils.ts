@@ -99,7 +99,14 @@ export function normalizeDates(value: any, path = '$'): any {
         }
         const result: any = {};
         for (const [key, item] of Object.entries(value)) {
-            result[key] = normalizeDates(item, `${path}.${key}`);
+            // defineProperty rather than assignment: assigning an own '__proto__' key (from
+            // JSON.parse) would set the copy's prototype instead of copying the key
+            Object.defineProperty(result, key, {
+                value: normalizeDates(item, `${path}.${key}`),
+                enumerable: true,
+                writable: true,
+                configurable: true,
+            });
         }
         return result;
     }
