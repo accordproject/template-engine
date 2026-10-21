@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { JavaScriptEvaluator } from '../src/JavaScriptEvaluator';
+import { JavaScriptEvaluator, dynamicImport } from '../src/JavaScriptEvaluator';
 import os from 'os';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -129,5 +129,30 @@ describe('javascript evaluator', () => {
             delete err.elapsed;
             expect(err).toEqual(CRASH_ERROR_RESULT);
         }
+    });
+});
+
+describe('dynamicImport', () => {
+    const DEFAULT_MODULE = 'data:text/javascript;base64,'
+        + btoa('export default function add(a, b) { return a + b; }');
+    const NAMED_MODULE = 'data:text/javascript;base64,'
+        + btoa('export default function noop() { return 0; }\n'
+        + 'export function twice(a) { return a * 2; }');
+
+    test('should load the default export when symbol is omitted', async () => {
+        const add = await dynamicImport<(a: number, b: number) => number>(DEFAULT_MODULE);
+        expect(typeof add).toBe('function');
+        expect(add(1, 2)).toBe(3);
+    });
+
+    test('should load the named export when symbol is provided', async () => {
+        const twice = await dynamicImport<(a: number) => number>(NAMED_MODULE, 'twice');
+        expect(typeof twice).toBe('function');
+        expect(twice(21)).toBe(42);
+    });
+
+    test('should throw when the named export does not exist', async () => {
+        await expect(dynamicImport(NAMED_MODULE, 'missing'))
+            .rejects.toThrow(/does not export a symbol named 'missing'/);
     });
 });

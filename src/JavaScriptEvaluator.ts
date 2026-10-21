@@ -74,7 +74,13 @@ const _import = async (path: string) => new Function('specifier', 'return import
 // inferred by the module name or a custom one base on user preferences...
 export const dynamicImport = async <T>(path: string, symbol?: string) => {
     const mod = await _import(path);
-    return symbol ? mod.symbol : mod.default as T;
+    if (symbol) {
+        if (!(symbol in mod)) {
+            throw new Error(`Module '${path}' does not export a symbol named '${symbol}'`);
+        }
+        return mod[symbol];
+    }
+    return mod.default as T;
 }
 
 type TemplateLogicClassConstructor = () => void;
