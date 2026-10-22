@@ -34,4 +34,29 @@ describe('Duration Drafter', () => {
         const duration = { amount: 1, unit: 'day' };
         expect(durationDrafter(duration)).toBe('1 day');
     });
+
+    test.each([
+        ['seconds', 'second'],
+        ['minutes', 'minute'],
+        ['hours', 'hour'],
+        ['days', 'day'],
+        ['weeks', 'week'],
+        ['months', 'month'],
+        ['quarters', 'quarter'],
+        ['years', 'year'],
+    ])('should use the singular of %s for an amount of 1', (unit, singular) => {
+        expect(durationDrafter({ amount: 1, unit })).toBe(`1 ${singular}`);
+    });
+
+    test('should use the singular unit for an amount of -1', () => {
+        expect(durationDrafter({ amount: -1, unit: 'days' })).toBe('-1 day');
+    });
+
+    test('should keep the plural unit for an amount of 0', () => {
+        expect(durationDrafter({ amount: 0, unit: 'weeks' })).toBe('0 weeks');
+    });
+
+    test('should leave unknown units unchanged for an amount of 1', () => {
+        expect(durationDrafter({ amount: 1, unit: 'fortnights' })).toBe('1 fortnights');
+    });
 });
