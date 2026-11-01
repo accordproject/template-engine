@@ -340,6 +340,113 @@ concept TemplateData {
         });
     });
 
+    // Variables typed by a scalar declaration are drafted as the primitive it extends.
+    describe('scalar declarations', () => {
+        const NS = 'test@1.0.0';
+        const MODEL = `namespace ${NS}
+scalar Name extends String
+scalar Age extends Integer
+scalar Units extends Long
+scalar Rate extends Double
+scalar Signed extends DateTime
+scalar Active extends Boolean
+@template
+concept TemplateData {
+    o String name
+    o Name partner
+    o Age age
+    o Units units
+    o Rate rate
+    o Signed signed
+    o Active active
+    o Name[] partners
+    o Age[] ages
+    o Signed[] dates
+    o Name nickname optional
+}`;
+        const DATA = {
+            $class: `${NS}.TemplateData`,
+            name: 'Bob',
+            partner: 'Ann',
+            age: 42,
+            units: 1234567,
+            rate: 2,
+            signed: '2024-03-05T00:00:00.000Z',
+            active: true,
+            partners: ['Ann', 'Ben'],
+            ages: [1, 2],
+            dates: ['2024-03-05T00:00:00.000Z'],
+            nickname: 'Annie'
+        };
+
+        function createEngine(): { modelManager: ModelManager, engine: TemplateMarkInterpreter } {
+            const modelManager = new ModelManager();
+            modelManager.addCTOModel(MODEL);
+            return { modelManager, engine: new TemplateMarkInterpreter(modelManager, {}) };
+        }
+
+        function collectText(node: any, out: string[] = []): string[] {
+            if (typeof node.text === 'string') out.push(node.text);
+            if (typeof node.value === 'string') out.push(node.value);
+            (node.nodes || []).forEach((child: any) => collectText(child, out));
+            return out;
+        }
+
+        async function render(markup: string): Promise<string> {
+            const { modelManager, engine } = createEngine();
+            const templateMarkDom = new TemplateMarkTransformer().fromMarkdownTemplate({ content: markup }, modelManager, 'contract', { verbose: false });
+            const ciceroMark = await engine.generate(templateMarkDom, DATA, { now: '2023-03-17T00:00:00.000Z', locale: 'en' });
+            return collectText(ciceroMark.toJSON()).join('');
+        }
+
+        test.each([
+            ['a String', '{{partner}}', 'Ann'],
+            ['an Integer', '{{age}}', '42'],
+            ['a Double', '{{rate}}', '2.0'],
+            ['a DateTime', '{{signed}}', '03/05/2024'],
+            ['a Boolean', '{{active}}', 'true'],
+            ['a formatted Long', '{{units as "0,0"}}', '1,234,567'],
+            ['a formatted Double', '{{rate as "0,0.00"}}', '2.00'],
+            ['a formatted DateTime', '{{signed as "MMMM DD, YYYY"}}', 'March 05, 2024'],
+        ])('should draft a scalar extending %s', async (_name, markup, expected) => {
+            expect(await render(markup)).toBe(expected);
+        });
+
+        test.each([
+            ['String', '{{#join partners}}{{/join}}', 'Ann and Ben'],
+            ['Integer', '{{#join ages}}{{/join}}', '1 and 2'],
+            ['DateTime', '{{#join dates}}{{/join}}', '03/05/2024'],
+        ])('should join an array of scalars extending %s', async (_name, markup, expected) => {
+            expect(await render(markup)).toBe(expected);
+        });
+
+        test('should resolve named variables inside an optional scalar from the parent data', async () => {
+            const { engine } = createEngine();
+            const TM = 'org.accordproject.templatemark@0.5.0';
+            const templateMark = {
+                $class: `${CommonMarkModel.NAMESPACE}.Document`,
+                xmlns: 'http://commonmark.org/xml/1.0',
+                nodes: [{
+                    $class: `${TM}.ClauseDefinition`,
+                    name: 'top',
+                    elementType: `${NS}.TemplateData`,
+                    nodes: [{
+                        $class: `${CommonMarkModel.NAMESPACE}.Paragraph`,
+                        nodes: [{
+                            $class: `${TM}.OptionalDefinition`,
+                            name: 'nickname',
+                            elementType: `${NS}.Name`,
+                            whenSome: [{ $class: `${TM}.VariableDefinition`, name: 'name', elementType: 'String' }],
+                            whenNone: []
+                        }]
+                    }]
+                }]
+            };
+            const ciceroMark = await engine.generate(templateMark, DATA, { now: '2023-03-17T00:00:00.000Z' });
+            expect(collectText(ciceroMark.toJSON()).join('')).toBe('Bob');
+        });
+    });
+
     // Optional blocks guarding scalar values (primitives and enums) have no property
     // scope to navigate into: named variables inside them resolve from the parent data
     // context, while {{this}} refers to the optional value itself. The TemplateMark is

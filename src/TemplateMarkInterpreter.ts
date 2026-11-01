@@ -158,11 +158,35 @@ function isScalarType(modelManager: ModelManager | undefined, elementType: strin
     }
     try {
         const type = new Introspector(modelManager).getClassDeclaration(elementType);
-        return !!(type && type.isEnum());
+        return !!(type && (type.isEnum() || type.isScalarDeclaration()));
     }
     catch {
         return false;
     }
+}
+
+/**
+ * Finds the drafter for an element type. Enums are drafted as strings, and scalar
+ * declarations (e.g. `scalar Name extends String`) as the primitive they extend.
+ * @param {Introspector} introspector the introspector used to resolve the type
+ * @param {string} [elementType] the fully-qualified element type
+ * @returns {*} the drafter, or null if the type has none
+ */
+function getElementDrafter(introspector: Introspector, elementType: string | undefined) {
+    if (!elementType) {
+        return null;
+    }
+    if ((ModelUtil as any).isPrimitiveType(elementType)) {
+        return getDrafter(elementType);
+    }
+    const type = introspector.getClassDeclaration(elementType);
+    if (type.isEnum()) {
+        return getDrafter('String');
+    }
+    if (type.isScalarDeclaration()) {
+        return getDrafter((type as any).getType());
+    }
+    return getDrafter(elementType);
 }
 
 /**
@@ -519,7 +543,7 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                     }
                     else {
                         context.$class = `${CommonMarkModel.NAMESPACE}.Text`;
-                        const drafter = getDrafter(context.elementType);
+                        const drafter = getElementDrafter(introspector, context.elementType);
                         context.text = joinList(arrayData.map(arrayItem => {
                             return drafter ? drafter(arrayItem, context.format) : arrayItem as string;
                         }), context, options);
@@ -558,18 +582,14 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                     else {
                         // convert the value to a string, optionally using the formatter
                         const variableValue = variableValues[0];
-                        const type = (ModelUtil as any).isPrimitiveType(context.elementType) ? null : introspector.getClassDeclaration(context.elementType);
-                        // we want to draft Enums as strings, not objects
-                        const drafter = getDrafter(type && type.isEnum() ? 'String' : context.elementType);
+                        const drafter = getElementDrafter(introspector, context.elementType);
                         context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
                     }
                 }
                 else {
                     // a list of enum values or primitives brings us here
                     const variableValue = data;
-                    const type = (ModelUtil as any).isPrimitiveType(context.elementType) ? null : introspector.getClassDeclaration(context.elementType);
-                    // we want to draft Enums as strings, not objects
-                    const drafter = getDrafter(type && type.isEnum() ? 'String' : context.elementType);
+                    const drafter = getElementDrafter(introspector, context.elementType);
                     context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
                 }
             }
