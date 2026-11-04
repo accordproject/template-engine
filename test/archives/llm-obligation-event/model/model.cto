@@ -1,0 +1,33 @@
+namespace org.example@0.0.1
+
+import org.accordproject.runtime@0.2.0.{Request,Response,Obligation} from https://models.accordproject.org/accordproject/runtime@0.2.0.cto
+import org.accordproject.contract@0.2.0.Contract from https://models.accordproject.org/accordproject/contract@0.2.0.cto
+
+/**
+ * Defines the data model for the obligation test template.
+ */
+@template
+asset TemplateModel extends Contract {
+  o String name
+}
+
+/**
+ * Defines the input data required by the template
+ */
+transaction GreetingRequest extends Request {
+  o String greeting
+}
+
+/**
+ * Defines the output data for the template
+ */
+transaction GreetingResponse extends Response {
+  o String message
+}
+
+/**
+ * A concrete Obligation event emitted by the template. The required
+ * 'contract' back-reference is intentionally left to the runtime to fill.
+ */
+event FulfillmentObligationEvent extends Obligation {
+}
