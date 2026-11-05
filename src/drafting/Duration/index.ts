@@ -35,16 +35,16 @@ function isDuration(value: unknown): value is Duration {
  * Singular forms of the TemporalUnit and PeriodUnit enum values,
  * which are declared in the plural in org.accordproject.time
  */
-const SINGULAR_UNITS: Record<string, string> = {
-    seconds: 'second',
-    minutes: 'minute',
-    hours: 'hour',
-    days: 'day',
-    weeks: 'week',
-    months: 'month',
-    quarters: 'quarter',
-    years: 'year',
-};
+const SINGULAR_UNITS: ReadonlyMap<string, string> = new Map([
+    ['seconds', 'second'],
+    ['minutes', 'minute'],
+    ['hours', 'hour'],
+    ['days', 'day'],
+    ['weeks', 'week'],
+    ['months', 'month'],
+    ['quarters', 'quarter'],
+    ['years', 'year'],
+]);
 
 /**
  * Creates a drafter for Duration/Period types
@@ -57,7 +57,7 @@ export default function durationDrafter(value: unknown): string {
     }
 
     const unit = Math.abs(value.amount) === 1
-        ? SINGULAR_UNITS[value.unit] ?? value.unit
+        ? SINGULAR_UNITS.get(value.unit) ?? value.unit
         : value.unit;
     return `${value.amount} ${unit}`;
 }

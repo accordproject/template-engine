@@ -59,4 +59,11 @@ describe('Duration Drafter', () => {
     test('should leave unknown units unchanged for an amount of 1', () => {
         expect(durationDrafter({ amount: 1, unit: 'fortnights' })).toBe('1 fortnights');
     });
+
+    test.each(['constructor', 'toString', '__proto__'])(
+        'should not resolve %s through the object prototype',
+        (unit) => {
+            expect(durationDrafter({ amount: 1, unit })).toBe(`1 ${unit}`);
+        },
+    );
 });
