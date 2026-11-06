@@ -12,6 +12,8 @@
  * limitations under the License.
  */
 
+import { DraftFormat } from '../DraftFormat';
+
 type Duration = {
     amount: number;
     unit: string;
@@ -32,32 +34,47 @@ function isDuration(value: unknown): value is Duration {
 }
 
 /**
- * Singular forms of the TemporalUnit and PeriodUnit enum values,
- * which are declared in the plural in org.accordproject.time
+ * Intl unit identifiers for the TemporalUnit and PeriodUnit values in
+ * org.accordproject.time. Intl supplies the words, plural forms and word
+ * order for the locale. It has no unit for quarters, so those fall back
+ * to the enum value.
  */
-const SINGULAR_UNITS: ReadonlyMap<string, string> = new Map([
+const INTL_UNITS: ReadonlyMap<string, string> = new Map([
     ['seconds', 'second'],
     ['minutes', 'minute'],
     ['hours', 'hour'],
     ['days', 'day'],
     ['weeks', 'week'],
     ['months', 'month'],
-    ['quarters', 'quarter'],
     ['years', 'year'],
 ]);
 
 /**
+ * The locale used when generation options do not set one
+ */
+const DEFAULT_LOCALE = 'en';
+
+/**
  * Creates a drafter for Duration/Period types
  * @param {unknown} value the duration or period (validated at runtime)
- * @returns {string} the text (e.g., "2 days" or "1 day")
+ * @param {DraftFormat} [format] the format (not used)
+ * @param {string} [locale] the locale to draft in, 'en' if not set
+ * @returns {string} the text (e.g., "2 days" in 'en', "2 jours" in 'fr')
  */
-export default function durationDrafter(value: unknown): string {
+export default function durationDrafter(value: unknown, format?: DraftFormat, locale?: string): string {
     if (!isDuration(value)) {
         return '0 unknown';
     }
 
-    const unit = Math.abs(value.amount) === 1
-        ? SINGULAR_UNITS.get(value.unit) ?? value.unit
-        : value.unit;
-    return `${value.amount} ${unit}`;
+    const unit = INTL_UNITS.get(value.unit);
+    if (!unit) {
+        return `${value.amount} ${value.unit}`;
+    }
+
+    return new Intl.NumberFormat(locale ?? DEFAULT_LOCALE, {
+        style: 'unit',
+        unit,
+        unitDisplay: 'long',
+        useGrouping: false,
+    }).format(value.amount);
 }
