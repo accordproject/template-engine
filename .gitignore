@@ -12,6 +12,7 @@ output
 test.html
 examples/
 templates/
+!test/templates/
 compare-outputs.test.mjs
 scripts/run-all-stateless.js
 scripts/run-all-stateful.js

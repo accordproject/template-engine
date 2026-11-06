@@ -1,0 +1,58 @@
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "xmlns": "http://commonmark.org/xml/1.0",
+  "nodes": [
+    {
+      "$class": "org.accordproject.templatemark@0.5.0.ContractDefinition",
+      "name": "top",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.templatemark@0.5.0.OptionalDefinition",
+              "name": "person",
+              "whenSome": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "some"
+                }
+              ],
+              "whenNone": [
+                {
+                  "$class": "org.accordproject.templatemark@0.5.0.OptionalDefinition",
+                  "name": "other",
+                  "whenSome": [
+                    {
+                      "$class": "org.accordproject.templatemark@0.5.0.ListBlockDefinition",
+                      "name": "tags",
+                      "type": "ordered",
+                      "tight": "true",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                          "nodes": [
+                            {
+                              "$class": "org.accordproject.templatemark@0.5.0.VariableDefinition",
+                              "name": "this"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  "whenNone": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Text",
+                      "text": "none"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

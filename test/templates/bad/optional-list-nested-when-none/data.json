@@ -1,0 +1,9 @@
+{
+  "$class": "optionalnestedwhennone@1.0.0.TemplateData",
+  "other": {
+    "$class": "optionalnestedwhennone@1.0.0.Person",
+    "tags": [
+      "value"
+    ]
+  }
+}

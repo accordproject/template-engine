@@ -1,0 +1,10 @@
+namespace nestedlists@1.0.0
+
+concept Child { o String label o String[] tags }
+concept Entry {
+    o String label
+    o String[] tags
+    o Child[] children
+}
+@template
+concept TemplateData { o Entry[] entries o String[] names }
