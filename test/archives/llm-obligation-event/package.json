@@ -1,0 +1,10 @@
+{
+  "name": "llm-obligation-event",
+  "version": "0.0.1",
+  "description": "Stateless template emitting an Obligation event without the contract back-reference",
+  "accordproject": {
+    "runtime": "typescript",
+    "template": "clause",
+    "cicero": "^3.0.0"
+  }
+}

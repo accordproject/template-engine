@@ -398,9 +398,6 @@ function extractJson(text: string): any {
  * Assert that a parsed value has the shape of an {@link InitResponse}.
  * @param value - the value to check
  * @throws {Error} if the value is not a valid init response
- * TODO - replace these with Concerto based deserialization:
- * template.getModelManager().getSerializer().fromJSON( json ) 
- * throws error if object is not a valid Concerto instance
  */
 function assertInitShape(value: any): asserts value is InitResponse {
   if (!value || typeof value !== 'object' || !value.state || typeof value.state !== 'object') {
@@ -489,6 +486,13 @@ function injectRuntimeMetadata<T extends { state?: any; result?: any; events?: a
  * LLM, deriving the request/response/state/event schemas from the template's own
  * ModelManager. Used as a fallback when a template carries no executable logic,
  * or when LLM execution is explicitly forced.
+ *
+ * Note on validation: LLM responses are only checked for overall shape
+ * (assertInitShape/assertTriggerShape). They are NOT validated against the
+ * template's Concerto model here — callers that require model validation should
+ * route their execution through TemplateArchiveProcessor (which validates data,
+ * request, priorState, state, result and events) or validate the pieces
+ * returned by init()/trigger() themselves against the template model.
  */
 export class LLMExecutor {
   /** The template being executed. */
