@@ -43,7 +43,7 @@ function drafterKey(fqn: string): string {
     }
 }
 
-export function getDrafter(typeName: string) : ((value:any, format?:DraftFormat) => string)|null  {
+export function getDrafter(typeName: string) : ((value:any, format?:DraftFormat, locale?:string) => string)|null  {
     switch(drafterKey(typeName)) {
     case 'Boolean': return booleanDrafter;
     case 'DateTime': return dateTimeDrafter;
