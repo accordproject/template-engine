@@ -1,0 +1,24 @@
+{
+  "$class": "optionallists@1.0.0.TemplateData",
+  "label": "root",
+  "entries": [
+    {
+      "$class": "optionallists@1.0.0.Entry",
+      "label": "absent"
+    },
+    {
+      "$class": "optionallists@1.0.0.Entry",
+      "label": "present",
+      "person": {
+        "$class": "optionallists@1.0.0.Person",
+        "name": "Alice",
+        "tags": [
+          "person-A",
+          "person-A"
+        ]
+      }
+    }
+  ],
+  "age": 0,
+  "color": "GREEN"
+}
