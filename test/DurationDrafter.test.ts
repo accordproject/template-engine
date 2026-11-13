@@ -76,6 +76,10 @@ describe('Duration Drafter', () => {
         expect(plainSpaces(durationDrafter({ amount, unit }, undefined, locale))).toBe(expected);
     });
 
+    test('should fall back to English for an empty locale', () => {
+        expect(durationDrafter({ amount: 2, unit: 'days' }, undefined, '')).toBe('2 days');
+    });
+
     test('should draft quarters with the enum value, as Intl has no unit for them', () => {
         expect(durationDrafter({ amount: 2, unit: 'quarters' })).toBe('2 quarters');
     });

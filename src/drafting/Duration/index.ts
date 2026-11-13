@@ -58,7 +58,7 @@ const DEFAULT_LOCALE = 'en';
  * Creates a drafter for Duration/Period types
  * @param {unknown} value the duration or period (validated at runtime)
  * @param {DraftFormat} [format] the format (not used)
- * @param {string} [locale] the locale to draft in, 'en' if not set
+ * @param {string} [locale] the locale to draft in, 'en' if not set or empty
  * @returns {string} the text (e.g., "2 days" in 'en', "2 jours" in 'fr')
  */
 export default function durationDrafter(value: unknown, format?: DraftFormat, locale?: string): string {
@@ -71,7 +71,8 @@ export default function durationDrafter(value: unknown, format?: DraftFormat, lo
         return `${value.amount} ${value.unit}`;
     }
 
-    return new Intl.NumberFormat(locale ?? DEFAULT_LOCALE, {
+    // An empty string is not a valid locale for Intl, so treat it as unset
+    return new Intl.NumberFormat(locale || DEFAULT_LOCALE, {
         style: 'unit',
         unit,
         unitDisplay: 'long',
