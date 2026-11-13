@@ -268,6 +268,17 @@ export class TemplateArchiveProcessor {
         }
     }
 
+    private validateTemplateData(serializer: Serializer, data: any): void {
+        if (data === undefined || data === null) {
+            return;
+        }
+        const actualType = serializer.fromJSON(data).getFullyQualifiedType();
+        const expectedType = this.template.getTemplateModel().getFullyQualifiedName();
+        if (!isAssignableTo(this.template.getModelManager(), actualType, expectedType)) {
+            throw new Error(`Invalid template data: expected a resource assignable to '${expectedType}', got '${actualType}'.`);
+        }
+    }
+
     /**
      * Populates the `contract` back-reference that `org.accordproject.runtime.Obligation`
      * (and therefore any event that extends it, e.g. a template's `PaymentObligationEvent`)
@@ -488,7 +499,7 @@ export class TemplateArchiveProcessor {
         // validate inputs before execution. A stateless template's init returns an empty
         // placeholder state ({}); skip only that. Any other state - including a non-empty
         // object with no $class - is validated normally (and fails if malformed).
-        if (data) serializer.fromJSON(data);
+        this.validateTemplateData(serializer, data);
         if (request) serializer.fromJSON(request);
         if (priorState && Object.keys(priorState).length > 0) serializer.fromJSON(priorState);
 
@@ -543,7 +554,7 @@ export class TemplateArchiveProcessor {
         const serializer = new Serializer(factory, this.template.getModelManager(), { validate: true});
         
         // validate inputs before execution
-        if (data) serializer.fromJSON(data);
+        this.validateTemplateData(serializer, data);
 
         let initResponse: InitResponse;
         const forceLLM = this.llmConfig?.mode === 'force';
