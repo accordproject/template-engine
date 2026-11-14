@@ -521,7 +521,7 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                         context.$class = `${CommonMarkModel.NAMESPACE}.Text`;
                         const drafter = getDrafter(context.elementType);
                         context.text = joinList(arrayData.map(arrayItem => {
-                            return drafter ? drafter(arrayItem, context.format) : arrayItem as string;
+                            return drafter ? drafter(arrayItem, context.format, context.locale ?? options?.locale) : arrayItem as string;
                         }), context, options);
                         delete context.elementType;
                         delete context.name;
@@ -561,7 +561,7 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                         const type = (ModelUtil as any).isPrimitiveType(context.elementType) ? null : introspector.getClassDeclaration(context.elementType);
                         // we want to draft Enums as strings, not objects
                         const drafter = getDrafter(type && type.isEnum() ? 'String' : context.elementType);
-                        context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
+                        context.value = drafter ? drafter(variableValue, context.format, context.locale ?? options?.locale) : JSON.stringify(variableValue) as string;
                     }
                 }
                 else {
@@ -570,7 +570,7 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                     const type = (ModelUtil as any).isPrimitiveType(context.elementType) ? null : introspector.getClassDeclaration(context.elementType);
                     // we want to draft Enums as strings, not objects
                     const drafter = getDrafter(type && type.isEnum() ? 'String' : context.elementType);
-                    context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
+                    context.value = drafter ? drafter(variableValue, context.format, context.locale ?? options?.locale) : JSON.stringify(variableValue) as string;
                 }
             }
 
