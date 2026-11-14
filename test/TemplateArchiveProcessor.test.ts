@@ -398,6 +398,13 @@ describe('template archive processor - logic that only defines trigger', () => {
         $identifier: 'test',
         name: 'World'
     };
+    const request = {
+        $class: 'org.example@0.0.1.GreetingRequest',
+        $timestamp: '2026-01-01T00:00:00.000Z',
+        greeting: 'Hello'
+    };
+    const typeMismatch = 'Invalid template data: expected a resource assignable to ' +
+        "'org.example@0.0.1.TemplateModel', got 'org.example@0.0.1.GreetingRequest'.";
 
     let templateArchiveProcessor: TemplateArchiveProcessor;
 
@@ -413,15 +420,64 @@ describe('template archive processor - logic that only defines trigger', () => {
 
     test('trigger works with the state returned by the inherited init', async () => {
         const { state } = await templateArchiveProcessor.init(data);
-        const request = {
-            $class: 'org.example@0.0.1.GreetingRequest',
-            $timestamp: new Date().toISOString(),
-            greeting: 'Hello'
-        };
         const response = await templateArchiveProcessor.trigger(data, request, state);
         expect(response.result).toMatchObject({
             $class: 'org.example@0.0.1.GreetingResponse',
             message: 'Hello World'
         });
+    });
+
+    test('rejects unrelated template data in init before compiling logic', async () => {
+        const processor = new TemplateArchiveProcessor(templateArchiveProcessor.template);
+        const compile = jest.spyOn(processor, 'compileLogic');
+
+        await expect(processor.init(request)).rejects.toThrow(typeMismatch);
+        expect(compile).not.toHaveBeenCalled();
+    });
+
+    test('rejects unrelated template data in trigger after a CTA reload', async () => {
+        const archive = await templateArchiveProcessor.template.toArchive('typescript');
+        const template = await Template.fromArchive(archive, { offline: true });
+        const processor = new TemplateArchiveProcessor(template);
+        const compile = jest.spyOn(processor, 'compileLogic');
+
+        await expect(processor.trigger(request, request)).rejects.toThrow(typeMismatch);
+        expect(compile).not.toHaveBeenCalled();
+    });
+
+    test('rejects unrelated template data before invoking the LLM', async () => {
+        const loader = jest.fn().mockRejectedValue(new Error('Unexpected SDK load'));
+        const processor = new TemplateArchiveProcessor(
+            templateArchiveProcessor.template,
+            { mode: 'force', provider: { provider: 'openai', apiKey: 'unused', model: 'unused', retries: 0 } },
+            { openai: loader }
+        );
+
+        await expect(processor.init(request)).rejects.toThrow(typeMismatch);
+        await expect(processor.trigger(request, request)).rejects.toThrow(typeMismatch);
+        expect(loader).not.toHaveBeenCalled();
+    });
+
+    test('accepts a subclass of the selected template-data model', async () => {
+        const template = await Template.fromDirectory('test/archives/inherited-init', { offline: true });
+        template.getModelManager().addCTOModel(
+            'namespace org.example.extended@0.0.1\n' +
+            'import org.example@0.0.1.TemplateModel\n' +
+            'asset ExtendedTemplateModel extends TemplateModel { o String extra }'
+        );
+        const processor = new TemplateArchiveProcessor(template);
+        const extendedData = { ...data, $class: 'org.example.extended@0.0.1.ExtendedTemplateModel', extra: 'value' };
+
+        const { state } = await processor.init(extendedData);
+        const response = await processor.trigger(extendedData, request, state);
+        expect(response.result).toMatchObject({ message: 'Hello World' });
+    });
+
+    test.each([undefined, null])('passes absent data (%s) through to inherited init', async (absentData) => {
+        await expect(templateArchiveProcessor.init(absentData)).resolves.toEqual({ state: {} });
+    });
+
+    test.each([false, 0, ''])('validates supplied falsy data (%p) as a resource', async (invalidData) => {
+        await expect(templateArchiveProcessor.init(invalidData)).rejects.toThrow('Does not contain a $class type identifier');
     });
 });
