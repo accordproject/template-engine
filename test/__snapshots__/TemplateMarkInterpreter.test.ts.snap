@@ -5037,3 +5037,526 @@ exports[`templatemark interpreter should generate volumediscountulist 1`] = `
   "xmlns": "http://commonmark.org/xml/1.0",
 }
 `;
+
+exports[`templatemark interpreter should generate nested-list 1`] = `
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": [
+    {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "label",
+                      "value": "first",
+                    },
+                  ],
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.List",
+                  "delimiter": "period",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Item",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                          "nodes": [
+                            {
+                              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                              "elementType": "String",
+                              "name": "this",
+                              "value": "red",
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Item",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                          "nodes": [
+                            {
+                              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                              "elementType": "String",
+                              "name": "this",
+                              "value": "red",
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Item",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                          "nodes": [
+                            {
+                              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                              "elementType": "String",
+                              "name": "this",
+                              "value": "blue",
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                  "start": "1",
+                  "tight": "true",
+                  "type": "ordered",
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "label",
+                      "value": "second",
+                    },
+                  ],
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.List",
+                  "delimiter": "period",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Item",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                          "nodes": [
+                            {
+                              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                              "elementType": "String",
+                              "name": "this",
+                              "value": "green",
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                  "start": "1",
+                  "tight": "true",
+                  "type": "ordered",
+                },
+              ],
+            },
+          ],
+          "tight": "true",
+          "type": "bullet",
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "delimiter": "period",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "label",
+                      "value": "first",
+                    },
+                  ],
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.List",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Item",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                          "nodes": [
+                            {
+                              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                              "elementType": "String",
+                              "name": "this",
+                              "value": "red",
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Item",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                          "nodes": [
+                            {
+                              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                              "elementType": "String",
+                              "name": "this",
+                              "value": "red",
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Item",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                          "nodes": [
+                            {
+                              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                              "elementType": "String",
+                              "name": "this",
+                              "value": "blue",
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                  "tight": "true",
+                  "type": "bullet",
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "label",
+                      "value": "second",
+                    },
+                  ],
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.List",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.commonmark@0.5.0.Item",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                          "nodes": [
+                            {
+                              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                              "elementType": "String",
+                              "name": "this",
+                              "value": "green",
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                  "tight": "true",
+                  "type": "bullet",
+                },
+              ],
+            },
+          ],
+          "start": "1",
+          "tight": "true",
+          "type": "ordered",
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate optional-list-absent 1`] = `
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": [
+    {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Root: ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+              "elementType": "optionallists@1.0.0.Person",
+              "hasSome": false,
+              "name": "person",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "none",
+                },
+              ],
+              "whenNone": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "none",
+                },
+              ],
+              "whenSome": [],
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.List",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "label",
+                      "value": "absent",
+                    },
+                  ],
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+                      "elementType": "optionallists@1.0.0.Person",
+                      "hasSome": false,
+                      "name": "person",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "none",
+                        },
+                      ],
+                      "whenNone": [
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.Text",
+                          "text": "none",
+                        },
+                      ],
+                      "whenSome": [],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Item",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                      "elementType": "String",
+                      "name": "label",
+                      "value": "present",
+                    },
+                  ],
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                  "nodes": [
+                    {
+                      "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+                      "elementType": "optionallists@1.0.0.Person",
+                      "hasSome": true,
+                      "name": "person",
+                      "nodes": [
+                        {
+                          "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                          "elementType": "String",
+                          "name": "name",
+                          "value": "Alice",
+                        },
+                        {
+                          "$class": "org.accordproject.commonmark@0.5.0.List",
+                          "nodes": [
+                            {
+                              "$class": "org.accordproject.commonmark@0.5.0.Item",
+                              "nodes": [
+                                {
+                                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                                  "nodes": [
+                                    {
+                                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                                      "elementType": "String",
+                                      "name": "this",
+                                      "value": "person-A",
+                                    },
+                                  ],
+                                },
+                              ],
+                            },
+                            {
+                              "$class": "org.accordproject.commonmark@0.5.0.Item",
+                              "nodes": [
+                                {
+                                  "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+                                  "nodes": [
+                                    {
+                                      "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                                      "elementType": "String",
+                                      "name": "this",
+                                      "value": "person-A",
+                                    },
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                          "tight": "true",
+                          "type": "ordered",
+                        },
+                      ],
+                      "whenNone": [],
+                      "whenSome": [],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+          "tight": "false",
+          "type": "bullet",
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Scalar: ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+              "elementType": "Integer",
+              "hasSome": true,
+              "name": "age",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "String",
+                  "name": "label",
+                  "value": "root",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "/",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "Integer",
+                  "name": "age",
+                  "value": "0",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "/",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "Integer",
+                  "name": "this",
+                  "value": "0",
+                },
+              ],
+              "whenNone": [],
+              "whenSome": [],
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Enum: ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Optional",
+              "elementType": "optionallists@1.0.0.Color",
+              "hasSome": true,
+              "name": "color",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+                  "elementType": "String",
+                  "name": "label",
+                  "value": "root",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "/",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.EnumVariable",
+                  "elementType": "optionallists@1.0.0.Color",
+                  "enumValues": [
+                    "RED",
+                    "GREEN",
+                  ],
+                  "name": "color",
+                  "value": "GREEN",
+                },
+                {
+                  "$class": "org.accordproject.commonmark@0.5.0.Text",
+                  "text": "/",
+                },
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.EnumVariable",
+                  "elementType": "optionallists@1.0.0.Color",
+                  "enumValues": [
+                    "RED",
+                    "GREEN",
+                  ],
+                  "name": "this",
+                  "value": "GREEN",
+                },
+              ],
+              "whenNone": [],
+              "whenSome": [],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should fail to generate optional-list-null 1`] = `[Error: No values found for path '$['person']['tags']' in data {"$class":"optionallistnull@1.0.0.TemplateData","person":null}.]`;
+
+exports[`templatemark interpreter should fail to generate optional-list-relationship 1`] = `[Error: No values found for path '$['person']['tags']' in data {"$class":"optionallistrelationship@1.0.0.TemplateData","person":"resource:optionallistrelationship@1.0.0.Person#alice"}.]`;
+
+exports[`templatemark interpreter should fail to generate optional-list-nested-when-none 1`] = `[Error: No values found for path '$['person']['other']['tags']' in data {"$class":"optionalnestedwhennone@1.0.0.TemplateData","other":{"$class":"optionalnestedwhennone@1.0.0.Person","tags":["value"]}}.]`;

@@ -1,0 +1,34 @@
+{
+  "$class": "nestedlists@1.0.0.TemplateData",
+  "entries": [
+    {
+      "$class": "nestedlists@1.0.0.Entry",
+      "label": "first",
+      "tags": [
+        "red",
+        "red",
+        "blue"
+      ],
+      "children": [
+        {
+          "$class": "nestedlists@1.0.0.Child",
+          "label": "child",
+          "tags": [
+            "deep"
+          ]
+        }
+      ]
+    },
+    {
+      "$class": "nestedlists@1.0.0.Entry",
+      "label": "second",
+      "tags": [
+        "green"
+      ],
+      "children": []
+    }
+  ],
+  "names": [
+    "root"
+  ]
+}

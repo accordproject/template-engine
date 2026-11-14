@@ -1,0 +1,5 @@
+namespace optionallistrelationship@1.0.0
+
+asset Person identified by id { o String id o String[] tags }
+@template
+concept TemplateData { --> Person person optional }
