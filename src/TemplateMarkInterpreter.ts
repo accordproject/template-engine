@@ -14,7 +14,6 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import jp from 'jsonpath';
 import traverse from 'traverse';
 import { isBrowser } from 'browser-or-node';
 import os from 'os';
@@ -38,8 +37,7 @@ import {
     OPTIONAL_DEFINITION_RE,
     CLAUSE_DEFINITION_RE,
     CONTRACT_DEFINITION_RE,
-    TemplateData,
-    NAVIGATION_NODES
+    TemplateData
 } from './TemplateMarkNodes';
 import { TemplateMarkToJavaScriptCompiler, hasUserCode } from './TemplateMarkToJavaScriptCompiler';
 import { CodeType, ICode } from './model-gen/org.accordproject.templatemark@0.5.0';
@@ -165,262 +163,441 @@ function isScalarType(modelManager: ModelManager | undefined, elementType: strin
     }
 }
 
-/**
- * Calculates a JSON path to use to retrieve data, based on a TemplatemMark tree.
- * For example, if we hit a VariableDefinition {{city}} that is nested inside a
- * WithDefinition {{#with address}} then the JSON path returned should be '$.address.city'.
- * Similarly ListBlockDefinition, JoinDefinition and OptionalDefinition also include
- * property names that must apply to their child nodes.
- * @param {*} rootData the root of the JSON document, typically this is a TemplateMark JSON
- * @param {*} currentNode the current TemplateMark node we are processing
- * @param {string[]} paths the traverse path to the current node
- * @param {ModelManager} [modelManager] the model manager, used to detect optionals guarding enums
- * @returns {string} the JSON path to use to retrieve data
- */
-function getJsonPath(rootData: any, currentNode: any, paths: string[], modelManager?: ModelManager): string {
-    if (!currentNode) {
-        throw new Error('Node must be supplied');
-    }
-    if (!currentNode.name) {
-        throw new Error(`Node must have a name: ${JSON.stringify(currentNode)}`);
-    }
-    if (currentNode.name.indexOf('.') >= 0) {
-        // prevent JSON path injection
-        throw new Error(`Invalid name property ${currentNode.name}`);
-    }
-    if (!paths || !paths.length || paths.length < 1) {
-        throw new Error('Paths must be supplied');
-    }
-    const withPath = [];
-    // the innermost enclosing optional that guards a scalar (primitive or enum) value, if
-    // it is also the innermost enclosing navigation node
-    let scalarOptional: string | null = null;
-    for (let n = 1; n < paths.length; n++) {
-        const sub = paths.slice(0, n);
-        const obj = traverse.get(rootData, sub);
-        // HACK
-        // if(obj===undefined) {
-        //     throw new Error(`Failed to find data with path ${sub} and data ${JSON.stringify(rootData, null, 2)}`);
-        // }
-        if (obj && obj.$class) {
-            if (NAVIGATION_NODES.indexOf(obj.$class) >= 0) {
-                if(obj.name !== 'top') { // HACK!!
-                    // A scalar optional has no property scope to navigate into, so named
-                    // variables inside it (e.g. {{age}} in {{#optional age}}) resolve from
-                    // the parent data context rather than as $['age']['age']
-                    if (OPTIONAL_DEFINITION_RE.test(obj.$class) && isScalarType(modelManager, obj.elementType)) {
-                        scalarOptional = obj.name;
-                    }
-                    else {
-                        withPath.push(`['${obj.name}']`);
-                        scalarOptional = null;
-                    }
-                }
-            }
-        }
-    }
-
-    if (currentNode.name === 'this') {
-        // {{this}} directly inside a scalar optional refers to the optional value itself
-        if (scalarOptional) {
-            withPath.push(`['${scalarOptional}']`);
-        }
-    }
-    else if (currentNode.name !== 'top') {
-        withPath.push(`['${currentNode.name}']`);
-    }
-
-    return withPath.length > 0 ? `$${withPath.join('')}` : '$';
+interface Scope {
+    data: any;                 // current data context
+    parent?: Scope;            // optional, for fall-back name lookup
+    elementType?: string;      // concerto type of `data`, for typing / scalar detection
+    thisValue?: any;           // for scalar optionals, binds `this`
 }
 
-// the key is a path[] joined with '/' from the traverse library
-// the value is the evaluation result
-type UserCodeResult = Record<string, any>;
-
-/**
- * Evaluates all the user code in a template mark document
- * @param {*} clauseLibrary - the clause library
- * @param {*} templateMark - the TemplateMark JSON document
- * @param {*} data - the template data JSON
- * @param {CompiledUserLogic} userLogic - the compiled logic/logic.ts, exposing its helpers
- * @param {[GenerationOptions]} options - the generation options
- * @returns {Promise<UserCodeResult>} a promise to a UserCodeResult
- */
-async function evaluateUserCode(clauseLibrary: object, templateMark: object, data: TemplateData, userLogic: CompiledUserLogic | undefined, options?: GenerationOptions): Promise<UserCodeResult> {
-    const result: UserCodeResult = {};
-    const paths = traverse(templateMark).paths();
-    for (let n = 0; n < paths.length; n++) {
-        const path = paths[n];
-        const context = traverse(templateMark).get(path);
-        if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
-            const nodeClass = context.$class as string;
-            if (FORMULA_DEFINITION_RE.test(nodeClass)) {
-                if (context.code) {
-                    checkCode(context.code);
-                    const evalResponse = await evaluateJavaScript(clauseLibrary, data, context.code.contents, userLogic, options);
-                    result[path.join('/')] = JSON.stringify(evalResponse.result);
-                }
-                else {
-                    throw new Error('Formula node is missing code.');
-                }
-            }
-            else if (CONDITIONAL_DEFINITION_RE.test(nodeClass) || CLAUSE_DEFINITION_RE.test(nodeClass)) {
-                if (context.condition) {
-                    checkCode(context.condition);
-                    const evalResponse = await evaluateJavaScript(clauseLibrary, data, context.condition.contents, userLogic, options);
-                    result[path.join('/')] = JSON.stringify(evalResponse.result);
-                }
-            }
-        }
-    }
-    return result;
-}
-
-// the key is a path[] joined with '/' from the traverse library
-// the value is an array of agreementmark Item nodes for the recursive block
-type RecursiveBlockResult = Record<string, any[]>;
-
-// the key is a path[] joined with '/' from the traverse library
-// the value is an array of agreementmark nodes for the optional block
-type OptionalBlockResult = Record<string, any[]>;
-
-/**
- * Generates agreementmark for all optional blocks with proper context switching
- * Warning: this is async and recursive
- * @param {ModelManager} modelManager - the template model
- * @param {*} clauseLibrary - the clause library
- * @param {*} templateMark - the TemplateMark JSON document
- * @param {*} data - the template data JSON
- * @param {[GenerationOptions]} options - the generation options
- * @returns {*} the AgreementMark JSON for optional blocks
- */
-async function generateOptionalBlocks(modelManager: ModelManager, clauseLibrary: object, templateMark: object, data: TemplateData, userLogic: CompiledUserLogic | undefined, options?: GenerationOptions): Promise<OptionalBlockResult> {
-    const result: OptionalBlockResult = {};
-    const paths = traverse(templateMark).paths();
-    for (let n = 0; n < paths.length; n++) {
-        const thisPath = paths[n];
-        const context = traverse(templateMark).get(thisPath);
-        if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
-            const nodeClass = context.$class as string;
-
-            // evaluate optional blocks, processing the whenSome content with the optional property value as context
-            if (OPTIONAL_DEFINITION_RE.test(nodeClass)) {
-                const path = getJsonPath(templateMark, context, thisPath, modelManager);
-                const variableValues = jp.query(data, path, 1);
-
-                if (variableValues.length > 0) {
-                    // Optional property exists, process whenSome with the property value as context
-                    const optionalPropertyValue = variableValues[0];
-
-                    // Scalar optional values (primitives and enums) are not pre-processed: the
-                    // normal traverse handles them with the full parent data context, so that
-                    // both {{this}} and named variables like {{age}} resolve inside
-                    // {{#optional age}}...{{/optional}}.
-                    if (typeof optionalPropertyValue !== 'object' || optionalPropertyValue === null) {
-                        continue;
-                    }
-
-                    if (context.whenSome && context.whenSome.length > 0) {
-                        // Create a paragraph wrapper for the whenSome content
-                        const whenSomeParagraph = {
-                            $class: 'org.accordproject.commonmark@0.5.0.Paragraph',
-                            nodes: context.whenSome
-                        };
-                        // Process with the optional property value as the new data context
-                        const subResult = await generateAgreement(modelManager, clauseLibrary, whenSomeParagraph, optionalPropertyValue, userLogic, options);
-                        result[thisPath.join('/')] = subResult.nodes ? subResult.nodes : [];
-                    } else {
-                        result[thisPath.join('/')] = [];
-                    }
-                }
-                // If optional property doesn't exist, we don't add anything to results
-                // and the normal processing will handle whenNone
-            }
-        }
-    }
-    return result;
+interface EvaluationContext {
+    modelManager: ModelManager;
+    introspector: Introspector;
+    clauseLibrary: object;
+    userLogic?: CompiledUserLogic;
+    options?: GenerationOptions;
 }
 
 /**
- * Generates agreementmark for all recursive blocks (list, foreach)
- * Warning: this is async and recursive
- * @param {ModelManager} modelManager - the template model
- * @param {*} clauseLibrary - the clause library
- * @param {*} templateMark - the TemplateMark JSON document
- * @param {*} data - the template data JSON
- * @param {RegExp} nodeRegExp - the regex used to match against $class of nodes
- * @param {string} childNodeClass - the $class to use for the node that wraps child items
- * @param {[GenerationOptions]} options - the generation options
- * @returns {*} the AgreementMark JSON for the list block
+ * Prepares the data object passed to evaluateJavaScript so that formulas
+ * have access to local properties on scope.data, as well as parent/root properties
+ * required by the compiled TypeScript function prelude.
  */
-async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary: object, templateMark: object, data: TemplateData, nodeRegExp: RegExp, childNodeClass: string, userLogic: CompiledUserLogic | undefined, options?: GenerationOptions): Promise<RecursiveBlockResult> {
-    const result: RecursiveBlockResult = {};
-    const paths = traverse(templateMark).paths();
-    for (let n = 0; n < paths.length; n++) {
-        const thisPath = paths[n];
-        const context = traverse(templateMark).get(thisPath);
-        if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
-            const nodeClass = context.$class as string;
-
-            // evaluate nodes, recursing on each child item
-            if (nodeRegExp.test(nodeClass)) {
-                const path = getJsonPath(templateMark, context, thisPath, modelManager);
-                const variableValues = jp.query(data, path, 1);
-
-                if (variableValues.length === 0) {
-                    throw new Error(`No values found for path '${path}' in data ${JSON.stringify(data)}.`);
-                }
-                else {
-                    const arrayData = variableValues[0];
-                    if (!Array.isArray(arrayData)) {
-                        throw new Error(`Values found for path '${path}' in data ${data} is not an array: ${arrayData}.`);
-                    }
-                    else {
-                        // The shape of the ListBlockDefinition's children depends on whether
-                        // the markdown parser produced a CommonMark List/Item wrapping. That
-                        // wrapping is only emitted when the items have leading list markers
-                        // (e.g. `- ` for ulist, `1. ` for olist). When users put direct
-                        // variable references inside `{{#ulist}}` / `{{#olist}}` with no
-                        // leading marker (see #145), the body blocks are placed directly
-                        // under the ListBlockDefinition.
-                        const firstChild = context.nodes[0];
-                        const hasListWrapper = firstChild &&
-                            firstChild.$class === `${CommonMarkModel.NAMESPACE}.List` &&
-                            Array.isArray(firstChild.nodes) &&
-                            firstChild.nodes.length > 0;
-                        const hasMultiBlockListBody = LISTBLOCK_DEFINITION_RE.test(nodeClass) &&
-                            !hasListWrapper && context.nodes.length > 1;
-                        // Repeat all unwrapped list body blocks within one Item. Keep the
-                        // existing wrapped, single-block and foreach paths unchanged.
-                        const itemTemplate = hasListWrapper ? firstChild.nodes[0]
-                            : hasMultiBlockListBody ? {
-                                $class: `${CommonMarkModel.NAMESPACE}.Item`,
-                                nodes: context.nodes
-                            } : firstChild;
-                        const nodes = [];
-                        for (let n = 0; n < arrayData.length; n++) {
-                            const arrayItem = arrayData[n];
-                            // arrayItem is now the data for the nested generation
-                            const subResult = await generateAgreement(modelManager, clauseLibrary, itemTemplate, arrayItem, userLogic, options);
-                            // Unwrap the processed Item, including a synthetic multi-block
-                            // container, so the output never gains an extra Item layer.
-                            // Otherwise the processed block itself becomes the sole child of
-                            // the new output node, preserving a valid block hierarchy.
-                            const childNodes = hasListWrapper || hasMultiBlockListBody
-                                ? (subResult.nodes ? subResult.nodes : [])
-                                : [subResult];
-                            nodes.push({
-                                $class: childNodeClass,
-                                nodes: childNodes
-                            });
-                        }
-                        result[thisPath.join('/')] = nodes;
-                    }
-                }
-            }
+function getEvaluationData(scope: Scope): any {
+    let current: Scope | undefined = scope;
+    const scopes: Scope[] = [];
+    while (current) {
+        scopes.unshift(current);
+        current = current.parent;
+    }
+    const merged: any = {};
+    for (const s of scopes) {
+        if (s.data !== null && typeof s.data === 'object' && !Array.isArray(s.data)) {
+            Object.assign(merged, s.data);
         }
     }
-    return result;
+    if (scope.thisValue !== undefined) {
+        merged.this = scope.thisValue;
+    } else if (typeof scope.data !== 'object' || scope.data === null) {
+        merged.this = scope.data;
+    }
+    return merged;
+}
+
+/**
+ * Resolves a variable name within the given scope, checking local properties,
+ * `this`, and falling back to parent scopes.
+ */
+function resolveVariableValue(name: string, scope: Scope): any {
+    if (name === 'this') {
+        if (scope.thisValue !== undefined) {
+            return scope.thisValue;
+        }
+        return scope.data;
+    }
+    if (scope.data !== null && typeof scope.data === 'object' && name in scope.data && scope.data[name] !== undefined) {
+        return scope.data[name];
+    }
+    if (scope.parent) {
+        return resolveVariableValue(name, scope.parent);
+    }
+    if (scope.data !== null && typeof scope.data === 'object' && name in scope.data) {
+        return scope.data[name];
+    }
+    throw new Error(`No values found for path '$['${name}']' in data ${JSON.stringify(scope.data)}.`);
+}
+
+/**
+ * Resolves the value for an optional block.
+ */
+function resolveOptionalValue(name: string, scope: Scope): any {
+    if (name === 'this') {
+        if (scope.thisValue !== undefined) {
+            return scope.thisValue;
+        }
+        return scope.data;
+    }
+    if (scope.data !== null && typeof scope.data === 'object' && name in scope.data) {
+        return scope.data[name];
+    }
+    return undefined;
+}
+
+/**
+ * Determines the item template for a ListBlockDefinition based on whether
+ * its body is wrapped in a CommonMark List/Item, multi-block, or a single block.
+ */
+function itemTemplate(listDef: any): { template: any; isUnwrappedSingleBlock: boolean } {
+    if (!Array.isArray(listDef.nodes) || listDef.nodes.length === 0) {
+        return { template: undefined, isUnwrappedSingleBlock: false };
+    }
+    const firstChild = listDef.nodes[0];
+    const hasListWrapper = firstChild &&
+        firstChild.$class === `${CommonMarkModel.NAMESPACE}.List` &&
+        Array.isArray(firstChild.nodes) &&
+        firstChild.nodes.length > 0;
+    const hasMultiBlockListBody = !hasListWrapper && listDef.nodes.length > 1;
+
+    if (hasListWrapper) {
+        return { template: firstChild.nodes[0], isUnwrappedSingleBlock: false };
+    }
+    if (hasMultiBlockListBody) {
+        return {
+            template: {
+                $class: `${CommonMarkModel.NAMESPACE}.Item`,
+                nodes: listDef.nodes
+            },
+            isUnwrappedSingleBlock: false
+        };
+    }
+    return { template: firstChild, isUnwrappedSingleBlock: true };
+}
+
+/**
+ * Recursively evaluates a TemplateMark AST node in the given Scope.
+ */
+async function evaluate(node: any, scope: Scope, ctx: EvaluationContext): Promise<any> {
+    if (!node || typeof node !== 'object') {
+        return node;
+    }
+
+    if (Array.isArray(node)) {
+        const evaluated = await Promise.all(node.map((child: any) => evaluate(child, scope, ctx)));
+        return evaluated.flat();
+    }
+
+    const nodeClass = node.$class;
+    if (!nodeClass || typeof nodeClass !== 'string') {
+        const out: any = {};
+        for (const key of Object.keys(node)) {
+            out[key] = await evaluate(node[key], scope, ctx);
+        }
+        return out;
+    }
+
+    // ContractDefinition
+    if (CONTRACT_DEFINITION_RE.test(nodeClass)) {
+        const childScope: Scope = {
+            data: scope.data,
+            parent: scope,
+            elementType: node.elementType
+        };
+        const childNodes = Array.isArray(node.nodes)
+            ? (await Promise.all(node.nodes.map((child: any) => evaluate(child, childScope, ctx)))).flat()
+            : [];
+        const out: any = { ...node };
+        out.$class = `${CommonMarkModel.NAMESPACE}.Paragraph`;
+        delete out.name;
+        delete out.elementType;
+        out.nodes = childNodes;
+        return out;
+    }
+
+    // ClauseDefinition
+    if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
+        let includeClause = true;
+        if (node.condition) {
+            checkCode(node.condition);
+            const evalData = getEvaluationData(scope);
+            const evalResponse = await evaluateJavaScript(ctx.clauseLibrary, evalData, node.condition.contents, ctx.userLogic, ctx.options);
+            includeClause = !!evalResponse.result;
+        } else if (node.name !== 'top') {
+            const clauseData = (scope.data !== null && typeof scope.data === 'object') ? scope.data[node.name] : undefined;
+            if (clauseData === undefined || clauseData === null) {
+                includeClause = false;
+            }
+        }
+
+        const out: any = { ...node };
+        out.$class = `${CiceroMarkModel.NAMESPACE}.Clause`;
+        delete out.condition;
+        delete out.functionName;
+
+        if (!includeClause) {
+            delete out.nodes;
+            return out;
+        }
+
+        const childData = node.name === 'top'
+            ? scope.data
+            : ((scope.data !== null && typeof scope.data === 'object') ? scope.data[node.name] : undefined);
+        const childScope: Scope = {
+            data: childData,
+            parent: scope,
+            elementType: node.elementType
+        };
+        const childNodes = Array.isArray(node.nodes)
+            ? (await Promise.all(node.nodes.map((child: any) => evaluate(child, childScope, ctx)))).flat()
+            : [];
+        out.nodes = childNodes;
+        return out;
+    }
+
+    // WithDefinition
+    if (WITH_DEFINITION_RE.test(nodeClass)) {
+        const childData = (scope.data !== null && typeof scope.data === 'object') ? scope.data[node.name] : undefined;
+        const childScope: Scope = {
+            data: childData,
+            parent: scope,
+            elementType: node.elementType
+        };
+        const childNodes = Array.isArray(node.nodes)
+            ? (await Promise.all(node.nodes.map((child: any) => evaluate(child, childScope, ctx)))).flat()
+            : [];
+        const out: any = { ...node };
+        out.$class = `${CommonMarkModel.NAMESPACE}.Paragraph`;
+        delete out.name;
+        delete out.elementType;
+        out.nodes = childNodes;
+        return out;
+    }
+
+    // OptionalDefinition
+    if (OPTIONAL_DEFINITION_RE.test(nodeClass)) {
+        const rawVal = resolveOptionalValue(node.name, scope);
+        const hasSome = rawVal !== undefined && rawVal !== null;
+        const isScalar = isScalarType(ctx.modelManager, node.elementType) ||
+            (hasSome && (typeof rawVal !== 'object'));
+
+        const out: any = { ...node };
+        out.$class = `${CiceroMarkModel.NAMESPACE}.Optional`;
+        out.hasSome = hasSome;
+
+        if (hasSome) {
+            const childScope: Scope = isScalar ? {
+                data: scope.data,
+                parent: scope,
+                elementType: node.elementType,
+                thisValue: rawVal
+            } : {
+                data: rawVal,
+                parent: scope,
+                elementType: node.elementType
+            };
+
+            const evaluatedNodes = Array.isArray(node.whenSome)
+                ? (await Promise.all(node.whenSome.map((child: any) => evaluate(child, childScope, ctx)))).flat()
+                : [];
+            out.nodes = evaluatedNodes;
+            out.whenSome = [];
+            out.whenNone = [];
+        } else {
+            const evaluatedNodes = Array.isArray(node.whenNone)
+                ? (await Promise.all(node.whenNone.map((child: any) => evaluate(child, scope, ctx)))).flat()
+                : [];
+            out.nodes = evaluatedNodes;
+            out.whenSome = [];
+            out.whenNone = evaluatedNodes;
+        }
+        return out;
+    }
+
+    // ListBlockDefinition
+    if (LISTBLOCK_DEFINITION_RE.test(nodeClass)) {
+        if (scope.data === null || typeof scope.data !== 'object' || !(node.name in scope.data)) {
+            throw new Error(`No values found for path '$['${node.name}']' in data ${JSON.stringify(scope.data)}.`);
+        }
+        const arrayData = scope.data[node.name];
+        if (!Array.isArray(arrayData)) {
+            throw new Error(`Values found for path '$['${node.name}']' in data ${scope.data} is not an array: ${arrayData}.`);
+        }
+
+        const { template, isUnwrappedSingleBlock } = itemTemplate(node);
+        const itemNodes: any[] = [];
+        if (template) {
+            for (let n = 0; n < arrayData.length; n++) {
+                const arrayItem = arrayData[n];
+                const itemScope: Scope = {
+                    data: arrayItem,
+                    parent: scope,
+                    elementType: node.elementType
+                };
+                const subResult = await evaluate(template, itemScope, ctx);
+                const childNodes = isUnwrappedSingleBlock
+                    ? [subResult]
+                    : (subResult && subResult.nodes ? subResult.nodes : []);
+                itemNodes.push({
+                    $class: `${CommonMarkModel.NAMESPACE}.Item`,
+                    nodes: childNodes
+                });
+            }
+        }
+
+        const out: any = { ...node };
+        out.$class = `${CommonMarkModel.NAMESPACE}.List`;
+        delete out.elementType;
+        delete out.name;
+        out.nodes = itemNodes;
+        return out;
+    }
+
+    // ForeachDefinition
+    if (FOREACH_DEFINITION_RE.test(nodeClass)) {
+        if (scope.data === null || typeof scope.data !== 'object' || !(node.name in scope.data)) {
+            throw new Error(`No values found for path '$['${node.name}']' in data ${JSON.stringify(scope.data)}.`);
+        }
+        const arrayData = scope.data[node.name];
+        if (!Array.isArray(arrayData)) {
+            throw new Error(`Values found for path '$['${node.name}']' in data ${scope.data} is not an array: ${arrayData}.`);
+        }
+
+        const itemTmpl = node.nodes && node.nodes[0];
+        const itemNodes: any[] = [];
+        if (itemTmpl) {
+            for (let n = 0; n < arrayData.length; n++) {
+                const arrayItem = arrayData[n];
+                const itemScope: Scope = {
+                    data: arrayItem,
+                    parent: scope,
+                    elementType: node.elementType
+                };
+                const subResult = await evaluate(itemTmpl, itemScope, ctx);
+                itemNodes.push({
+                    $class: `${CommonMarkModel.NAMESPACE}.Paragraph`,
+                    nodes: [subResult]
+                });
+            }
+        }
+
+        const out: any = { ...node };
+        out.$class = `${CommonMarkModel.NAMESPACE}.Foreach`;
+        delete out.elementType;
+        delete out.name;
+        out.nodes = itemNodes;
+        return out;
+    }
+
+    // JoinDefinition
+    if (JOIN_DEFINITION_RE.test(nodeClass)) {
+        if (scope.data === null || typeof scope.data !== 'object' || !(node.name in scope.data)) {
+            throw new Error(`No values found for path '$['${node.name}']' in data ${JSON.stringify(scope.data)}.`);
+        }
+        const arrayData = scope.data[node.name];
+        if (!Array.isArray(arrayData)) {
+            throw new Error(`Values found for path '$['${node.name}']' in data ${scope.data} is not an array: ${arrayData}.`);
+        }
+
+        const out: any = { ...node };
+        out.$class = `${CommonMarkModel.NAMESPACE}.Text`;
+        const drafter = getDrafter(node.elementType);
+        out.text = joinList(arrayData.map((arrayItem: any) => {
+            return drafter ? drafter(arrayItem, node.format) : arrayItem as string;
+        }), node, ctx.options);
+        delete out.elementType;
+        delete out.name;
+        delete out.separator;
+        delete out.locale;
+        delete out.type;
+        delete out.style;
+        delete out.nodes;
+        return out;
+    }
+
+    // FormulaDefinition
+    if (FORMULA_DEFINITION_RE.test(nodeClass)) {
+        if (!node.code) {
+            throw new Error('Formula node is missing code.');
+        }
+        checkCode(node.code);
+        const evalData = getEvaluationData(scope);
+        const evalResponse = await evaluateJavaScript(ctx.clauseLibrary, evalData, node.code.contents, ctx.userLogic, ctx.options);
+        const rawResult = evalResponse.result;
+
+        const out: any = { ...node };
+        if (rawResult === undefined) {
+            throw new Error(`Formula '${node.name}' did not return a value. Formulas must be an expression or use 'return' to produce a value.`);
+        } else if (rawResult === null) {
+            out.value = '<null>';
+        } else {
+            out.value = JSON.stringify(rawResult);
+        }
+        delete out.code;
+        out.$class = `${CiceroMarkModel.NAMESPACE}.Formula`;
+        return out;
+    }
+
+    // ConditionalDefinition
+    if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
+        let isTrue = false;
+        if (node.condition) {
+            checkCode(node.condition);
+            const evalData = getEvaluationData(scope);
+            const evalResponse = await evaluateJavaScript(ctx.clauseLibrary, evalData, node.condition.contents, ctx.userLogic, ctx.options);
+            if (evalResponse.result !== undefined && evalResponse.result !== null) {
+                isTrue = !!evalResponse.result;
+            }
+        } else {
+            if (scope.data !== null && typeof scope.data === 'object' && node.name in scope.data) {
+                isTrue = !!scope.data[node.name];
+            } else {
+                isTrue = false;
+            }
+        }
+
+        const chosenBranch = isTrue ? node.whenTrue : node.whenFalse;
+        const evaluatedNodes = Array.isArray(chosenBranch)
+            ? (await Promise.all(chosenBranch.map((child: any) => evaluate(child, scope, ctx)))).flat()
+            : [];
+
+        const out: any = { ...node };
+        out.$class = `${CiceroMarkModel.NAMESPACE}.Conditional`;
+        out.isTrue = isTrue;
+        out.nodes = evaluatedNodes;
+        delete out.condition;
+        delete out.dependencies;
+        delete out.functionName;
+        return out;
+    }
+
+    // VariableDefinition, EnumVariableDefinition, FormattedVariableDefinition
+    if (VARIABLE_DEFINITION_RE.test(nodeClass) ||
+        ENUM_VARIABLE_DEFINITION_RE.test(nodeClass) ||
+        FORMATTED_VARIABLE_DEFINITION_RE.test(nodeClass)) {
+        const variableValue = resolveVariableValue(node.name, scope);
+        const type = (ModelUtil as any).isPrimitiveType(node.elementType) ? null : ctx.introspector.getClassDeclaration(node.elementType);
+        const drafter = getDrafter(type && type.isEnum() ? 'String' : node.elementType);
+        const value = drafter ? drafter(variableValue, node.format) : JSON.stringify(variableValue) as string;
+
+        const out: any = { ...node };
+        out.value = value;
+        const match = nodeClass.match(TEMPLATEMARK_RE);
+        if (match && match.length > 1) {
+            out.$class = `${CiceroMarkModel.NAMESPACE}.${match[3]}`;
+        }
+        return out;
+    }
+
+    // Generic TemplateMark or CommonMark node (e.g. Document, Paragraph, Heading, etc.)
+    const match = nodeClass.match(TEMPLATEMARK_RE);
+    const out: any = { ...node };
+    if (match && match.length > 1) {
+        out.$class = `${CiceroMarkModel.NAMESPACE}.${match[3]}`;
+    }
+    if (Array.isArray(node.nodes)) {
+        const evaluatedChildren = await Promise.all(node.nodes.map((child: any) => evaluate(child, scope, ctx)));
+        out.nodes = evaluatedChildren.flat();
+    }
+    return out;
 }
 
 /**
@@ -429,264 +606,25 @@ async function generateRecursiveBlocks(modelManager: ModelManager, clauseLibrary
  * @param {*} clauseLibrary - the clause library
  * @param {*} templateMark - the TemplateMark JSON document
  * @param {*} data - the template data JSON
+ * @param {CompiledUserLogic} userLogic - the compiled logic/logic.ts, exposing its helpers
  * @param {[GenerationOptions]} options - the generation options
  * @returns {*} the AgreementMark JSON
  */
 async function generateAgreement(modelManager: ModelManager, clauseLibrary: object, templateMark: object, data: TemplateData, userLogic: CompiledUserLogic | undefined, options?: GenerationOptions): Promise<any> {
     const introspector = new Introspector(modelManager);
-    // evaluate all the user code (async)
-    const userCodeResults = await evaluateUserCode(clauseLibrary, templateMark, data, userLogic, options);
-    // evaluate all recursive blocks (async)
-    const listBlockResults = await generateRecursiveBlocks(modelManager, clauseLibrary, templateMark, data, LISTBLOCK_DEFINITION_RE, `${CommonMarkModel.NAMESPACE}.Item`, userLogic, options);
-    const foreachBlockResults = await generateRecursiveBlocks(modelManager, clauseLibrary, templateMark, data, FOREACH_DEFINITION_RE, `${CommonMarkModel.NAMESPACE}.Paragraph`, userLogic, options);
-    // evaluate all optional blocks (async)
-    const optionalBlockResults = await generateOptionalBlocks(modelManager, clauseLibrary, templateMark, data, userLogic, options);
-    // traverse the templatemark, creating an output agreementmark tree
-    return traverse(templateMark).map(function (context: any) {
-        let stopHere = false;
-        if (typeof context === 'object' && context.$class && typeof context.$class === 'string') {
-            const nodeClass = context.$class as string;
-
-            // rewrite node types, mapping from TemplateMark namespace to CiceroMark
-            const match = nodeClass.match(TEMPLATEMARK_RE);
-            if (match && match.length > 1) {
-                context.$class = `${CiceroMarkModel.NAMESPACE}.${match[3]}`;
-            }
-
-            // convert a contract node to a clause node (HACK)
-            if (CONTRACT_DEFINITION_RE.test(nodeClass)) {
-                context.$class = `${CommonMarkModel.NAMESPACE}.Paragraph`;
-                delete context.name;
-                delete context.elementType;
-            }
-
-            // convert a WithDefinition to a Paragraph in the output
-            // not 100% sure we want to do that ... we may need to process
-            // the child variable nodes and reparent them?
-            if (WITH_DEFINITION_RE.test(nodeClass)) {
-                context.$class = `${CommonMarkModel.NAMESPACE}.Paragraph`;
-                delete context.name;
-                delete context.elementType;
-            }
-
-            // add a 'value' property to FormulaDefinition
-            // with the result of evaluating the JS code
-            else if (FORMULA_DEFINITION_RE.test(nodeClass)) {
-                if (context.code) {
-                    const result = userCodeResults[this.path.join('/')];
-                    if (result === undefined) {
-                        // JSON.stringify(undefined) is undefined, which would leave the
-                        // required `value` field unset and fail downstream validation.
-                        throw new Error(`Formula '${context.name}' did not return a value. Formulas must be an expression or use 'return' to produce a value.`);
-                    }
-                    else if (result === null) {
-                        context.value = '<null>';
-                    }
-                    else if (typeof result === 'string') {
-                        context.value = result;
-                    }
-                    else {
-                        context.value = JSON.stringify(result);
-                    }
-                    delete context.code;
-                }
-                else {
-                    throw new Error('Formula node is missing code.');
-                }
-            }
-
-            // evaluate lists, recursing on each list item
-            else if (LISTBLOCK_DEFINITION_RE.test(nodeClass)) {
-                context.$class = `${CommonMarkModel.NAMESPACE}.List`;
-                delete context.elementType;
-                delete context.name;
-                context.nodes = listBlockResults[this.path.join('/')];
-                stopHere = true; // do not process child nodes, we've already done it above...
-            }
-
-            // map over an array of items, joining them into a Text node
-            else if (JOIN_DEFINITION_RE.test(nodeClass)) {
-                const path = getJsonPath(templateMark, context, this.path, modelManager);
-                const variableValues = jp.query(data, path, 1);
-
-                if (variableValues.length === 0) {
-                    throw new Error(`No values found for path '${path}' in data ${JSON.stringify(data)}.`);
-                }
-                else {
-                    const arrayData = variableValues[0];
-                    if (!Array.isArray(arrayData)) {
-                        throw new Error(`Values found for path '${path}' in data ${data} is not an array: ${arrayData}.`);
-                    }
-                    else {
-                        context.$class = `${CommonMarkModel.NAMESPACE}.Text`;
-                        const drafter = getDrafter(context.elementType);
-                        context.text = joinList(arrayData.map(arrayItem => {
-                            return drafter ? drafter(arrayItem, context.format) : arrayItem as string;
-                        }), context, options);
-                        delete context.elementType;
-                        delete context.name;
-                        delete context.separator;
-                        delete context.locale;
-                        delete context.type;
-                        delete context.style;
-                        delete context.nodes;
-                        stopHere = true; // do not process child nodes, we've already done it above...
-                    }
-                }
-            }
-
-            // map over an array of items, joining them into a Text node
-            else if (FOREACH_DEFINITION_RE.test(nodeClass)) {
-                context.$class = `${CommonMarkModel.NAMESPACE}.Foreach`;
-                delete context.elementType;
-                delete context.name;
-                context.nodes = foreachBlockResults[this.path.join('/')];
-                stopHere = true; // do not process child nodes, we've already done it above...
-            }
-
-            // add a 'value' property to VariableDefinition
-            // with the value of the variable from 'data'
-            else if (VARIABLE_DEFINITION_RE.test(nodeClass) ||
-                ENUM_VARIABLE_DEFINITION_RE.test(nodeClass) ||
-                FORMATTED_VARIABLE_DEFINITION_RE.test(nodeClass)) {
-                if (typeof data === 'object') {
-                    const path = getJsonPath(templateMark, context, this.path, modelManager);
-                    const variableValues = jp.query(data, path, 1);
-                    if (variableValues.length === 0) {
-                        throw new Error(`No values found for path '${path}' in data ${JSON.stringify(data)}.`);
-                    }
-                    else {
-                        // convert the value to a string, optionally using the formatter
-                        const variableValue = variableValues[0];
-                        const type = (ModelUtil as any).isPrimitiveType(context.elementType) ? null : introspector.getClassDeclaration(context.elementType);
-                        // we want to draft Enums as strings, not objects
-                        const drafter = getDrafter(type && type.isEnum() ? 'String' : context.elementType);
-                        context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
-                    }
-                }
-                else {
-                    // a list of enum values or primitives brings us here
-                    const variableValue = data;
-                    const type = (ModelUtil as any).isPrimitiveType(context.elementType) ? null : introspector.getClassDeclaration(context.elementType);
-                    // we want to draft Enums as strings, not objects
-                    const drafter = getDrafter(type && type.isEnum() ? 'String' : context.elementType);
-                    context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
-                }
-            }
-
-            // add a 'isTrue' property to ConditionDefinition
-            // with the result of evaluating the JS code or a boolean property
-            else if (CONDITIONAL_DEFINITION_RE.test(nodeClass)) {
-                if (context.condition) {
-                    const key = this.path.join('/');
-                    const resultStr = userCodeResults[key];
-                    if (resultStr === undefined || resultStr === null) {
-                        // Treat missing result as false (e.g., condition didn't return a value)
-                        context.isTrue = false;
-                    } else {
-                        try {
-                            // Parse the JSON-stringified result to get the actual boolean value
-                            context.isTrue = !!JSON.parse(resultStr);
-                        } catch (err) {
-                            throw new Error(`Invalid JSON boolean result for condition '${key}': ${String(err)}`);
-                        }
-                    }
-                }
-                else {
-                    const path = getJsonPath(templateMark, context, this.path, modelManager);
-                    const variableValues = jp.query(data, path, 1);
-                    if (variableValues && variableValues.length) {
-                        if (variableValues.length === 1) {
-                            context.isTrue = !!variableValues[0];
-                        }
-                        else {
-                            throw new Error(`Multiple values found for path '${path}' in data ${data}.`);
-                        }
-                    }
-                    else {
-                        context.isTrue = false;
-                    }
-                }
-                context.nodes = context.isTrue ? context.whenTrue : context.whenFalse;
-                delete context.condition;
-                delete context.dependencies;
-                delete context.functionName;
-            }
-
-            // only include the children of a clause if its condition is true
-            else if (CLAUSE_DEFINITION_RE.test(nodeClass)) {
-                const path = getJsonPath(templateMark, context, this.path, modelManager);
-                const variableValues = jp.query(data, path, 1);
-
-                // If there's an explicit condition, evaluate it first (takes precedence over implicit check).
-                // This allows conditions like "return address!==undefined" to work correctly when
-                // the optional field is missing - the condition controls whether to render the clause.
-                if (context.condition) {
-                    checkCode(context.condition);
-                    const key = this.path.join('/');
-                    const resultStr = userCodeResults[key];
-                    let result = false;
-                    if (resultStr === undefined || resultStr === null) {
-                        // Treat missing result as false (e.g., condition didn't return a value)
-                        result = false;
-                    } else {
-                        try {
-                            // Parse the JSON-stringified result to get the actual boolean value
-                            result = !!JSON.parse(resultStr);
-                        } catch (err) {
-                            throw new Error(`Invalid JSON boolean result for condition '${key}': ${String(err)}`);
-                        }
-                    }
-                    if (!result) {
-                        delete context.nodes;
-                        stopHere = true;
-                    }
-                }
-                // Otherwise, apply implicit undefined check: skip clause block if scoped variable is undefined/null.
-                // Skip this check for the root template clause (name === 'top') since its data IS the root object.
-                else if (context.name !== 'top' && (variableValues.length === 0 || variableValues[0] === undefined || variableValues[0] === null)) {
-                    delete context.nodes;
-                    stopHere = true;
-                }
-
-                delete context.condition;
-                delete context.functionName;
-            }
-
-            // add a 'hasSome' property to OptionalDefinition
-            else if (OPTIONAL_DEFINITION_RE.test(nodeClass)) {
-                const path = getJsonPath(templateMark, context, this.path, modelManager);
-                const variableValues = jp.query(data, path, 1);
-                if (variableValues && variableValues.length) {
-                    if (variableValues.length === 1) {
-                        context.hasSome = true;
-                        context.whenNone = [];
-                        // Check if we have processed optional blocks for this path
-                        if (optionalBlockResults[this.path.join('/')]) {
-                            context.nodes = optionalBlockResults[this.path.join('/')];
-                            // Set whenSome to empty since we've processed it, but keep the field for validation
-                            context.whenSome = [];
-                            stopHere = true; // do not process child nodes, we've already done it above...
-                        } else {
-                            // scalar optionals are processed in place, with the parent data context
-                            context.nodes = context.whenSome;
-                            context.whenSome = [];
-                        }
-                    }
-                    else {
-                        throw new Error(`Multiple values found for path '${path}' in data ${data}.`);
-                    }
-                }
-                else {
-                    context.hasSome = false;
-                    context.whenSome = [];
-                    context.nodes = context.whenNone;
-                }
-            }
-        }
-        this.update(context, stopHere);
-    });
+    const ctx: EvaluationContext = {
+        modelManager,
+        introspector,
+        clauseLibrary,
+        userLogic,
+        options
+    };
+    const rootScope: Scope = {
+        data
+    };
+    return evaluate(templateMark, rootScope, ctx);
 }
+
 
 /**
  * A template engine: merges the markup and logic of a template with
