@@ -95,6 +95,18 @@ describe('javascript evaluator', () => {
             expect(err).toEqual(EXCEPTION_RESULT);
         }
     });
+    test.each([
+        ['throw null;', 'null'],
+        ['throw undefined;', 'undefined'],
+        ['throw new Error("my error");', 'Error: my error'],
+    ])('should preserve the caught child error for %s', async (code, message) => {
+        await expect(javaScriptEvaluator.evalChildProcess({
+            code,
+            argumentNames: [],
+            arguments: [],
+        })).rejects.toMatchObject({ code: 1, result: { message } });
+    });
+
     test('should exit after successful code leaves an open handle', async () => {
         const result = await javaScriptEvaluator.evalChildProcess(OPEN_HANDLE, {timeout: 1000});
         delete result.elapsed;

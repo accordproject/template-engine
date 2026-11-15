@@ -39,7 +39,8 @@ process.on('message', (msg) => {
         });
     } catch (err) {
         // console.log(`worker: ${err} ${msg.code}`);
-        process.send({ message: err.toString() }, () => {
+        const message = err === null || err === undefined ? String(err) : err.toString();
+        process.send({ message }, () => {
             process.exit(1);
         });
     }
