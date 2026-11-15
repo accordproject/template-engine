@@ -188,10 +188,10 @@ export class JavaScriptEvaluator {
                 return;
             }
             this.queue.push(workItem);
-            this.processQueue(options);
+            this.processQueue();
         });
     }
-    private processQueue(options: EvalOptions) {
+    private processQueue() {
         const now = new Date().getTime();
         const notExpired = this.queue.filter(w => (now < w.expireTime));
         const expired = this.queue.filter(w => (now >= w.expireTime));
@@ -203,7 +203,7 @@ export class JavaScriptEvaluator {
             // we have a free worker
             const next = this.queue.shift();
             if (next) {
-                this.doWork(next, options)
+                this.doWork(next)
                     .then(result => next.resolve(result))
                     .catch(error => next.reject(error));
             }
@@ -212,7 +212,7 @@ export class JavaScriptEvaluator {
             // no free worker, so sleep and then try again
             sleep(this.options.waitInterval)
                 .then(() => {
-                    this.processQueue(options);
+                    this.processQueue();
                 });
         }
     }
@@ -226,9 +226,8 @@ export class JavaScriptEvaluator {
             return path.join(__dirname, '..', 'lib', 'worker.js');
         }
     }
-    private doWork(work: WorkItem, options: EvalOptions): Promise<EvalResponse> {
+    private doWork(work: WorkItem): Promise<EvalResponse> {
         return new Promise((resolve, reject) => {
-            const start = new Date().getTime();
             // check for browser
             if (!child_process.fork) {
                 reject({ message: 'Cannot use evalChildProcess because child_process.fork is not defined.' });
@@ -236,7 +235,13 @@ export class JavaScriptEvaluator {
             // on timeout will send SIGTERM
             const workerPath = this.getWorkerPath();
             // console.debug(`Worker path: ${workerPath}`);
-            const worker = child_process.fork(workerPath, { timeout: options.timeout, env: {} });
+            const start = new Date().getTime();
+            const timeout = work.expireTime - start;
+            if (timeout <= 0) {
+                reject({ timeout: true, starvation: true, elapsed: start - work.startTime });
+                return;
+            }
+            const worker = child_process.fork(workerPath, { timeout, env: {} });
             if (worker.pid === undefined || worker.pid === null) {
                 throw new Error('Failed to fork child process');
             }
@@ -244,6 +249,7 @@ export class JavaScriptEvaluator {
             work.pid = worker.pid;
             let result: any;
             let resultReceived = false;
+            let expiredBeforeSend = false;
             worker.on('error', (err: any) => {       
                 this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
                 const end = new Date().getTime();
@@ -271,7 +277,7 @@ export class JavaScriptEvaluator {
             worker.on('close', (code: any) => {
                 this.workers = this.workers.filter((w: ChildProcess) => w.pid !== worker.pid);
                 const end = new Date().getTime();
-                if (code === null) {
+                if (expiredBeforeSend || code === null || (code === 0 && resultReceived && end >= work.expireTime)) {
                     reject({ timeout: true, elapsed: end - start });
                 }
                 else if (code === 0 && resultReceived) {
@@ -281,7 +287,11 @@ export class JavaScriptEvaluator {
                     reject({ code, result, elapsed: end - start });
                 }
             });
-            // send the request to the child process
+            expiredBeforeSend = new Date().getTime() >= work.expireTime;
+            if (expiredBeforeSend) {
+                worker.kill();
+                return;
+            }
             worker.send(work.request);
         });
     }
