@@ -1,3 +1,4 @@
+import childProcess, { ChildProcess } from 'child_process';
 import dayjs from 'dayjs';
 import { JavaScriptEvaluator } from '../src/JavaScriptEvaluator';
 import os from 'os';
@@ -129,5 +130,116 @@ describe('javascript evaluator', () => {
             delete err.elapsed;
             expect(err).toEqual(CRASH_ERROR_RESULT);
         }
+    });
+});
+
+describe('javascript evaluator request deadlines', () => {
+    let evaluator: JavaScriptEvaluator;
+    let workers: ChildProcess[];
+    let fork: jest.SpyInstance;
+
+    beforeEach(() => {
+        jest.useFakeTimers({ now: 0 });
+        evaluator = new JavaScriptEvaluator({ maxWorkers: 1, waitInterval: 10, maxQueueDepth: 3 });
+        workers = [];
+        fork = jest.spyOn(childProcess, 'fork').mockImplementation(() => {
+            const worker = Object.assign(new ChildProcess(), { pid: workers.length + 1, send: jest.fn() });
+            workers.push(worker);
+            return worker;
+        });
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
+        jest.useRealTimers();
+    });
+
+    function complete(index: number) {
+        workers[index].emit('message', SIMPLE_RESULT);
+        workers[index].emit('close', 0);
+    }
+
+    test('deducts time in the queue from the worker timeout', async () => {
+        const first = evaluator.evalChildProcess(SIMPLE, { timeout: 1000 });
+        const second = evaluator.evalChildProcess(SIMPLE, { timeout: 1000 });
+        await jest.advanceTimersByTimeAsync(690);
+        complete(0);
+        await jest.advanceTimersByTimeAsync(10);
+        complete(1);
+        await Promise.all([first, second]);
+
+        expect(fork).toHaveBeenNthCalledWith(2, expect.any(String), { timeout: 300, env: {} });
+    });
+
+    test.each([[1000, 250], [250, 1000]])(
+        'uses the selected request deadline (selected timeout %i, polling timeout %i)',
+        async (selectedTimeout, pollingTimeout) => {
+            const first = evaluator.evalChildProcess(SIMPLE, { timeout: 2000 });
+            const selected = evaluator.evalChildProcess(NOW, { timeout: selectedTimeout });
+            await jest.advanceTimersByTimeAsync(11);
+            const later = evaluator.evalChildProcess(SIMPLE, { timeout: pollingTimeout });
+            // After the selected request polls at 20 ms, the later request polls next at 21 ms.
+            await jest.advanceTimersByTimeAsync(9);
+            complete(0);
+            await jest.advanceTimersByTimeAsync(1);
+            complete(1);
+            await jest.advanceTimersByTimeAsync(9);
+            complete(2);
+            await Promise.all([first, selected, later]);
+
+            expect(workers[1].send).toHaveBeenCalledWith(NOW);
+            expect(fork).toHaveBeenNthCalledWith(2, expect.any(String), {
+                timeout: selectedTimeout - 21, env: {}
+            });
+        }
+    );
+
+    test('does not fork when the deadline expires between queue selection and launch', async () => {
+        const first = evaluator.evalChildProcess(SIMPLE, { timeout: 100 });
+        const result = evaluator.evalChildProcess(SIMPLE, { timeout: 10 }).catch(error => error);
+        complete(0);
+        jest.spyOn(Date.prototype, 'getTime').mockReturnValueOnce(9); // queue selection
+        await jest.advanceTimersByTimeAsync(10); // dispatch
+        workers[1]?.emit('close', null);
+        await first;
+        const outcome = await result;
+
+        expect(fork).toHaveBeenCalledTimes(1);
+        expect(outcome).toEqual({ timeout: true, starvation: true, elapsed: 10 });
+        expect(evaluator.workers).toHaveLength(0);
+    });
+
+    test('does not send work if the deadline expires during fork', async () => {
+        fork.mockImplementationOnce(() => {
+            const worker = Object.assign(new ChildProcess(), { pid: 1, send: jest.fn(), kill: jest.fn() });
+            workers.push(worker);
+            jest.setSystemTime(2);
+            return worker;
+        });
+        const expired = evaluator.evalChildProcess(SIMPLE, { timeout: 1 }).catch(error => error);
+        const waiting = evaluator.evalChildProcess(NOW, { timeout: 100 });
+
+        expect(fork).toHaveBeenNthCalledWith(1, expect.any(String), { timeout: 1, env: {} });
+        expect(fork).toHaveBeenCalledTimes(1);
+        expect(workers[0].send).not.toHaveBeenCalled();
+        expect(workers[0].kill).toHaveBeenCalledTimes(1);
+
+        workers[0].emit('close', 0);
+        expect(await expired).toEqual({ timeout: true, elapsed: 2 });
+        await jest.advanceTimersByTimeAsync(10);
+        expect(workers[1].send).toHaveBeenCalledWith(NOW);
+        complete(1);
+        await expect(waiting).resolves.toMatchObject(SIMPLE_RESULT);
+        expect(evaluator.workers).toHaveLength(0);
+    });
+
+    test('rejects a successful worker close at the request deadline', async () => {
+        const result = evaluator.evalChildProcess(SIMPLE, { timeout: 100 });
+        workers[0].emit('message', SIMPLE_RESULT);
+        await jest.advanceTimersByTimeAsync(100);
+        workers[0].emit('close', 0);
+
+        await expect(result).rejects.toEqual({ timeout: true, elapsed: 100 });
+        expect(evaluator.workers).toHaveLength(0);
     });
 });
