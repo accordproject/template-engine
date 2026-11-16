@@ -42,11 +42,64 @@ import {
     NAVIGATION_NODES
 } from './TemplateMarkNodes';
 import { TemplateMarkToJavaScriptCompiler, hasUserCode } from './TemplateMarkToJavaScriptCompiler';
+import type { VocabularyManager } from '@accordproject/concerto-vocabulary';
 import { CodeType, ICode } from './model-gen/org.accordproject.templatemark@0.5.0';
-import { GenerationOptions, joinList } from './TypeScriptRuntime';
+import { GenerationOptions as RuntimeGenerationOptions, joinList } from './TypeScriptRuntime';
 import { getTemplateClassDeclaration } from './utils';
 import { EvalResponse, JavaScriptEvaluator } from './JavaScriptEvaluator';
 import { CompiledUserLogic } from './UserLogic';
+
+/**
+ * The options of {@link TemplateMarkInterpreter.generate}: the runtime options,
+ * plus the ones only the interpreter reads. They are declared here rather than
+ * in TypeScriptRuntime, whose GenerationOptions is copied into the generated
+ * template code (TypeScriptCompilationContext), which never sees a vocabulary.
+ */
+export type GenerationOptions = RuntimeGenerationOptions & {
+    /**
+     * Drafts each enum value as its term in this vocabulary, in `locale`
+     * (issue #10). Ignored without a `locale`.
+     */
+    vocabularyManager?: VocabularyManager
+};
+
+/**
+ * The vocabulary term for an enum value, in the locale of the generation
+ * options. VocabularyManager.getTerm already falls back from a region to its
+ * language (`fr-CA`, then `fr`); English is tried last. Returns undefined, so
+ * the raw value is drafted, when there is no vocabulary or locale, when the
+ * element type is not an enum, or when no locale has a term for the value.
+ * @param {ModelManager} modelManager - the model manager
+ * @param {string} elementType - the fully qualified type of the value
+ * @param {*} value - the value read from the data
+ * @param {GenerationOptions} [options] - the generation options
+ * @returns {string | undefined} the term, if there is one
+ */
+function enumTerm(modelManager: ModelManager, elementType: string | undefined, value: unknown, options?: GenerationOptions): string | undefined {
+    const vocabularyManager = options?.vocabularyManager;
+    const locale = options?.locale;
+    if (!vocabularyManager || !locale || !elementType || typeof value !== 'string' || (ModelUtil as any).isPrimitiveType(elementType)) {
+        return undefined;
+    }
+    let declaration;
+    try {
+        declaration = modelManager.getType(elementType);
+    }
+    catch {
+        return undefined; // not a declared type, so not an enum
+    }
+    if (!declaration?.isEnum()) {
+        return undefined;
+    }
+    const locales = locale.split('-')[0].toLowerCase() === 'en' ? [locale] : [locale, 'en'];
+    for (const candidate of locales) {
+        const term = vocabularyManager.getTerm(declaration.getNamespace(), candidate, declaration.getName(), value);
+        if (typeof term === 'string' && term.length > 0) {
+            return term;
+        }
+    }
+    return undefined;
+}
 
 function checkCode(code: ICode) {
     if (code.type !== CodeType.ES_2020) {
@@ -521,7 +574,8 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                         context.$class = `${CommonMarkModel.NAMESPACE}.Text`;
                         const drafter = getDrafter(context.elementType);
                         context.text = joinList(arrayData.map(arrayItem => {
-                            return drafter ? drafter(arrayItem, context.format) : arrayItem as string;
+                            return enumTerm(modelManager, context.elementType, arrayItem, options)
+                                ?? (drafter ? drafter(arrayItem, context.format) : arrayItem as string);
                         }), context, options);
                         delete context.elementType;
                         delete context.name;
@@ -561,7 +615,8 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                         const type = (ModelUtil as any).isPrimitiveType(context.elementType) ? null : introspector.getClassDeclaration(context.elementType);
                         // we want to draft Enums as strings, not objects
                         const drafter = getDrafter(type && type.isEnum() ? 'String' : context.elementType);
-                        context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
+                        context.value = enumTerm(modelManager, context.elementType, variableValue, options)
+                            ?? (drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string);
                     }
                 }
                 else {
@@ -570,7 +625,8 @@ async function generateAgreement(modelManager: ModelManager, clauseLibrary: obje
                     const type = (ModelUtil as any).isPrimitiveType(context.elementType) ? null : introspector.getClassDeclaration(context.elementType);
                     // we want to draft Enums as strings, not objects
                     const drafter = getDrafter(type && type.isEnum() ? 'String' : context.elementType);
-                    context.value = drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string;
+                    context.value = enumTerm(modelManager, context.elementType, variableValue, options)
+                        ?? (drafter ? drafter(variableValue, context.format) : JSON.stringify(variableValue) as string);
                 }
             }
 

@@ -1,0 +1,25 @@
+namespace org.example.cards@1.0.0
+
+import org.accordproject.contract@0.2.0.Clause from https://models.accordproject.org/accordproject/contract@0.2.0.cto
+
+enum Suit {
+  o HEARTS
+  o SPADES
+  o CLUBS
+  o DIAMONDS
+}
+
+concept Card {
+  o Suit suit
+  o Suit alternative optional
+}
+
+@template
+asset TemplateModel extends Clause {
+  o String player
+  o Suit trump
+  o Suit[] suits
+  o Card[] hand
+  o Suit lead optional
+  o Boolean showTrump
+}
