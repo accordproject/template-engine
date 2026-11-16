@@ -122,7 +122,8 @@ export class TemplateArchiveProcessor {
      * Drafts a template by merging it with data
      * @param {any} data the data to merge with the template
      * @param {string} format the output format
-     * @param {any} options merge options
+     * @param {any} options merge options. With `vocabularyManager` and `locale`,
+     * enum values are drafted as their terms in that vocabulary and locale.
      * @param {[string]} currentTime the current value for 'now'
      * @returns {Promise} the drafted content
      */
@@ -143,7 +144,13 @@ export class TemplateArchiveProcessor {
         const userLogic = hasUserCode(templateMarkDom) ? await this.compileUserLogicForDraft() : undefined;
         const engine = new TemplateMarkInterpreter(modelManager, {}, undefined, userLogic);
         const now = currentTime ? currentTime : new Date().toISOString();
-        const ciceroMark = await engine.generate(templateMarkDom, data, { now });
+        // The locale is only passed on with a vocabulary (issue #10): drafting
+        // without one must stay as it was, and a locale alone would change the
+        // output of {{#join}}, which formats lists in the generation locale.
+        const generationOptions = options?.vocabularyManager
+            ? { now, locale: options.locale, vocabularyManager: options.vocabularyManager }
+            : { now };
+        const ciceroMark = await engine.generate(templateMarkDom, data, generationOptions);
         const result = transform(ciceroMark.toJSON(), 'ciceromark', ['ciceromark_unquoted', format], null, options);
         return result;
     }

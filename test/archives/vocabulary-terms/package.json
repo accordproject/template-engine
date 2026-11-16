@@ -1,0 +1,10 @@
+{
+  "name": "vocabulary-terms",
+  "version": "0.0.1",
+  "description": "Drafts enum values with the terms of a Concerto vocabulary (issue #10)",
+  "accordproject": {
+    "runtime": "typescript",
+    "template": "clause",
+    "cicero": "^3.0.0"
+  }
+}
