@@ -42,13 +42,13 @@ describe('templatemark to javascript compiler', () => {
         const err = thrown as TemplateCompilationError;
         expect(err.name).toBe('TemplateCompilationError');
         expect(err.message).toMatch(/Compilation error in 'formula_/);
-        expect(err.message).toContain("Property 'missing' does not exist on type 'string'. (line 140, col 18)");
+        expect(err.message).toContain("Property 'missing' does not exist on type 'string'. (line 141, col 18)");
         expect(Array.isArray(err.errors)).toBe(true);
         expect(err.errors.length).toBe(1);
         expect(err.errors[0].nodeId).toMatch(/^formula_/);
         expect(err.errors[0].code).toBe(' return message.missing() ');
         expect(err.errors[0].errors[0].renderedMessage).toBe("Property 'missing' does not exist on type 'string'.");
-        expect(err.errors[0].errors[0].line).toBe(140);
+        expect(err.errors[0].errors[0].line).toBe(141);
         expect(err.errors[0].errors[0].character).toBe(18);
 
         expect(JSON.parse(JSON.stringify(err))).toEqual({

@@ -11,8 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import dayjs from 'dayjs';
-import jp from 'jsonpath';
+import { createUserFunction } from './userFunction';
 
 /**
  * This executed JS code inside a child process, so that the code
@@ -24,16 +23,10 @@ process.on('message', (msg) => {
     if (!process.send) {
         throw new Error('Cannot communicate with parent process!');
     }
-    // we wrap the code in "use strict" to so the code cannot access the global scope
-    const code = `"use strict";
-    ${msg.code}
-    `;
     try {
-        // we expose just two node modules to the function: 'dayjs' and 'jsonpath'
-        const argNames = ['dayjs','jp',...msg.argumentNames];
-        const args = [dayjs,jp,...msg.arguments];
-        const fun = new Function(...argNames, code);
-        const result = fun(...args);
+        // the code is strict, so it cannot access the global scope
+        const fun = createUserFunction(msg.argumentNames, msg.code, true);
+        const result = fun(...msg.arguments);
         process.send({ result }, () => {
             process.exit();
         });

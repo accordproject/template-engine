@@ -18,7 +18,7 @@ import { createDefaultMapFromNodeModules } from '@typescript/vfs';
 import { twoslasher, TwoSlashOptions, TwoSlashReturn } from '@typescript/twoslash';
 import { ModelManager } from '@accordproject/concerto-core';
 import { TypeScriptCompilationContext } from './TypeScriptCompilationContext';
-import { DAYJS_BASE64, JSONPATH_BASE64 } from './runtime/declarations';
+import { DAYJS_BASE64, JSONPATH_BASE64, TEMPORAL_BASE64 } from './runtime/declarations';
 import * as lzstring from 'lz-string';
 
 /**
@@ -33,7 +33,7 @@ import * as lzstring from 'lz-string';
  * node_modules (Node.js) or from the bundle (browser), so no network requests are made.
  *
  * The 'updateRuntimeDependencies' script it used to package type declarations for 3rd-party
- * modules that we need to expose to user TS code: dayjs and jsonpath, these also need to be
+ * modules that we need to expose to user TS code: dayjs, jsonpath and the Temporal polyfill, these also need to be
  * added to the twoslash compilation context. It also packages the TypeScript lib files
  * for the browser.
  */
@@ -152,6 +152,7 @@ async function loadTypeScriptLibrary(): Promise<TypeScriptLibrary> {
     fsMap.set(`/${CONSOLE_LIB}`, CONSOLE_DECLARATION);
     fsMap.set('/node_modules/@types/dayjs/index.d.ts', Buffer.from(DAYJS_BASE64, 'base64').toString());
     fsMap.set('/node_modules/@types/jsonpath/index.d.ts', Buffer.from(JSONPATH_BASE64, 'base64').toString());
+    fsMap.set('/node_modules/@js-temporal/polyfill/index.d.ts', Buffer.from(TEMPORAL_BASE64, 'base64').toString());
     return { ts, fsMap };
 }
 

@@ -82,6 +82,17 @@ export function removeSync(path:string) {
 }
 
 /**
+ * Returns true if code contains name as an identifier, rather than as part of a longer
+ * identifier or as a property access (e.g. `x.name`).
+ * @param {string} code - the code to search
+ * @param {string} name - the identifier
+ * @returns {boolean} true if the identifier occurs in the code
+ */
+export function referencesIdentifier(code: string, name: string): boolean {
+    return new RegExp(`(^|[^\\w$.])${name}($|[^\\w$])`).test(code);
+}
+
+/**
  * Writes user code (a formula or condition) as a TypeScript function.
  * @param {ClassDeclaration} templateClass - the template model class
  * @param {string} functionName - the name of the generated function
@@ -97,6 +108,12 @@ export function writeFunctionToString(templateClass:ClassDeclaration, functionNa
     result += '/// ---cut---\n';
     result += `export function ${functionName}(data:TemplateModel.I${templateClass.getName()}, library:any, options:GenerationOptions) : ${returnType} {\n`;
     result += '   const now = dayjs(options?.now);\n';
+    // the same instant as `now`, so drafting stays deterministic given options.now. A template
+    // property called temporalNow or Temporal takes precedence, as it did before temporalNow existed.
+    const propertyNames = templateClass.getProperties().map((p: Property) => p.getName());
+    if (referencesIdentifier(code, 'temporalNow') && !propertyNames.includes('temporalNow') && !propertyNames.includes('Temporal')) {
+        result += '   const temporalNow = Temporal.Instant.fromEpochMilliseconds(now.valueOf());\n';
+    }
     result += '   const locale = options?.locale;\n';
     templateClass.getProperties().forEach((p: Property) => {
         result += `   const ${p.getName()} = data.${p.getName()};\n`;

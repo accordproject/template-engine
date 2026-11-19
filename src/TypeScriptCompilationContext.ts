@@ -192,6 +192,7 @@ ${content}
 import * as TemplateModel from './generated/${this.templateClass.getNamespace()}';
 import dayjs from 'dayjs';
 import jp from 'jsonpath';
+import { Temporal } from '@js-temporal/polyfill';
 ${this.getRuntimeDeclarations()}
 type GenerationOptions = {
     now?:string,

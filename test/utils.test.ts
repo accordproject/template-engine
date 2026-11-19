@@ -26,7 +26,8 @@ import {
     writeFunctionToString,
     nameUserCode,
     getTemplateClassDeclaration,
-    wrapExpressionWithReturn
+    wrapExpressionWithReturn,
+    referencesIdentifier
 } from '../src/utils';
 
 const MODEL_NS = 'test.hierarchy@1.0.0';
@@ -207,6 +208,41 @@ describe('src/utils.ts unit test suite', () => {
             // Trimmed user code body
             expect(output).toContain('return count > 10 && active;');
             expect(output.endsWith('}\n\n')).toBe(true);
+
+            // temporalNow is only declared for code that uses it
+            expect(output).not.toContain('temporalNow');
+        });
+
+        test('declares temporalNow as the instant of now when the code uses it', () => {
+            const templateClass = modelManager.getType(`${MODEL_NS}.MultiPropTemplate`);
+            const output = writeFunctionToString(templateClass, 'formula_temporal', 'string', 'return temporalNow.toString();');
+            expect(output).toContain('const temporalNow = Temporal.Instant.fromEpochMilliseconds(now.valueOf());');
+            // declared after now, which it is derived from
+            expect(output.indexOf('const temporalNow')).toBeGreaterThan(output.indexOf('const now'));
+        });
+
+        test('does not declare temporalNow when a template property has that name', () => {
+            const mm = new ModelManager();
+            mm.addCTOModel('namespace test.temporal@1.0.0\n@template\nconcept T {\n    o String temporalNow\n}', 'temporal.cto');
+            const output = writeFunctionToString(mm.getType('test.temporal@1.0.0.T'), 'formula_temporal', 'string', 'return temporalNow;');
+            expect(output).not.toContain('Temporal.Instant');
+            expect(output).toContain('const temporalNow = data.temporalNow;');
+        });
+    });
+
+    describe('referencesIdentifier', () => {
+        test('matches the identifier on its own', () => {
+            expect(referencesIdentifier('temporalNow', 'temporalNow')).toBe(true);
+            expect(referencesIdentifier('return temporalNow.add({ days: 1 });', 'temporalNow')).toBe(true);
+            expect(referencesIdentifier('f(temporalNow)', 'temporalNow')).toBe(true);
+        });
+
+        test('does not match a longer identifier or a property access', () => {
+            expect(referencesIdentifier('return temporalNowish;', 'temporalNow')).toBe(false);
+            expect(referencesIdentifier('return myTemporalNow;', 'temporalNow')).toBe(false);
+            expect(referencesIdentifier('return $temporalNow;', 'temporalNow')).toBe(false);
+            expect(referencesIdentifier('return data.temporalNow;', 'temporalNow')).toBe(false);
+            expect(referencesIdentifier('return now.toISOString();', 'temporalNow')).toBe(false);
         });
     });
 

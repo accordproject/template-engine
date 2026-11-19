@@ -53,6 +53,7 @@
     "@accordproject/markdown-common": "^2.0.0",
     "@accordproject/markdown-template": "^2.0.0",
     "@accordproject/markdown-transform": "^2.0.0",
+    "@js-temporal/polyfill": "0.5.1",
     "@typescript/twoslash": "^3.2.9",
     "browser-or-node": "^3.0.0",
     "dayjs": "1.11.13",

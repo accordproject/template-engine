@@ -15,8 +15,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import child_process from 'child_process';
-import jp from 'jsonpath';
-import dayjs from 'dayjs';
+import { createUserFunction } from './userFunction';
 import { EventEmitter } from 'node:events';
 import path from 'path';
 
@@ -115,8 +114,8 @@ export class JavaScriptEvaluator {
                 let result = null;
                 // is this a simple JS function?
                 if(!request.templateLogic) {
-                    const fun = new Function(...['dayjs', 'jp', ...request.argumentNames], request.code);
-                    result = fun(...[dayjs, jp, ...request.arguments]);
+                    const fun = createUserFunction(request.argumentNames, request.code);
+                    result = fun(...request.arguments);
                     const end = new Date().getTime();
                     resolve({ result, elapsed: end - start });
                 }
