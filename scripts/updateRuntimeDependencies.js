@@ -42,9 +42,9 @@ const HEADER = `/*
 `;
 
 /**
- * Package the TypeScript declarations for dayjs and jsonpath.
+ * Package the TypeScript declarations for dayjs, jsonpath and the Temporal polyfill.
  * These are needed at runtime to type-check user TypeScript code and template logic
- * against the dayjs / jsonpath libraries when compiling to JS.
+ * against the dayjs / jsonpath / Temporal libraries when compiling to JS.
  *
  * Note: the runtime SmartLegalContract declarations (TemplateLogic, EngineResponse,
  * etc.) are no longer bundled here. They are emitted directly by
@@ -57,6 +57,9 @@ const dayjs = readFileSync('./node_modules/dayjs/index.d.ts').toString(
 const jsonpath = readFileSync(
   './node_modules/@types/jsonpath/index.d.ts'
 ).toString('base64');
+const temporal = readFileSync(
+  './node_modules/@js-temporal/polyfill/index.d.ts'
+).toString('base64');
 
 removeSync('./src/runtime/');
 ensureDirSync('./src/runtime/');
@@ -67,6 +70,7 @@ ${HEADER}
 
 export const DAYJS_BASE64 = '${dayjs}';
 export const JSONPATH_BASE64 = '${jsonpath}';
+export const TEMPORAL_BASE64 = '${temporal}';
 `
 );
 

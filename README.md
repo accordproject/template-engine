@@ -123,6 +123,23 @@ This AgreementMark JSON document can then be passed to the `@accordproject/markd
 }
 ```
 
+## Dates and Times in Formulae
+
+Formulae and conditions can use these values for the current time:
+
+| Name | Type | Value |
+|---|---|---|
+| `now` | [dayjs](https://day.js.org) object | the `now` generation option (the `currentTime` argument of `TemplateArchiveProcessor.draft`), or the current time if it isn't set |
+| `temporalNow` | [`Temporal.Instant`](https://tc39.es/proposal-temporal/docs/instant.html) | the same instant as `now` |
+
+The [Temporal](https://tc39.es/proposal-temporal/docs/) API is also available as `Temporal`, for dates, times, time zones and durations. The engine uses the runtime's built-in `Temporal` when it has one, and [@js-temporal/polyfill](https://www.npmjs.com/package/@js-temporal/polyfill) otherwise.
+
+A `Temporal.Instant` has no time zone, so name one when a formula needs a calendar date or a time of day:
+
+```
+The effective date is {{% return temporalNow.toZonedDateTimeISO('Europe/Paris').toPlainDate().toString() %}}.
+```
+
 ## Next Steps
 
 The Hello World example just scratches the surface of what can be accomplished! TemplateMark can define optional sections, conditional sections, TypeScript formulae/calculations and even reference external data.

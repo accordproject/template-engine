@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`templatemark interpreter should fail to generate formula-invalid 1`] = `[TemplateCompilationError: Compilation error in 'formula_adef0feb9fc1b6e7513409c93d86aa4d9999d35608e1aaeecc07dca99bc591c8': Cannot find name 'THIS'. (line 140, col 3); Cannot find name 'IS'. (line 140, col 8); Cannot find name 'GARBAGE'. (line 140, col 11); Unknown keyword or identifier. Did you mean 'this'? (line 140, col 3); Unexpected keyword or identifier. (line 140, col 8)]`;
+exports[`templatemark interpreter should fail to generate formula-invalid 1`] = `[TemplateCompilationError: Compilation error in 'formula_adef0feb9fc1b6e7513409c93d86aa4d9999d35608e1aaeecc07dca99bc591c8': Cannot find name 'THIS'. (line 141, col 3); Cannot find name 'IS'. (line 141, col 8); Cannot find name 'GARBAGE'. (line 141, col 11); Unknown keyword or identifier. Did you mean 'this'? (line 141, col 3); Unexpected keyword or identifier. (line 141, col 8)]`;
 
 exports[`templatemark interpreter should fail to generate formula-invalid: compilation errors 1`] = `
 [
@@ -11,51 +11,51 @@ exports[`templatemark interpreter should fail to generate formula-invalid: compi
         "category": 1,
         "character": 3,
         "code": 2304,
-        "id": "err-2304-2622-4",
+        "id": "err-2304-2672-4",
         "length": 4,
-        "line": 140,
+        "line": 141,
         "renderedMessage": "Cannot find name 'THIS'.",
-        "start": 3730,
+        "start": 3780,
       },
       {
         "category": 1,
         "character": 8,
         "code": 2304,
-        "id": "err-2304-2627-2",
+        "id": "err-2304-2677-2",
         "length": 2,
-        "line": 140,
+        "line": 141,
         "renderedMessage": "Cannot find name 'IS'.",
-        "start": 3735,
+        "start": 3785,
       },
       {
         "category": 1,
         "character": 11,
         "code": 2304,
-        "id": "err-2304-2630-7",
+        "id": "err-2304-2680-7",
         "length": 7,
-        "line": 140,
+        "line": 141,
         "renderedMessage": "Cannot find name 'GARBAGE'.",
-        "start": 3738,
+        "start": 3788,
       },
       {
         "category": 1,
         "character": 3,
         "code": 1435,
-        "id": "err-1435-2622-4",
+        "id": "err-1435-2672-4",
         "length": 4,
-        "line": 140,
+        "line": 141,
         "renderedMessage": "Unknown keyword or identifier. Did you mean 'this'?",
-        "start": 3730,
+        "start": 3780,
       },
       {
         "category": 1,
         "character": 8,
         "code": 1434,
-        "id": "err-1434-2627-2",
+        "id": "err-1434-2677-2",
         "length": 2,
-        "line": 140,
+        "line": 141,
         "renderedMessage": "Unexpected keyword or identifier.",
-        "start": 3735,
+        "start": 3785,
       },
     ],
     "nodeId": "formula_adef0feb9fc1b6e7513409c93d86aa4d9999d35608e1aaeecc07dca99bc591c8",
@@ -63,7 +63,7 @@ exports[`templatemark interpreter should fail to generate formula-invalid: compi
 ]
 `;
 
-exports[`templatemark interpreter should fail to generate formula-no-method 1`] = `[TemplateCompilationError: Compilation error in 'formula_4ef52e3adc6e5334e0925838eed0e51a372091d9b3a4499537ccf82fce5b1b25': Property 'missing' does not exist on type 'string'. (line 140, col 18)]`;
+exports[`templatemark interpreter should fail to generate formula-no-method 1`] = `[TemplateCompilationError: Compilation error in 'formula_4ef52e3adc6e5334e0925838eed0e51a372091d9b3a4499537ccf82fce5b1b25': Property 'missing' does not exist on type 'string'. (line 141, col 18)]`;
 
 exports[`templatemark interpreter should fail to generate formula-no-method: compilation errors 1`] = `
 [
@@ -74,11 +74,11 @@ exports[`templatemark interpreter should fail to generate formula-no-method: com
         "category": 1,
         "character": 18,
         "code": 2339,
-        "id": "err-2339-2637-7",
+        "id": "err-2339-2687-7",
         "length": 7,
-        "line": 140,
+        "line": 141,
         "renderedMessage": "Property 'missing' does not exist on type 'string'.",
-        "start": 3745,
+        "start": 3795,
       },
     ],
     "nodeId": "formula_4ef52e3adc6e5334e0925838eed0e51a372091d9b3a4499537ccf82fce5b1b25",
@@ -440,6 +440,102 @@ exports[`templatemark interpreter should generate formula-now 1`] = `
             {
               "$class": "org.accordproject.commonmark@0.5.0.Text",
               "text": ".",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "xmlns": "http://commonmark.org/xml/1.0",
+}
+`;
+
+exports[`templatemark interpreter should generate formula-temporal 1`] = `
+{
+  "$class": "org.accordproject.commonmark@0.5.0.Document",
+  "nodes": [
+    {
+      "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+      "nodes": [
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "Hello ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Variable",
+              "elementType": "String",
+              "name": "message",
+              "value": "World",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "! The instant is ",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Strong",
+              "nodes": [
+                {
+                  "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+                  "dependencies": [],
+                  "name": "formula_988fb56b8f36f9082ed461e47cf7568ccc197742689c61f08557326e76584b2a",
+                  "value": ""2023-03-17T00:00:00Z"",
+                },
+              ],
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": ", the same as ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+              "dependencies": [],
+              "name": "formula_f0bf5a79ebf5383c600fde8b5741509daa86e1c85d4f4572d5564ec65a1b8e3a",
+              "value": ""2023-03-17T00:00:00.000Z"",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": ".",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "In New York it is still ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+              "dependencies": [],
+              "name": "formula_61dbd8ce3496f585afa7458fa5a74e9d34a4dbd18e4c5ce9801476eea1304495",
+              "value": ""2023-03-16"",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": ".",
+            },
+          ],
+        },
+        {
+          "$class": "org.accordproject.commonmark@0.5.0.Paragraph",
+          "nodes": [
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": "The agreement became effective ",
+            },
+            {
+              "$class": "org.accordproject.ciceromark@0.6.0.Formula",
+              "dependencies": [],
+              "name": "formula_ba7aeb47e8bba7b2f716c1625191b4ad429d75fc5b4c627e8e62217e317894d9",
+              "value": "374",
+            },
+            {
+              "$class": "org.accordproject.commonmark@0.5.0.Text",
+              "text": " hours ago.",
             },
           ],
         },

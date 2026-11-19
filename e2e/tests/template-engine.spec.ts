@@ -118,4 +118,25 @@ test.describe('@accordproject/template-engine UMD', () => {
         expect(results[2]).toBe(results[0]);
         expect(requests).toEqual([]);
     });
+
+    test('evaluates Temporal formulas in the browser', async ({ page }) => {
+        const requests = trackNetworkRequests(page);
+        await inject(page);
+        const json = await page.evaluate(async () => {
+            const { ModelManager, TemplateMarkTransformer, TemplateMarkInterpreter } =
+                (window as any)['template-engine'];
+            const MODEL = 'namespace test@1.0.0\n@template\nconcept TemplateData {\n  o String name\n}';
+            const mm = new ModelManager();
+            mm.addCTOModel(MODEL, undefined, true);
+            const templateMark = new TemplateMarkTransformer().fromMarkdownTemplate(
+                { content: 'Signed {{% return temporalNow.toString() %}}, due {{% return Temporal.PlainDate.from(\'2024-02-28\').add({ days: 2 }).toString() %}}.' },
+                mm, 'contract', { verbose: false });
+            const data = { $class: 'test@1.0.0.TemplateData', name: 'World' };
+            const result = await new TemplateMarkInterpreter(mm, {}).generate(templateMark, data, { now: '2023-03-17T00:00:00.000Z' });
+            return JSON.stringify(result.toJSON());
+        });
+        expect(json).toContain('"value":"\\"2023-03-17T00:00:00Z\\""');
+        expect(json).toContain('"value":"\\"2024-03-01\\""');
+        expect(requests).toEqual([]);
+    });
 });
