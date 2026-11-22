@@ -425,4 +425,32 @@ concept TemplateData {
             ])])).toBe('Alice 25 25');
         });
     });
+
+    // Regression for https://github.com/accordproject/template-engine/issues/233.
+    // checkTypes() validates the input TemplateMark, so its error must not use the
+    // "Generated invalid agreement" wording that belongs to validateCiceroMark().
+    test('checkTypes reports an invalid input TemplateMark, not an invalid agreement', () => {
+        const NS = 'test@1.0.0';
+        const modelManager = new ModelManager();
+        modelManager.addCTOModel(`namespace ${NS}
+@template
+concept TemplateData {
+    o String name
+}`);
+        const engine = new TemplateMarkInterpreter(modelManager, {});
+        const templateMark = {
+            $class: `${CommonMarkModel.NAMESPACE}.Document`,
+            xmlns: 'http://commonmark.org/xml/1.0',
+            nodes: [{ $class: 'org.accordproject.templatemark@0.5.0.NotARealNode' }]
+        };
+        let err: any;
+        try {
+            engine.checkTypes(templateMark);
+        } catch (e) {
+            err = e;
+        }
+        expect(err).toBeInstanceOf(Error);
+        expect(err.message).toContain('Invalid TemplateMark');
+        expect(err.message).not.toContain('Generated invalid agreement');
+    });
 });
