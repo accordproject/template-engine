@@ -3,6 +3,7 @@ import os from 'os';
 import path from 'path';
 import {Template} from '@accordproject/cicero-core';
 import { TemplateArchiveProcessor, InitResponse, TriggerResponse, resolveLogicEntryPoint } from '../src/TemplateArchiveProcessor';
+import { TypeScriptToJavaScriptCompiler } from '../src/TypeScriptToJavaScriptCompiler';
 
 const TEMPLATE_DIR = 'test/archives/latedeliveryandpenalty-typescript';
 
@@ -162,6 +163,94 @@ describe('template archive processor', () => {
         await templateArchiveProcessor.compileLogic(true);
 
         expect(validationSpy).toHaveBeenCalledTimes(1);
+    });
+
+    describe('compiled logic cache on init and trigger', () => {
+        const data = {
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.TemplateModel",
+            "forceMajeure": true,
+            "penaltyDuration": {
+                "$class": "org.accordproject.time@0.3.0.Duration",
+                "amount": 2,
+                "unit": "days"
+            },
+            "penaltyPercentage": 10.5,
+            "capPercentage": 55,
+            "termination": {
+                "$class": "org.accordproject.time@0.3.0.Duration",
+                "amount": 15,
+                "unit": "days"
+            },
+            "fractionalPart": "days",
+            "clauseId": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8",
+            "$identifier": "c88e5ed7-c3e0-4249-a99c-ce9278684ac8"
+        };
+        const request = {
+            "$class": "io.clause.latedeliveryandpenalty@0.1.0.LateDeliveryAndPenaltyRequest",
+            "forceMajeure": false,
+            "agreedDelivery": "2017-10-07T16:38:01.412Z",
+            "goodsValue": 100,
+            "$timestamp": "2017-10-07T16:38:01.412Z"
+        };
+
+        // the sample logic stamps $timestamp from the wall clock, so leave it out of comparisons
+        const withoutTimestamps = (value: unknown) =>
+            JSON.parse(JSON.stringify(value, (key, field) => (key === '$timestamp' ? undefined : field)));
+
+        afterEach(() => {
+            jest.restoreAllMocks();
+        });
+
+        test('should compile the logic once across repeated cached init and trigger calls', async () => {
+            const template = await loadTemplate();
+            const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+            const compileSpy = jest.spyOn(TypeScriptToJavaScriptCompiler.prototype, 'compile');
+
+            let { state } = await templateArchiveProcessor.init(data, undefined, undefined, true);
+            const compilationsForOneCall = compileSpy.mock.calls.length;
+            expect(compilationsForOneCall).toBeGreaterThan(0);
+
+            for (let n = 1; n <= 3; n++) {
+                const response = await templateArchiveProcessor.trigger(data, request, state, undefined, undefined, true);
+                state = response.state;
+                expect((state as { count?: number }).count).toBe(n);
+            }
+            await templateArchiveProcessor.init(data, undefined, undefined, true);
+
+            expect(compileSpy).toHaveBeenCalledTimes(compilationsForOneCall);
+            // the first call compiles each TypeScript file once (the cached result is returned without compiling)
+            const compiledFiles = Object.keys(await templateArchiveProcessor.compileLogic(true));
+            expect(compilationsForOneCall).toBe(compiledFiles.length);
+        });
+
+        test('should recompile the logic on every call when the cache is not enabled', async () => {
+            const template = await loadTemplate();
+            const templateArchiveProcessor = new TemplateArchiveProcessor(template);
+            const compileSpy = jest.spyOn(TypeScriptToJavaScriptCompiler.prototype, 'compile');
+
+            const { state } = await templateArchiveProcessor.init(data);
+            const compilationsForOneCall = compileSpy.mock.calls.length;
+            await templateArchiveProcessor.trigger(data, request, state);
+            await templateArchiveProcessor.trigger(data, request, state);
+
+            expect(compileSpy).toHaveBeenCalledTimes(compilationsForOneCall * 3);
+        });
+
+        test('should return the same results with and without the cache', async () => {
+            const template = await loadTemplate();
+            const now = '2024-01-01T00:00:00.000Z';
+            const uncached = new TemplateArchiveProcessor(template);
+            const cached = new TemplateArchiveProcessor(template);
+
+            const uncachedInit = await uncached.init(data, now);
+            const cachedInit = await cached.init(data, now, 0, true);
+            expect(cachedInit).toEqual(uncachedInit);
+
+            const uncachedTrigger = await uncached.trigger(data, request, uncachedInit.state, now);
+            await cached.trigger(data, request, cachedInit.state, now, 0, true);
+            const cachedTrigger = await cached.trigger(data, request, cachedInit.state, now, 0, true);
+            expect(withoutTimestamps(cachedTrigger)).toEqual(withoutTimestamps(uncachedTrigger));
+        });
     });
 
     test('should reject plain default-exported classes', async () => {

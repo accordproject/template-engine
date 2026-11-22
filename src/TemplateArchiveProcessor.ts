@@ -390,10 +390,11 @@ export class TemplateArchiveProcessor {
      * trigger()); required for stateful templates, ignored for stateless ones
      * @param {string} [currentTime] - the current time, defaults to now
      * @param {number} [utcOffset] - the UTC offset, defaults to zero
+     * @param {boolean} [enableCompiledLogicCache] - whether to use the compiled logic cache
      * @returns {Promise<TriggerResponse>} the response and any events
      */
-    private async executeTypeScriptTrigger(data: any, request: any, priorState?: any, currentTime?: string, utcOffset?: number): Promise<TriggerResponse> {
-        const compiledCode = await this.compileLogic();
+    private async executeTypeScriptTrigger(data: any, request: any, priorState?: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<TriggerResponse> {
+        const compiledCode = await this.compileLogic(enableCompiledLogicCache);
         const resolvedTime = currentTime ?? new Date().toISOString();
         const resolvedOffset = utcOffset ?? 0;
         const evaluator = new JavaScriptEvaluator();
@@ -420,10 +421,11 @@ export class TemplateArchiveProcessor {
      * @param {any} data - the data for the template
      * @param {string} [currentTime] - the current time, defaults to now
      * @param {number} [utcOffset] - the UTC offset, defaults to zero
+     * @param {boolean} [enableCompiledLogicCache] - whether to use the compiled logic cache
      * @returns {Promise<InitResponse>} the new state
      */
-    private async executeTypeScriptInit(data: any, currentTime?: string, utcOffset?: number): Promise<InitResponse> {
-        const compiledCode = await this.compileLogic();
+    private async executeTypeScriptInit(data: any, currentTime?: string, utcOffset?: number, enableCompiledLogicCache?: boolean): Promise<InitResponse> {
+        const compiledCode = await this.compileLogic(enableCompiledLogicCache);
         const logicCode = compiledCode[resolveLogicEntryPoint(Object.keys(compiledCode))].code;
 
         const resolvedTime = currentTime ?? new Date().toISOString();
@@ -501,10 +503,7 @@ export class TemplateArchiveProcessor {
 
         // Run the template's TypeScript logic unless the caller forces the LLM path.
         if (!forceLLM && this.template.hasLogic()) {
-            if (enableCompiledLogicCache) {
-                await this.compileLogic(true);
-            }
-            triggerResponse = await this.executeTypeScriptTrigger(data, request, priorState, currentTime, utcOffset);
+            triggerResponse = await this.executeTypeScriptTrigger(data, request, priorState, currentTime, utcOffset, enableCompiledLogicCache);
         } else if (forceLLM || this.shouldUseLLM()) {
             // Otherwise use the LLM executor
             triggerResponse = await this.makeLLMExecutor().trigger(data, request, priorState, currentTime, utcOffset);
@@ -550,10 +549,7 @@ export class TemplateArchiveProcessor {
 
         // Run the template's TypeScript logic unless the caller forces the LLM path.
         if (!forceLLM && this.template.hasLogic()) {
-            if (enableCompiledLogicCache) {
-                await this.compileLogic(true);
-            }
-            initResponse = await this.executeTypeScriptInit(data, currentTime, utcOffset);
+            initResponse = await this.executeTypeScriptInit(data, currentTime, utcOffset, enableCompiledLogicCache);
         } else if (forceLLM || this.shouldUseLLM()) {
             // Otherwise use the LLM executor
             initResponse = await this.makeLLMExecutor().init(data, currentTime, utcOffset);
