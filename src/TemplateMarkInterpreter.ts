@@ -728,7 +728,7 @@ export class TemplateMarkInterpreter {
             serializer.fromJSON(templateMark, {});
         }
         catch (err) {
-            throw new Error(`Generated invalid agreement: ${err}: ${JSON.stringify(templateMark, null, 2)}`);
+            throw new Error(`Invalid TemplateMark: ${err}: ${JSON.stringify(templateMark, null, 2)}`);
         }
 
         const errors: Array<{ propertyName: string, message: string }> = [];
