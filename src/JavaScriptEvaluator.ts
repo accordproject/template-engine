@@ -79,6 +79,67 @@ export const dynamicImport = async <T>(path: string, symbol?: string) => {
 
 type TemplateLogicClassConstructor = () => void;
 
+function safeString(val: unknown): string {
+    try {
+        if (typeof val === 'string') {
+            return val;
+        }
+        if (typeof val === 'symbol') {
+            return val.toString();
+        }
+        return String(val);
+    } catch {
+        return '[Unserializable value]';
+    }
+}
+
+function toError(err: unknown): Error {
+    let error: Error;
+    if (err instanceof Error) {
+        error = err;
+    } else if (typeof err === 'object' && err !== null) {
+        let customMessage: string | undefined;
+        try {
+            if ('message' in err && typeof (err as any).message === 'string') {
+                customMessage = (err as any).message;
+            }
+        } catch {
+            // getter threw
+        }
+        if (customMessage !== undefined) {
+            error = new Error(customMessage);
+            (error as any).cause = err;
+            try {
+                if ('stack' in err && typeof (err as any).stack === 'string') {
+                    error.stack = (err as any).stack;
+                }
+            } catch {
+                // getter threw
+            }
+        } else {
+            const msg = safeString(err);
+            error = new Error(msg);
+            (error as any).cause = err;
+        }
+    } else {
+        error = new Error(safeString(err));
+    }
+
+    try {
+        Object.defineProperty(error, 'message', { value: error.message, enumerable: true, writable: true, configurable: true });
+    } catch {
+        // ignore if frozen
+    }
+    if (error.stack) {
+        try {
+            Object.defineProperty(error, 'stack', { value: error.stack, enumerable: true, writable: true, configurable: true });
+        } catch {
+            // ignore if frozen
+        }
+    }
+    return error;
+}
+
 /**
  * This class implements two JS function evaluation strategies:
  * 1. evalDangerously which creates a dynamic function and run it in-process
@@ -137,32 +198,13 @@ export class JavaScriptEvaluator {
                         })
                         .catch(err => {
                             console.error(err);
-                            if(err instanceof Error){
-                                reject({
-                                    message: err.message,
-                                    stack: err.stack,
-                                });
-                            }else{
-                                reject({
-                                    message: String(err),
-                                });
-                            }
-                            
+                            reject(toError(err));
                         });
                 }
             }
             catch (err: any) {
                 console.error(err);
-                if(err instanceof Error){
-                    reject({
-                        message: err.message,
-                        stack: err.stack,
-                    });
-                }else{
-                    reject({
-                        message: String(err),
-                    })
-                }
+                reject(toError(err));
             }
         });
     }

@@ -131,3 +131,195 @@ describe('javascript evaluator', () => {
         }
     });
 });
+
+describe('javascript evaluator in-process error normalization', () => {
+    test('preserves exact Error reference equality through evaluation', async () => {
+        const originalError = new TypeError('original failure');
+
+        const promise = javaScriptEvaluator.evalDangerously({
+            code: 'throw err;',
+            argumentNames: ['err'],
+            arguments: [originalError]
+        });
+
+        const caught = await promise.catch(error => error);
+
+        expect(caught).toBe(originalError);
+    });
+
+    test('preserves standard Error instance, message, and stack trace', async () => {
+        const promise = javaScriptEvaluator.evalDangerously({
+            code: 'throw new Error("standard error");',
+            argumentNames: [],
+            arguments: []
+        });
+
+        await expect(promise).rejects.toBeInstanceOf(Error);
+        const err = await promise.catch(e => e);
+        expect(err.message).toBe('standard error');
+        expect(err.stack).toContain('standard error');
+        expect(String(err)).toBe('Error: standard error');
+    });
+
+    test('preserves Error subclasses and their specific prototypes', async () => {
+        const promise = javaScriptEvaluator.evalDangerously({
+            code: 'throw new RangeError("index out of bounds");',
+            argumentNames: [],
+            arguments: []
+        });
+
+        await expect(promise).rejects.toBeInstanceOf(RangeError);
+        await expect(promise).rejects.toBeInstanceOf(Error);
+        const err = await promise.catch(e => e);
+        expect(err.name).toBe('RangeError');
+        expect(err.message).toBe('index out of bounds');
+        expect(String(err)).toBe('RangeError: index out of bounds');
+    });
+
+    test('preserves nested Error cause', async () => {
+        const promise = javaScriptEvaluator.evalDangerously({
+            code: 'throw new Error("outer error", { cause: new TypeError("inner root cause") });',
+            argumentNames: [],
+            arguments: []
+        });
+
+        await expect(promise).rejects.toBeInstanceOf(Error);
+        const err = await promise.catch(e => e);
+        expect(err.message).toBe('outer error');
+        expect((err as any).cause).toBeInstanceOf(TypeError);
+        expect(((err as any).cause as TypeError).message).toBe('inner root cause');
+    });
+
+    test('normalizes primitive string throws into an Error', async () => {
+        const promise = javaScriptEvaluator.evalDangerously({
+            code: 'throw "string failure";',
+            argumentNames: [],
+            arguments: []
+        });
+
+        await expect(promise).rejects.toBeInstanceOf(Error);
+        const err = await promise.catch(e => e);
+        expect(err.message).toBe('string failure');
+        expect(String(err)).toBe('Error: string failure');
+    });
+
+    test('normalizes null, undefined, and number throws into Error instances', async () => {
+        const nullPromise = javaScriptEvaluator.evalDangerously({
+            code: 'throw null;',
+            argumentNames: [],
+            arguments: []
+        });
+        await expect(nullPromise).rejects.toBeInstanceOf(Error);
+        const nullErr = await nullPromise.catch(e => e);
+        expect(nullErr.message).toBe('null');
+
+        const undefinedPromise = javaScriptEvaluator.evalDangerously({
+            code: 'throw undefined;',
+            argumentNames: [],
+            arguments: []
+        });
+        await expect(undefinedPromise).rejects.toBeInstanceOf(Error);
+        const undefErr = await undefinedPromise.catch(e => e);
+        expect(undefErr.message).toBe('undefined');
+
+        const numberPromise = javaScriptEvaluator.evalDangerously({
+            code: 'throw 404;',
+            argumentNames: [],
+            arguments: []
+        });
+        await expect(numberPromise).rejects.toBeInstanceOf(Error);
+        const numErr = await numberPromise.catch(e => e);
+        expect(numErr.message).toBe('404');
+    });
+
+    test('normalizes plain object with message property and preserves it as cause', async () => {
+        const promise = javaScriptEvaluator.evalDangerously({
+            code: 'throw { message: "custom object error", code: "ERR_CUSTOM" };',
+            argumentNames: [],
+            arguments: []
+        });
+
+        await expect(promise).rejects.toBeInstanceOf(Error);
+        const err = await promise.catch(e => e);
+        expect(err.message).toBe('custom object error');
+        expect(err.cause).toEqual({ message: 'custom object error', code: 'ERR_CUSTOM' });
+    });
+
+    test('safely normalizes hostile objects with throwing getters', async () => {
+        const promise = javaScriptEvaluator.evalDangerously({
+            code: 'throw { get message() { throw new Error("getter bomb"); }, toString() { throw new Error("toString bomb"); } };',
+            argumentNames: [],
+            arguments: []
+        });
+
+        await expect(promise).rejects.toBeInstanceOf(Error);
+        const err = await promise.catch(e => e);
+        expect(err.message).toBe('[Unserializable value]');
+    });
+
+    test('retains enumerable message and stack so JSON.stringify serializes diagnostics', async () => {
+        const promise = javaScriptEvaluator.evalDangerously({
+            code: 'throw new Error("serializable diagnostic");',
+            argumentNames: [],
+            arguments: []
+        });
+
+        const err = await promise.catch(e => e);
+        const json = JSON.stringify(err);
+        expect(json).toContain('"message":"serializable diagnostic"');
+        expect(json).toContain('"stack"');
+    });
+
+    test('normalizes compilation SyntaxError from new Function', async () => {
+        const promise = javaScriptEvaluator.evalDangerously({
+            code: 'const a = {;',
+            argumentNames: [],
+            arguments: []
+        });
+
+        await expect(promise).rejects.toBeInstanceOf(SyntaxError);
+        const err = await promise.catch(e => e);
+        expect(err.message).toBeTruthy();
+    });
+
+    test('normalizes explicit missing function name rejection in templateLogic path', async () => {
+        const promise = javaScriptEvaluator.evalDangerously({
+            templateLogic: true,
+            code: 'export default class MyLogic {}',
+            argumentNames: [],
+            arguments: []
+        });
+
+        await expect(promise).rejects.toBeInstanceOf(Error);
+        const err = await promise.catch(e => e);
+        expect(err.message).toBe('No function name specified for template logic');
+    });
+
+    test('normalizes module dynamic import failure in templateLogic path', async () => {
+        const promise = javaScriptEvaluator.evalDangerously({
+            templateLogic: true,
+            functionName: 'trigger',
+            code: 'export default class ??? syntax error',
+            argumentNames: [],
+            arguments: []
+        });
+
+        await expect(promise).rejects.toBeInstanceOf(Error);
+        const err = await promise.catch(e => e);
+        expect(err.message).toBeTruthy();
+    });
+
+    test('normalizes constructor failure in templateLogic path', async () => {
+        const promise = javaScriptEvaluator.evalDangerously({
+            templateLogic: true,
+            functionName: 'trigger',
+            code: 'export default class FailingLogic { constructor() { throw new TypeError("constructor exploded"); } }',
+            argumentNames: [],
+            arguments: []
+        });
+
+        await expect(promise).rejects.toBeInstanceOf(TypeError);
+        const err = await promise.catch(e => e);
+        expect(err.message).toBe('constructor exploded');
+    });
+});
