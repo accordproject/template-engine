@@ -1,0 +1,10 @@
+{
+  "name": "determinism-probe",
+  "version": "0.1.0",
+  "description": "Hostile probe template for the determinism conformance vectors: each request names one non-deterministic global for the logic to call",
+  "accordproject": {
+    "runtime": "typescript",
+    "template": "clause",
+    "cicero": "^3.0.0"
+  }
+}
