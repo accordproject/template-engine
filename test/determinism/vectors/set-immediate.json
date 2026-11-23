@@ -1,0 +1,60 @@
+{
+  "agreement": {
+    "agreementId": "set-immediate",
+    "documents": [
+      {
+        "data": {
+          "$class": "org.accordproject.determinism.probe@0.1.0.TemplateModel",
+          "$identifier": "probe",
+          "amount": 7,
+          "clauseId": "probe"
+        },
+        "documentId": "probe",
+        "template": {
+          "hash": "657bedd623541fbbde251acfd14b52bb9e799bee7169e8e79cfbe04c7e22d65f"
+        }
+      }
+    ],
+    "primary": "probe"
+  },
+  "archives": [
+    "657bedd623541fbbde251acfd14b52bb9e799bee7169e8e79cfbe04c7e22d65f"
+  ],
+  "id": "set-immediate",
+  "recorded": false,
+  "semantics": "1.0.0-draft",
+  "steps": [
+    {
+      "expect": {
+        "result": "Committed"
+      },
+      "inputs": {
+        "facts": [],
+        "now": "2026-01-01T00:00:00.000Z",
+        "principal": {
+          "$class": "org.accordproject.runtime@1.0.0.SystemPrincipal"
+        },
+        "requestId": "instantiate-1"
+      },
+      "request": null
+    },
+    {
+      "expect": {
+        "result": "Fault"
+      },
+      "inputs": {
+        "facts": [],
+        "now": "2026-01-01T00:00:00.000Z",
+        "principal": {
+          "$class": "org.accordproject.runtime@1.0.0.SystemPrincipal"
+        },
+        "requestId": "probe-1"
+      },
+      "request": {
+        "$class": "org.accordproject.determinism.probe@0.1.0.ProbeRequest",
+        "$timestamp": "2026-01-01T00:00:00.000Z",
+        "probe": "set-immediate"
+      }
+    }
+  ]
+}

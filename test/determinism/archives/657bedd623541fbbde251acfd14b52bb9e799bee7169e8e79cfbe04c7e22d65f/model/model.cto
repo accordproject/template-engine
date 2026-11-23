@@ -1,0 +1,18 @@
+namespace org.accordproject.determinism.probe@0.1.0
+
+import org.accordproject.contract@0.2.0.Clause from https://models.accordproject.org/accordproject/contract@0.2.0.cto
+import org.accordproject.runtime@0.2.0.{Request,Response} from https://models.accordproject.org/accordproject/runtime@0.2.0.cto
+
+@template
+asset TemplateModel extends Clause {
+  o Integer amount
+}
+
+/* Asks the logic to run one probe, named by the vector */
+transaction ProbeRequest extends Request {
+  o String probe
+}
+
+transaction ProbeResponse extends Response {
+  o String output
+}
