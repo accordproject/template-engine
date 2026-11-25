@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`templatemark interpreter should fail to generate formula-invalid 1`] = `[TemplateCompilationError: Compilation error in 'formula_adef0feb9fc1b6e7513409c93d86aa4d9999d35608e1aaeecc07dca99bc591c8': Cannot find name 'THIS'. (line 140, col 3); Cannot find name 'IS'. (line 140, col 8); Cannot find name 'GARBAGE'. (line 140, col 11); Unknown keyword or identifier. Did you mean 'this'? (line 140, col 3); Unexpected keyword or identifier. (line 140, col 8)]`;
+exports[`templatemark interpreter should fail to generate formula-invalid 1`] = `[TemplateCompilationError: Compilation error in 'formula_adef0feb9fc1b6e7513409c93d86aa4d9999d35608e1aaeecc07dca99bc591c8': Cannot find name 'THIS'. (line 130, col 3); Cannot find name 'IS'. (line 130, col 8); Cannot find name 'GARBAGE'. (line 130, col 11); Unknown keyword or identifier. Did you mean 'this'? (line 130, col 3); Unexpected keyword or identifier. (line 130, col 8)]`;
 
 exports[`templatemark interpreter should fail to generate formula-invalid: compilation errors 1`] = `
 [
@@ -11,51 +11,51 @@ exports[`templatemark interpreter should fail to generate formula-invalid: compi
         "category": 1,
         "character": 3,
         "code": 2304,
-        "id": "err-2304-2622-4",
+        "id": "err-2304-2006-4",
         "length": 4,
-        "line": 140,
+        "line": 130,
         "renderedMessage": "Cannot find name 'THIS'.",
-        "start": 3730,
+        "start": 3279,
       },
       {
         "category": 1,
         "character": 8,
         "code": 2304,
-        "id": "err-2304-2627-2",
+        "id": "err-2304-2011-2",
         "length": 2,
-        "line": 140,
+        "line": 130,
         "renderedMessage": "Cannot find name 'IS'.",
-        "start": 3735,
+        "start": 3284,
       },
       {
         "category": 1,
         "character": 11,
         "code": 2304,
-        "id": "err-2304-2630-7",
+        "id": "err-2304-2014-7",
         "length": 7,
-        "line": 140,
+        "line": 130,
         "renderedMessage": "Cannot find name 'GARBAGE'.",
-        "start": 3738,
+        "start": 3287,
       },
       {
         "category": 1,
         "character": 3,
         "code": 1435,
-        "id": "err-1435-2622-4",
+        "id": "err-1435-2006-4",
         "length": 4,
-        "line": 140,
+        "line": 130,
         "renderedMessage": "Unknown keyword or identifier. Did you mean 'this'?",
-        "start": 3730,
+        "start": 3279,
       },
       {
         "category": 1,
         "character": 8,
         "code": 1434,
-        "id": "err-1434-2627-2",
+        "id": "err-1434-2011-2",
         "length": 2,
-        "line": 140,
+        "line": 130,
         "renderedMessage": "Unexpected keyword or identifier.",
-        "start": 3735,
+        "start": 3284,
       },
     ],
     "nodeId": "formula_adef0feb9fc1b6e7513409c93d86aa4d9999d35608e1aaeecc07dca99bc591c8",
@@ -63,7 +63,7 @@ exports[`templatemark interpreter should fail to generate formula-invalid: compi
 ]
 `;
 
-exports[`templatemark interpreter should fail to generate formula-no-method 1`] = `[TemplateCompilationError: Compilation error in 'formula_4ef52e3adc6e5334e0925838eed0e51a372091d9b3a4499537ccf82fce5b1b25': Property 'missing' does not exist on type 'string'. (line 140, col 18)]`;
+exports[`templatemark interpreter should fail to generate formula-no-method 1`] = `[TemplateCompilationError: Compilation error in 'formula_4ef52e3adc6e5334e0925838eed0e51a372091d9b3a4499537ccf82fce5b1b25': Property 'missing' does not exist on type 'string'. (line 130, col 18)]`;
 
 exports[`templatemark interpreter should fail to generate formula-no-method: compilation errors 1`] = `
 [
@@ -74,11 +74,11 @@ exports[`templatemark interpreter should fail to generate formula-no-method: com
         "category": 1,
         "character": 18,
         "code": 2339,
-        "id": "err-2339-2637-7",
+        "id": "err-2339-2021-7",
         "length": 7,
-        "line": 140,
+        "line": 130,
         "renderedMessage": "Property 'missing' does not exist on type 'string'.",
-        "start": 3745,
+        "start": 3294,
       },
     ],
     "nodeId": "formula_4ef52e3adc6e5334e0925838eed0e51a372091d9b3a4499537ccf82fce5b1b25",

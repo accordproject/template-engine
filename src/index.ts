@@ -12,13 +12,29 @@
  * limitations under the License.
  */
 
-import type { TemplateLogic } from './slc/SmartLegalContract.d.ts';
+// The contract a template's logic/logic.ts implements: extend TemplateLogic and
+// return a TriggerResponse from trigger() (and an InitResponse from init()).
+export { TemplateLogic } from './slc/SmartLegalContract';
+export type {
+    IConcept,
+    ITransaction,
+    IEvent,
+    IState,
+    IRequest,
+    IResponse,
+    IAsset,
+    IContract,
+    IClause,
+    EngineResponse,
+    TriggerResponse,
+    InitResponse,
+    TemplateData,
+} from './slc/SmartLegalContract';
 
 export { TemplateMarkInterpreter } from './TemplateMarkInterpreter';
 export { TemplateArchiveProcessor } from './TemplateArchiveProcessor';
 export { TemplateCompilationError } from './TemplateMarkToJavaScriptCompiler';
 export type { CompilerError } from './TemplateMarkToJavaScriptCompiler';
-export { TemplateLogic }
 export * from './utils';
 
 // Re-exported for convenience so a single browser bundle can run the full
