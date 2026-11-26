@@ -22,6 +22,54 @@ import {
     RUNTIME_RESPONSE_FQN,
     BASE_EVENT_FQN,
 } from './utils';
+import { SMART_LEGAL_CONTRACT_SOURCE } from './runtime/smartLegalContract';
+
+/** The TypeScript types that stand for each runtime base in one template's compilation. */
+export type RuntimeBounds = {
+    state: string;
+    request: string;
+    response: string;
+    event: string;
+};
+
+const RUNTIME_BOUNDS_BLOCK = /^\/\/ @runtime-bounds-start$[\s\S]*?^\/\/ @runtime-bounds-end$/m;
+
+/**
+ * Turns the source of src/slc/SmartLegalContract.ts into the declarations that
+ * template logic is compiled against: the runtime bounds block is replaced by the
+ * given types, comments are dropped, and so are `export` keywords, because the
+ * declarations are inlined into the template's own module and must not become
+ * part of its exports. The concrete types assignable to each runtime base (the base
+ * itself, when concrete, plus its subclasses; never when the base is absent) are
+ * used as the state type-parameter bound, the request parameter, the result type
+ * and the emitted event type: a type that is structurally incompatible with the
+ * base (e.g. a plain concept lacking $timestamp used as a response/event) fails to
+ * compile. State is enforced nominally at runtime instead.
+ * @param {string} source the source of src/slc/SmartLegalContract.ts
+ * @param {RuntimeBounds} bounds the types to use for each runtime base
+ * @returns {string} the declarations, as a TypeScript source string
+ */
+export function toRuntimeDeclarations(source: string, bounds: RuntimeBounds): string {
+    if (!RUNTIME_BOUNDS_BLOCK.test(source.replace(/\r\n?/g, '\n'))) {
+        throw new Error('SmartLegalContract.ts has no @runtime-bounds-start/@runtime-bounds-end block');
+    }
+    const runtimeBounds = [
+        `type RuntimeState = ${bounds.state};`,
+        `type RuntimeRequest = ${bounds.request};`,
+        `type RuntimeResponse = ${bounds.response};`,
+        `type RuntimeEvent = ${bounds.event};`,
+    ].join('\n');
+    // Normalize line endings first: on a CRLF checkout the patterns below would not
+    // consume the \r before each \n, so comments would be kept.
+    return source
+        .replace(/\r\n?/g, '\n')
+        .replace(RUNTIME_BOUNDS_BLOCK, () => runtimeBounds)
+        .replace(/^\s*\/\*[\s\S]*?\*\/[ \t]*\n/gm, '')
+        .replace(/^\s*\/\/.*\n/gm, '')
+        .replace(/^export /gm, '')
+        .replace(/\n{2,}/g, '\n')
+        .trim();
+}
 
 /**
  * This class creates the typescript types
@@ -110,63 +158,15 @@ ${request.imports}
 ${response.imports}
 ${event.imports}
 
-/* eslint-disable @typescript-eslint/no-empty-object-type */
-// Runtime declarations injected by the template engine. The Runtime* unions are
-// derived from the template's Concerto model so that the type checker enforces the
-// runtime State / Request / Response / Event class hierarchies.
-interface IConcept {
-    $class: string;
-}
-interface ITransaction extends IConcept {
-    $timestamp: string;
-}
-interface IEvent extends IConcept {
-    $timestamp: string;
-}
-interface IState {
-    $identifier: string;
-}
-interface IRequest extends ITransaction {
-}
-interface IResponse extends ITransaction {
-}
-interface IAsset extends IConcept {
-    $identifier: string;
-}
-interface IContract extends IAsset {
-    contractId: string;
-}
-interface IClause extends IAsset {
-    clauseId: string;
-}
-
-// The concrete types assignable to each runtime base (the base itself, when concrete,
-// plus its subclasses; never when the base is absent). Used as the state type-parameter
-// bound, the request parameter, the result type and the emitted event type: a type that is
-// structurally incompatible with the base (e.g. a plain concept lacking $timestamp used as
-// a response/event) fails to compile. State is enforced nominally at runtime instead.
-type RuntimeState = ${state.union};
-type RuntimeRequest = ${request.union};
-type RuntimeResponse = ${response.union};
-type RuntimeEvent = ${event.union};
-
-interface EngineResponse<S extends RuntimeState> {
-    state?: S;
-    events?: Array<RuntimeEvent>
-}
-interface TriggerResponse<S extends RuntimeState = RuntimeState> extends EngineResponse<S> {
-    result: RuntimeResponse;
-}
-interface InitResponse<S extends RuntimeState> extends EngineResponse<S> {}
-
-type TemplateData = IContract|IClause;
-
-abstract class TemplateLogic<T extends TemplateData, S extends RuntimeState = RuntimeState> {
-    abstract trigger(data: T, request: RuntimeRequest, state:S) : Promise<TriggerResponse<S>>;
-    // A concrete (stub) implementation so the class emits runtime JS (user logic does
-    // \`extends TemplateLogic\`) and does not raise TS2391 for a missing body.
-    init(data: T) : Promise<InitResponse<S>|undefined> { return Promise.resolve(undefined); }
-}
+// Runtime declarations injected by the template engine: src/slc/SmartLegalContract.ts,
+// with the Runtime* types derived from the template's Concerto model so that the type
+// checker enforces the runtime State / Request / Response / Event class hierarchies.
+${toRuntimeDeclarations(SMART_LEGAL_CONTRACT_SOURCE, {
+        state: state.union,
+        request: request.union,
+        response: response.union,
+        event: event.union,
+    })}
 `;
     }
 

@@ -45,11 +45,6 @@ const HEADER = `/*
  * Package the TypeScript declarations for dayjs and jsonpath.
  * These are needed at runtime to type-check user TypeScript code and template logic
  * against the dayjs / jsonpath libraries when compiling to JS.
- *
- * Note: the runtime SmartLegalContract declarations (TemplateLogic, EngineResponse,
- * etc.) are no longer bundled here. They are emitted directly by
- * TypeScriptCompilationContext with model-derived State/Request/Response/Event bounds
- * so that the class hierarchy is enforced at compile time.
  */
 const dayjs = readFileSync('./node_modules/dayjs/index.d.ts').toString(
   'base64'
@@ -67,6 +62,23 @@ ${HEADER}
 
 export const DAYJS_BASE64 = '${dayjs}';
 export const JSONPATH_BASE64 = '${jsonpath}';
+`
+);
+
+/**
+ * Package the source of src/slc/SmartLegalContract.ts (TemplateLogic, TriggerResponse,
+ * etc.), the declarations the package exports. TypeScriptCompilationContext compiles
+ * template logic against this same text, with its runtime bounds block replaced by
+ * unions derived from the template's model, so the two cannot drift apart. Line endings
+ * are normalized so the embedded text is the same on a CRLF (Windows) checkout.
+ */
+const smartLegalContract = readFileSync('./src/slc/SmartLegalContract.ts', 'utf-8').replace(/\r\n?/g, '\n');
+writeFileSync(
+  './src/runtime/smartLegalContract.ts',
+  `
+${HEADER}
+
+export const SMART_LEGAL_CONTRACT_SOURCE = ${JSON.stringify(smartLegalContract)};
 `
 );
 

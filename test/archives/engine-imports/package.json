@@ -1,0 +1,10 @@
+{
+  "name": "engine-imports",
+  "version": "0.0.1",
+  "description": "Template whose logic imports TemplateLogic and the response types from @accordproject/template-engine",
+  "accordproject": {
+    "runtime": "typescript",
+    "template": "clause",
+    "cicero": "^3.0.0"
+  }
+}
