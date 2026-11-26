@@ -50,7 +50,7 @@ const RUNTIME_BOUNDS_BLOCK = /^\/\/ @runtime-bounds-start$[\s\S]*?^\/\/ @runtime
  * @returns {string} the declarations, as a TypeScript source string
  */
 export function toRuntimeDeclarations(source: string, bounds: RuntimeBounds): string {
-    if (!RUNTIME_BOUNDS_BLOCK.test(source)) {
+    if (!RUNTIME_BOUNDS_BLOCK.test(source.replace(/\r\n?/g, '\n'))) {
         throw new Error('SmartLegalContract.ts has no @runtime-bounds-start/@runtime-bounds-end block');
     }
     const runtimeBounds = [
@@ -59,7 +59,10 @@ export function toRuntimeDeclarations(source: string, bounds: RuntimeBounds): st
         `type RuntimeResponse = ${bounds.response};`,
         `type RuntimeEvent = ${bounds.event};`,
     ].join('\n');
+    // Normalize line endings first: on a CRLF checkout the patterns below would not
+    // consume the \r before each \n, so comments would be kept.
     return source
+        .replace(/\r\n?/g, '\n')
         .replace(RUNTIME_BOUNDS_BLOCK, () => runtimeBounds)
         .replace(/^\s*\/\*[\s\S]*?\*\/[ \t]*\n/gm, '')
         .replace(/^\s*\/\/.*\n/gm, '')

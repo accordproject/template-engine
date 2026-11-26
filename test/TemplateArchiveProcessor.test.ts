@@ -425,3 +425,47 @@ describe('template archive processor - logic that only defines trigger', () => {
         });
     });
 });
+
+describe('template logic that imports from @accordproject/template-engine', () => {
+    const data = {
+        $class: 'org.example@0.0.1.TemplateModel',
+        clauseId: 'test',
+        $identifier: 'test',
+        name: 'World'
+    };
+
+    let templateArchiveProcessor: TemplateArchiveProcessor;
+
+    beforeAll(async () => {
+        const template = await Template.fromDirectory('test/archives/engine-imports', {offline: true});
+        templateArchiveProcessor = new TemplateArchiveProcessor(template);
+    });
+
+    test('compiles without errors and without an import of the package in the emitted code', async () => {
+        const compiled = await templateArchiveProcessor.compileLogic();
+        const logic = compiled['logic/logic.ts'];
+        expect(logic.errors.filter(e => e.category === 1).map(e => e.renderedMessage)).toEqual([]);
+        expect(logic.code).not.toContain('@accordproject/template-engine');
+        expect(logic.code).toContain('class GreetingLogic extends TemplateLogic');
+    });
+
+    test('runs init and trigger', async () => {
+        const { state } = await templateArchiveProcessor.init(data);
+        expect(state).toEqual({ $class: 'org.accordproject.runtime@0.2.0.State', $identifier: 'test' });
+        const request = {
+            $class: 'org.example@0.0.1.GreetingRequest',
+            $timestamp: new Date().toISOString(),
+            greeting: 'Hello'
+        };
+        const response = await templateArchiveProcessor.trigger(data, request, state);
+        expect(response.result).toMatchObject({
+            $class: 'org.example@0.0.1.GreetingResponse',
+            message: 'HELLO WORLD'
+        });
+    });
+
+    test('drafts with a formula that calls a helper from the logic', async () => {
+        const result = await templateArchiveProcessor.draft(data, 'markdown', {});
+        expect(result).toContain('This is a test template for WORLD.');
+    });
+});

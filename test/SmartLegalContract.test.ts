@@ -111,8 +111,18 @@ describe('toRuntimeDeclarations', () => {
     const bounds = { state: '__RtState0', request: '__RtRequest0 | __RtRequest1', response: 'never', event: '__RtEvent0' };
 
     it('embeds the current src/slc/SmartLegalContract.ts', () => {
+        // with LF line endings, whatever the checkout uses
         const source = readFileSync(path.resolve(__dirname, '../src/slc/SmartLegalContract.ts'), 'utf-8');
-        expect(SMART_LEGAL_CONTRACT_SOURCE).toBe(source);
+        expect(SMART_LEGAL_CONTRACT_SOURCE).toBe(source.replace(/\r\n?/g, '\n'));
+        expect(SMART_LEGAL_CONTRACT_SOURCE).not.toContain('\r');
+    });
+
+    it('gives the same declarations for a CRLF source as for an LF one', () => {
+        const crlf = SMART_LEGAL_CONTRACT_SOURCE.replace(/\n/g, '\r\n');
+        const declarations = toRuntimeDeclarations(crlf, bounds);
+        expect(declarations).toBe(toRuntimeDeclarations(SMART_LEGAL_CONTRACT_SOURCE, bounds));
+        expect(declarations).not.toContain('\r');
+        expect(declarations).not.toMatch(/^\s*(\/\/|\/\*)/m);
     });
 
     it('binds the runtime types to the given unions', () => {

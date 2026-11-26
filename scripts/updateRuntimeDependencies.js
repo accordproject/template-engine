@@ -69,9 +69,10 @@ export const JSONPATH_BASE64 = '${jsonpath}';
  * Package the source of src/slc/SmartLegalContract.ts (TemplateLogic, TriggerResponse,
  * etc.), the declarations the package exports. TypeScriptCompilationContext compiles
  * template logic against this same text, with its runtime bounds block replaced by
- * unions derived from the template's model, so the two cannot drift apart.
+ * unions derived from the template's model, so the two cannot drift apart. Line endings
+ * are normalized so the embedded text is the same on a CRLF (Windows) checkout.
  */
-const smartLegalContract = readFileSync('./src/slc/SmartLegalContract.ts', 'utf-8');
+const smartLegalContract = readFileSync('./src/slc/SmartLegalContract.ts', 'utf-8').replace(/\r\n?/g, '\n');
 writeFileSync(
   './src/runtime/smartLegalContract.ts',
   `

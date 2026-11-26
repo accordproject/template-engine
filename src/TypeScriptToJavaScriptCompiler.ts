@@ -19,6 +19,7 @@ import { twoslasher, TwoSlashOptions, TwoSlashReturn } from '@typescript/twoslas
 import { ModelManager } from '@accordproject/concerto-core';
 import { TypeScriptCompilationContext } from './TypeScriptCompilationContext';
 import { DAYJS_BASE64, JSONPATH_BASE64 } from './runtime/declarations';
+import { removeEngineImports } from './EngineImports';
 import * as lzstring from 'lz-string';
 
 /**
@@ -195,9 +196,11 @@ export class TypeScriptToJavaScriptCompiler {
         if(!this.fsMap) {
             throw new Error('initialize must be awaited before compile is called.');
         }
+        // Imports of the runtime types from the engine package refer to declarations the
+        // context already provides, and could not be resolved when the logic runs.
         const twoSlashCode =`
 ${this.context}
-${typescript}
+${removeEngineImports(this.ts, typescript)}
 `;
 
         const options: TwoSlashOptions = {
